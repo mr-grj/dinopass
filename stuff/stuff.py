@@ -1,7 +1,7 @@
 import sys
 
 from models import Base, CredentialsTable
-from stuff.settings import ENGINE, session
+from settings import ENGINE, session
 
 from psycopg2 import OperationalError
 from rich.console import Console

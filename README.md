@@ -1,39 +1,17 @@
 Stuff (Simple CLI Password Manager)
 =======================
 
-This repo exists to provide [an example setup.py] file, that can be used
-to bootstrap your next Python project. It includes some advanced
-patterns and best practices for `setup.py`, as well as some
-commented–out nice–to–haves.
+Stuff is a Python library for managing your own passwords in a CLI-based manner.
 
-For example, this `setup.py` provides a `$ python setup.py upload`
-command, which creates a *universal wheel* (and *sdist*) and uploads
-your package to [PyPi] using [Twine], without the need for an annoying
-`setup.cfg` file. It also creates/uploads a new git tag, automatically.
+## Description
 
-In short, `setup.py` files can be daunting to approach, when first
-starting out — even Guido has been heard saying, "everyone cargo cults
-thems". It's true — so, I want this repo to be the best place to
-copy–paste from :)
+This library was first created to satisfy my own needs of handling my passwords. Because
+I tend to change my passwords pretty frequently I usually find myself in a position of 
+having to reset them kinda often.
 
-[Check out the example!][an example setup.py]
 
-Installation
------
-
-```bash
-cd your_project
-
-# Download the setup.py file:
-#  download with wget
-wget https://raw.githubusercontent.com/navdeep-G/setup.py/master/setup.py -O setup.py
-
-#  download with curl
-curl -O https://raw.githubusercontent.com/navdeep-G/setup.py/master/setup.py
-```
 
 Pull requests are encouraged!
-
 
 License
 -------

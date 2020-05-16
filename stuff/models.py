@@ -1,8 +1,29 @@
+import getpass
+import os
+import sys
+
+from dotenv import load_dotenv
+from psycopg2 import OperationalError
+from sqlalchemy import Column, Integer, String, UniqueConstraint, create_engine
+from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, UniqueConstraint
+from sqlalchemy.orm import sessionmaker
+
+
+load_dotenv()
 
 
 Base = declarative_base()
+
+DB_CREDENTIALS = {
+    'drivername': os.getenv('DB_DRIVERNAME'),
+    'host': os.getenv('DB_HOST'),
+    'database': os.getenv('DB_NAME'),
+    'username': os.getenv('DB_USER'),
+    'password': getpass.getpass('Please enter DB PASS: '),
+}
+ENGINE = create_engine(URL(**DB_CREDENTIALS))
+SESSION = sessionmaker(bind=ENGINE)
 
 
 class CredentialsTable(Base):
@@ -69,3 +90,10 @@ class CredentialsTable(Base):
         credentials.pop('_sa_instance_state')
         credentials.pop('id')
         return credentials
+
+
+try:
+    Base.metadata.create_all(ENGINE)
+except OperationalError as operational_error:
+    sys.exit(f'Error when connecting to DB: {operational_error}. '
+             f'Please make sure you have correctly set up your DB!')

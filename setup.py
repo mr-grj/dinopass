@@ -14,7 +14,7 @@ from setuptools import find_packages, setup, Command
 # Package meta-data.
 NAME = 'stuff'
 DESCRIPTION = 'Simple CLI Password Manager.'
-URL = 'https://github.com/me/myproject'
+URL = 'https://github.com/alexandru-grajdeanu/stuff.git'
 EMAIL = 'grajdeanu.alex@gmail.com'
 AUTHOR = 'Alexandru Grajdeanu'
 REQUIRES_PYTHON = '>=3.6.0'

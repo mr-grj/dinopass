@@ -1,4 +1,4 @@
-from .models import CredentialsTable
+from stuff.models import CredentialsTable
 
 from sqlalchemy.exc import IntegrityError
 
@@ -16,19 +16,21 @@ class Credential:
 
         Returns: str
         """
-
         try:
             record = CredentialsTable.create(name=name, password=password)
+
             self._db_session.add(record)
             self._db_session.commit()
-            return f'Successfully added record with name={name}.'
+
+            return record
         except IntegrityError as integrity_error:
             self._db_session.rollback()
+            return {'error': f'{str(integrity_error)}'}
 
-            if 'duplicate key value violates unique constraint' in str(integrity_error):
-                return 'Password names should be unique!'
-
-            return f'{str(integrity_error)}'
+            # if 'UNIQUE constraint failed' in str(integrity_error):
+            #     return f'There is already a record with name={name}'
+            #
+            # return f'{str(integrity_error)}'
 
     def get_all(self):
         return [
@@ -45,15 +47,7 @@ class Credential:
         Returns:
             str if no data is found, dict otherwise
         """
-
-        if not name:
-            raise ValueError('You should provide a name.')
-
         record = CredentialsTable.get_by_name(name=name, session=self._db_session)
-
-        if not record:
-            return
-
         return [record.to_dict()] if record else []
 
     def update(self, field, value, field_to_update, new_value):
@@ -96,9 +90,6 @@ class Credential:
 
         Returns: str
         """
-
-        if not name:
-            raise ValueError('You should provide a name.')
 
         try:
             CredentialsTable.delete_by_name(name=name, session=self._db_session)

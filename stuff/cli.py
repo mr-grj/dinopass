@@ -32,13 +32,17 @@ def purge(ctx):
         click.echo('ALL the records have been deleted!')
 
 
-@main.command(help='Create a new credential with a specific name and password.')
+@main.command(help='Create a new record with a specific name and password.')
 @click.option('--name', prompt=True, help='Name of the password.')
 @click.option('--password', prompt=True, hide_input=True, help='Your new password.')
 @click.pass_context
 def create(ctx, name: str, password: str):
     credential = ctx.obj['credential']
-    credential.create(name, password)
+    record = credential.create(name, password)
+    if hasattr(record, 'name'):
+        click.echo(f'Successfully created record with name={name}')
+    else:
+        click.echo(f'{record["error"]}')
 
 
 @main.command(help='Get a specific credential by name.')

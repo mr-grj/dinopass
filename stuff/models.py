@@ -20,7 +20,7 @@ class CredentialsTable(Base):
     password = Column(String, nullable=False)
 
     def __repr__(self):
-        return f"<Credential(name='{self.name}'>"
+        return f"<Credential(name='{self.name}')>"
 
     def __str__(self):
         return f"<Credential(name='{self.name}', password='***')>"

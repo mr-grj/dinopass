@@ -28,30 +28,26 @@ You can do the following:
 * Retrieve an existing password
 * Delete an existing password
 
-Each password has a name and a group to which it belongs.
-
 
 ## Usage
 
 ```shell script
-Usage: stuff.py [-h] (-a | -p | -c <name> <group> <password> | -g <field> <value> | -u <field> <value> <field_to_update> <new_value> | -d <field> <value>)
+Usage: cli.py [OPTIONS] COMMAND [ARGS]...
 
-Simple CLI Password manager for personal use
+  Simple CLI Password manager for personal use
 
-Optional arguments:
-  -h, --help            show this help message and exit
+Options:
+  --help  Show this message and exit.
 
-  -a, --all             List all credentials
-  -p, --purge           Purge all credentials
+Commands:
+  all     List all credentials.
+  create  Create a new credential with a specific name and password.
+  delete  Delete a specific credential by name.
+  get     Get a specific credential by name.
+  purge   Purge all credentials.
+  update  Update a credential field matching a specific condition with a
+          new value
 
-  -c <name> <group> <password>, --create <name> <group> <password>
-                        Create a new credential with a specific name, in a specific group, with a specific password
-  -g <field> <value>, --get <field> <value>
-                        Get a specific credential by name/group value
-  -u <field> <value> <field_to_update> <new_value>, --update <field> <value> <field_to_update> <new_value>
-                        Update a credential field matching a specific condition with a new value
-  -d <field> <value>, --delete <field> <value>
-                        Delete a specific credential by name/group value
 
 All the arguments are mutually exclusive
 ```

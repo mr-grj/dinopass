@@ -1,4 +1,4 @@
-from models import CredentialsTable
+from .models import CredentialsTable
 
 from sqlalchemy.exc import IntegrityError
 
@@ -7,24 +7,18 @@ class Credential:
     def __init__(self, db_session):
         self._db_session = db_session
 
-    def create(self, name, group, password):
+    def create(self, name, password):
         """Create a password.
 
         Arguments:
             name (str): Name of the password.
-            group (str): Group of the password.
             password (str): Password value.
 
-        Returns:
-            str
+        Returns: str
         """
 
         try:
-            record = CredentialsTable.create(
-                name=name,
-                group=group,
-                password=password
-            )
+            record = CredentialsTable.create(name=name, password=password)
             self._db_session.add(record)
             self._db_session.commit()
             return f'Successfully added record with name={name}.'
@@ -32,7 +26,7 @@ class Credential:
             self._db_session.rollback()
 
             if 'duplicate key value violates unique constraint' in str(integrity_error):
-                return 'Password should be unique per group!'
+                return 'Password names should be unique!'
 
             return f'{str(integrity_error)}'
 
@@ -42,28 +36,20 @@ class Credential:
             for credential in CredentialsTable.get_all(self._db_session)
         ]
 
-    def get(self, field, value):
-        """Retrieve a credential record with a specific field value.
+    def get(self, name):
+        """Retrieve a credential record with a specific name.
 
         Arguments:
-            field (str): Name of a table column.
-            value (str): Value to filter by.
+            name (str): Name to filter by.
 
         Returns:
             str if no data is found, dict otherwise
         """
 
-        if not field:
-            raise ValueError('You should provide a field name.')
+        if not name:
+            raise ValueError('You should provide a name.')
 
-        if not isinstance(field, str):
-            raise ValueError('Field should be a string.')
-
-        record = CredentialsTable.get_by_field(
-            field=field,
-            value=value,
-            session=self._db_session
-        )
+        record = CredentialsTable.get_by_name(name=name, session=self._db_session)
 
         if not record:
             return
@@ -102,31 +88,22 @@ class Credential:
         CredentialsTable.purge(self._db_session)
         self._db_session.commit()
 
-    def delete(self, field, value):
-        """Delete a credential record with a specific field value.
+    def delete(self, name):
+        """Delete a credential record with a specific name.
 
         Arguments:
-            field (str): Name of a table column.
-            value (str): Value to filter by.
+            name (str): Name to filter by.
 
-        Returns:
-            str
+        Returns: str
         """
 
-        if not field:
-            raise ValueError('You should provide a field name.')
-
-        if not isinstance(field, str):
-            raise ValueError('Field should be a string.')
+        if not name:
+            raise ValueError('You should provide a name.')
 
         try:
-            CredentialsTable.delete_by_field(
-                field=field,
-                value=value,
-                session=self._db_session
-            )
+            CredentialsTable.delete_by_name(name=name, session=self._db_session)
             self._db_session.commit()
-            return f'Successfully deleted record with {field}={value}.'
+            return f'Successfully deleted record with name={name}.'
         except IntegrityError as integrity_error:
             self._db_session.rollback()
             return f'{str(integrity_error)}'

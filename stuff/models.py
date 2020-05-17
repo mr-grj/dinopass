@@ -1,52 +1,42 @@
 import getpass
-import os
 import sys
 
-from dotenv import load_dotenv
 from psycopg2 import OperationalError
-from sqlalchemy import Column, Integer, String, UniqueConstraint, create_engine
+from sqlalchemy import Column, Integer, String, create_engine
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 
-load_dotenv()
-
-
-Base = declarative_base()
-
 DB_CREDENTIALS = {
-    'drivername': os.getenv('DB_DRIVERNAME'),
-    'host': os.getenv('DB_HOST'),
-    'database': os.getenv('DB_NAME'),
-    'username': os.getenv('DB_USER'),
+    'drivername': 'postgresql+psycopg2',
+    'host': 'localhost',
+    'database': 'stuff',
+    'username': 'alex',  # stuff
     'password': getpass.getpass('Please enter DB PASS: '),
 }
+
 ENGINE = create_engine(URL(**DB_CREDENTIALS))
 SESSION = sessionmaker(bind=ENGINE)
+
+Base = declarative_base()
 
 
 class CredentialsTable(Base):
     __tablename__ = 'credentials'
-    __table_args__ = (
-        UniqueConstraint('name', 'group', name='unique_name_group'),
-    )
 
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
-    group = Column(String, nullable=False)
+    name = Column(String, nullable=False, unique=True)
     password = Column(String, nullable=False)
 
     def __repr__(self):
-        return f"<Credential(name='{self.name}', group='{self.group}'>"
+        return f"<Credential(name='{self.name}'>"
 
     def __str__(self):
-        return f"<Credential(name='{self.name}', group='{self.group}', " \
-               f"password='***'>"
+        return f"<Credential(name='{self.name}', password='***')>"
 
-    def __init__(self, name, group, password):
+    def __init__(self, name, password):
         self.name = name
-        self.group = group
         self.password = password
 
     @classmethod
@@ -62,11 +52,8 @@ class CredentialsTable(Base):
         return session.query(cls).delete()
 
     @classmethod
-    def get_by_field(cls, field, value, session):
-        if not getattr(cls, field):
-            raise AttributeError(f'Invalid attribute name: {field}')
-
-        return session.query(cls).filter_by(**{field: value}).first()
+    def get_by_name(cls, name, session):
+        return session.query(cls).filter_by(name=name).first()
 
     @classmethod
     def update_by_field(cls, field, value, field_to_update, new_value, session):
@@ -79,11 +66,8 @@ class CredentialsTable(Base):
         return session.query(cls).filter_by(**{field: value}).update({field_to_update: new_value})
 
     @classmethod
-    def delete_by_field(cls, field, value, session):
-        if not getattr(cls, field):
-            raise AttributeError(f'Invalid attribute name: {field}')
-
-        return session.query(cls).filter_by(**{field: value}).delete()
+    def delete_by_name(cls, name, session):
+        return session.query(cls).filter_by(name=name).delete()
 
     def to_dict(self):
         credentials = vars(self)

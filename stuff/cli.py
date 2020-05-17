@@ -1,6 +1,6 @@
-from .credential import Credential
-from .helpers import pp
-from .models import SESSION
+from stuff.credential import Credential
+from stuff.helpers import pp
+from stuff.models import SESSION
 
 import click
 
@@ -27,12 +27,14 @@ def all(ctx):
 @click.pass_context
 def purge(ctx):
     credential = ctx.obj['credential']
-    credential.purge()
+    if click.confirm(f'Are you sure you want to purge ALL the records?', abort=True):
+        credential.purge()
+        click.echo('ALL the records have been deleted!')
 
 
 @main.command(help='Create a new credential with a specific name and password.')
-@click.option('--name', help='Name of the password.')
-@click.option('--password', help='The password.')
+@click.option('--name', prompt=True, help='Name of the password.')
+@click.option('--password', prompt=True, hide_input=True, help='Your new password.')
 @click.pass_context
 def create(ctx, name: str, password: str):
     credential = ctx.obj['credential']
@@ -40,7 +42,7 @@ def create(ctx, name: str, password: str):
 
 
 @main.command(help='Get a specific credential by name.')
-@click.option('--name', help='Name of the password.')
+@click.option('--name', prompt=True, help='Name of the password.')
 @click.pass_context
 def get(ctx, name: str):
     credential = ctx.obj['credential']
@@ -53,10 +55,10 @@ def get(ctx, name: str):
 
 @main.command(help='Update a credential field matching a specific '
                    'condition with a new value.')
-@click.option('--field', help='Name of the field.')
-@click.option('--value', help='Value of the field.')
-@click.option('--field_to_update', help='Name of the field to update.')
-@click.option('--new_value', help='New value')
+@click.option('--field', prompt=True, help='Name of the field.')
+@click.option('--value', prompt=True, help='Value of the field.')
+@click.option('--field_to_update', prompt=True, help='Name of the field to update.')
+@click.option('--new_value', prompt=True, help='New value')
 @click.pass_context
 def update(ctx, field: str, value: str, field_to_update: str, new_value: str):
     credential = ctx.obj['credential']
@@ -64,11 +66,13 @@ def update(ctx, field: str, value: str, field_to_update: str, new_value: str):
 
 
 @main.command(help='Delete a specific credential by name.')
-@click.option('--name', help='Name of the password.')
+@click.option('--name', prompt=True, help='Name of the password.')
 @click.pass_context
 def delete(ctx, name: str):
     credential = ctx.obj['credential']
-    credential.delete(name)
+    if click.confirm(f'Are you sure you want to delete {name} record?', abort=True):
+        credential.delete(name)
+        click.echo(f'The record with name={name} has been deleted!')
 
 
 def start():

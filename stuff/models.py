@@ -1,24 +1,14 @@
-import getpass
+import os
 import sys
 
 from psycopg2 import OperationalError
 from sqlalchemy import Column, Integer, String, create_engine
-from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 
-DB_CREDENTIALS = {
-    'drivername': 'postgresql+psycopg2',
-    'host': 'localhost',
-    'database': 'stuff',
-    'username': 'alex',  # stuff
-    'password': getpass.getpass('Please enter DB PASS: '),
-}
-
-ENGINE = create_engine(URL(**DB_CREDENTIALS))
+ENGINE = create_engine(f'sqlite:///{os.path.dirname(os.path.dirname(__file__))}/stuff.db')
 SESSION = sessionmaker(bind=ENGINE)
-
 Base = declarative_base()
 
 

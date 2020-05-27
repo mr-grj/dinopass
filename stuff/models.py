@@ -12,34 +12,62 @@ SESSION = sessionmaker(bind=ENGINE)
 Base = declarative_base()
 
 
-class CredentialsTable(Base):
-    __tablename__ = 'credentials'
-
+class PasswordMixin:
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False, unique=True)
-    password = Column(String, nullable=False)
-
-    def __repr__(self):
-        return f"<Credential(name='{self.name}')>"
-
-    def __str__(self):
-        return f"<Credential(name='{self.name}', password='***')>"
-
-    def __init__(self, name, password):
-        self.name = name
-        self.password = password
 
     @classmethod
     def create(cls, **kwargs):
         return cls(**kwargs)
 
     @classmethod
+    def get(cls, session):
+        return session.query(cls).first()
+
+    @classmethod
     def get_all(cls, session):
         return session.query(cls).all()
 
     @classmethod
+    def has_records(cls, session):
+        return cls.get(session)
+
+    @classmethod
     def purge(cls, session):
         return session.query(cls).delete()
+
+    def to_dict(self):
+        record = vars(self)
+        record.pop('_sa_instance_state')
+        record.pop('id')
+        return record
+
+
+class MasterPassword(Base, PasswordMixin):
+    __tablename__ = 'master_password'
+
+    salt = Column(String, nullable=False)
+    hash_key = Column(String, nullable=False)
+
+    def __init__(self, salt, hash_key):
+        self.salt = salt
+        self.hash_key = hash_key
+
+
+class Password(Base, PasswordMixin):
+    __tablename__ = 'passwords'
+
+    name = Column(String, nullable=False, unique=True)
+    value = Column(String, nullable=False)
+
+    def __repr__(self):
+        return f"<Password(name='{self.name}')>"
+
+    def __str__(self):
+        return f"<Password(name='{self.name}', value='***')>"
+
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
 
     @classmethod
     def get_by_name(cls, name, session):
@@ -58,12 +86,6 @@ class CredentialsTable(Base):
     @classmethod
     def delete_by_name(cls, name, session):
         return session.query(cls).filter_by(name=name).delete()
-
-    def to_dict(self):
-        credentials = vars(self)
-        credentials.pop('_sa_instance_state')
-        credentials.pop('id')
-        return credentials
 
 
 try:

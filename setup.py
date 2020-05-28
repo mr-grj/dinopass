@@ -9,7 +9,7 @@ setup(
     packages=['dinopass'],
     package_data={},
     python_requires='>=3.6.0',
-    install_requires=['SQLAlchemy', 'psycopg2-binary', 'rich', 'click'],
+    install_requires=['SQLAlchemy', 'cryptography', 'psycopg2-binary', 'rich', 'click'],
     entry_points={
         'console_scripts': ['dinopass=dinopass.cli:start']
     }

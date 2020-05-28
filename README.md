@@ -72,7 +72,8 @@ All the arguments are mutually exclusive
 * Add type annotations
 * Add tests
 * Improve readme (add installation process, how the passwords are stored, etc)
-
+* Implement functionality of saving the password to clipboard instead
+of printing it.
 
 License
 -------

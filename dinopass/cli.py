@@ -9,6 +9,9 @@ from dinopass.views import MasterPasswordView, PasswordView
 import click
 
 
+SALT_LENGTH = 16
+
+
 @click.group(help="Simple CLI Password Manager for personal use")
 @click.pass_context
 def main(ctx):
@@ -37,7 +40,7 @@ def main(ctx):
 
             master_password = click.prompt('Please enter your master password: ', hide_input=True)
 
-            salt = os.urandom(16)
+            salt = os.urandom(SALT_LENGTH)
             hash_key = generate_hash_key(master_password)
             key_derivation = generate_key_derivation(salt, master_password)
 
@@ -55,17 +58,18 @@ def all(ctx):
 
     data = password_view.get_all(key_derivation)
     if not data:
-        print('There are no credentials stored yet.')
+        click.echo('\n\nThere are no credentials stored yet\n\n')
+
     pp(title='ALL CREDENTIALS', data=data)
 
 
 @main.command(help='Purge all credentials.')
 @click.pass_context
 def purge(ctx):
-    password_view = ctx.obj['password_view']
     if click.confirm(f'Are you sure you want to purge ALL the records?', abort=True):
+        password_view = ctx.obj['password_view']
         password_view.purge()
-        click.echo('ALL the records have been deleted!')
+        click.echo('\n\nALL the records have been deleted!\n\n')
 
 
 @main.command(help='Create a new password with a specific name.')
@@ -79,9 +83,9 @@ def create(ctx, name: str, password: str):
     record = password_view.create(key_derivation, name, password)
 
     if hasattr(record, 'name'):
-        click.echo(f'Successfully created record with name={name}')
+        click.echo(f'\n\nSuccessfully created record with name={name}\n\n')
     else:
-        click.echo(f'{record["error"]}')
+        click.echo(f'\n\n{record["error"]}\n\n')
 
 
 @main.command(help='Get a specific credential by name.')
@@ -93,13 +97,12 @@ def get(ctx, name: str):
 
     data = password_view.get_by_name(key_derivation, name)
     if not data:
-        print(f'There is no record with name={name}!')
+        click.echo(f'\n\nThere is no record with name={name}\n\n')
         return
     pp(title=f'CREDENTIAL for {name}', data=data)
 
 
-@main.command(help='Update a credential field matching a specific '
-                   'condition with a new value.')
+@main.command(help='Update a credential field matching a specific condition with a new value.')
 @click.option('--field', prompt=True, help='Name of the field.')
 @click.option('--value', prompt=True, help='Value of the field.')
 @click.option('--field_to_update', prompt=True, help='Name of the field to update.')
@@ -116,8 +119,8 @@ def update(ctx, field: str, value: str, field_to_update: str, new_value: str):
 @click.option('--name', prompt=True, help='Name of the password.')
 @click.pass_context
 def delete(ctx, name: str):
-    password_view = ctx.obj['password_view']
     if click.confirm(f'Are you sure you want to delete {name} record?', abort=True):
+        password_view = ctx.obj['password_view']
         password_view.delete(name)
         click.echo(f'The record with name={name} has been deleted!')
 

@@ -8,6 +8,9 @@ class PasswordViewMixin:
     model = None
 
     def __init__(self, db_session):
+        if not self.model:
+            raise NotImplementedError('Please specify a model!')
+
         self._db_session = db_session
 
     def get(self):
@@ -26,13 +29,11 @@ class MasterPasswordView(PasswordViewMixin):
 
     @property
     def salt(self):
-        master_password = self.model.get(self._db_session)
-        return master_password.salt
+        return self.model.get(self._db_session).salt
 
     @property
     def hash_key(self):
-        master_password = self.model.get(self._db_session)
-        return master_password.hash_key
+        return self.model.get(self._db_session).hash_key
 
     def create(self, **kwargs):
         try:
@@ -55,13 +56,11 @@ class PasswordView(PasswordViewMixin):
 
     @property
     def name(self):
-        password = self.model.get(self._db_session)
-        return password.name
+        return self.model.get(self._db_session).name
 
     @property
     def value(self):
-        password = self.model.get(self._db_session)
-        return password.value
+        return self.model.get(self._db_session).value
 
     def create(self, key, name, value):
         encrypted_value = encrypt(key, value)

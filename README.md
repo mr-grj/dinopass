@@ -1,40 +1,55 @@
-Stuff (Simple CLI Password Manager)
+DinoPass 
 =======================
 
-Stuff is a Python library for managing your own passwords in a CLI-based manner.
-
+```
+               __
+              / _) -- I'm DinoPass and I can help you administer
+     _.----._/ /          your passwords directly from CLI!
+    /         /
+ __/ (  | (  |
+/__.-'|_|--|_|
+```
 
 ## Description
 
-This library was first created to satisfy my own needs of handling my passwords. Because
-I tend to change my passwords pretty frequently I usually find myself in a position of 
-having to reset them kinda often.
+DinoPass was first created to satisfy my own needs. Because I tend to change my 
+passwords pretty frequently I usually find myself in a position of having to reset 
+them kinda often. So there's that. 
 
 
 ## How it works and what it does
 
-Each time you run a command, you'll have to enter your database password. This is the only
-password that you'll have to remember so make sure it's a **strong** one! Behind the
-scenes, Stuff will do changes to this database. One important thing to keep in mind is
-that the passwords **ARE STORED IN CLEAR TEXT**. I don't expect this to get to much
-attention but if it will, I'll eventually add a way to securely encrypt everything.
+Everything is meant to be as easy and intuitive as possible. You're going to be asked
+for a master password which is going to be the only one that you'll need to remember
+(so please make sure it's gonna be as strong as possible!). After you'll enter your
+master password these are all the options that are currently available:
 
-You can do the following:
-
-* List all your passwords
-* Delete all your passwords
+* List all your passwords  (WARNING: It's going to be in clear text!)
+* Purge all your passwords (WARNING: This is permanent so do it at your own risk!)
 * Create a new password
 * Update an existing password
-* Retrieve an existing password
+* Retrieve an existing password (by name)
 * Delete an existing password
 
 
-## Usage
+## Installation
+
+Installing DinoPass is as simple as:
 
 ```shell script
+python3.8 setup.py install
+```
+
+## Usage
+
+You can always check the help menu by running:
+
+```shell script
+dinopass --help
+
 Usage: cli.py [OPTIONS] COMMAND [ARGS]...
 
-  Simple CLI Password manager for personal use
+  DinoPass - Simple CLI Password manager
 
 Options:
   --help  Show this message and exit.
@@ -52,7 +67,6 @@ Commands:
 All the arguments are mutually exclusive
 ```
 
-**Pull requests are encouraged!**
 
 License
 -------

@@ -1,10 +1,10 @@
-from encryption import generate_hash_key, generate_key_derivation, encrypt, decrypt
-from stuff.views import MasterPasswordView, PasswordView
-from stuff.helpers import pp
-from stuff.models import SESSION
-
 import os
 import sys
+
+from dinopass.helpers import pp
+from dinopass.models import SESSION
+from dinopass.views import MasterPasswordView, PasswordView
+from encryption import generate_hash_key, generate_key_derivation
 
 import click
 

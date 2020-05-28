@@ -12,6 +12,6 @@ def pp(title, data):
     table.add_column("PASSWORD", justify="center", style="bold green", no_wrap=True)
 
     for item in data:
-        table.add_row(item['name'], item['password'])
+        table.add_row(item['name'], item['value'])
 
     console.print(table)

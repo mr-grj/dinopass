@@ -38,6 +38,6 @@ def encrypt(key, value_to_encrypt):
 def decrypt(key, encrypted_value):
     f = Fernet(key)
     try:
-        return f.decrypt(encrypted_value)
+        return f.decrypt(encrypted_value).decode()
     except InvalidToken:
         return b''

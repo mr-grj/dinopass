@@ -51,7 +51,9 @@ def main(ctx):
 @click.pass_context
 def all(ctx):
     password_view = ctx.obj['password_view']
-    data = password_view.get_all()
+    key_derivation = ctx.obj['key_derivation']
+
+    data = password_view.get_all(key_derivation)
     if not data:
         print('There are no credentials stored yet.')
     pp(title='ALL CREDENTIALS', data=data)
@@ -74,47 +76,50 @@ def create(ctx, name: str, password: str):
     password_view = ctx.obj['password_view']
     key_derivation = ctx.obj['key_derivation']
 
-    encrypted_password = encrypt(key_derivation, password)
+    record = password_view.create(key_derivation, name, password)
 
-    record = password_view.create(name, encrypted_password)
     if hasattr(record, 'name'):
         click.echo(f'Successfully created record with name={name}')
     else:
         click.echo(f'{record["error"]}')
-#
-#
-# @main.command(help='Get a specific credential by name.')
-# @click.option('--name', prompt=True, help='Name of the password.')
-# @click.pass_context
-# def get(ctx, name: str):
-#     credential = ctx.obj['credential']
-#     data = credential.get(name)
-#     if not data:
-#         print(f'There is no record with name={name}!')
-#         return
-#     pp(title=f'CREDENTIAL for {name}', data=data)
-#
-#
-# @main.command(help='Update a credential field matching a specific '
-#                    'condition with a new value.')
-# @click.option('--field', prompt=True, help='Name of the field.')
-# @click.option('--value', prompt=True, help='Value of the field.')
-# @click.option('--field_to_update', prompt=True, help='Name of the field to update.')
-# @click.option('--new_value', prompt=True, help='New value')
-# @click.pass_context
-# def update(ctx, field: str, value: str, field_to_update: str, new_value: str):
-#     credential = ctx.obj['credential']
-#     credential.update(field, value, field_to_update, new_value)
-#
-#
-# @main.command(help='Delete a specific credential by name.')
-# @click.option('--name', prompt=True, help='Name of the password.')
-# @click.pass_context
-# def delete(ctx, name: str):
-#     credential = ctx.obj['credential']
-#     if click.confirm(f'Are you sure you want to delete {name} record?', abort=True):
-#         credential.delete(name)
-#         click.echo(f'The record with name={name} has been deleted!')
+
+
+@main.command(help='Get a specific credential by name.')
+@click.option('--name', prompt=True, help='Name of the password.')
+@click.pass_context
+def get(ctx, name: str):
+    password_view = ctx.obj['password_view']
+    key_derivation = ctx.obj['key_derivation']
+
+    data = password_view.get_by_name(key_derivation, name)
+    if not data:
+        print(f'There is no record with name={name}!')
+        return
+    pp(title=f'CREDENTIAL for {name}', data=data)
+
+
+@main.command(help='Update a credential field matching a specific '
+                   'condition with a new value.')
+@click.option('--field', prompt=True, help='Name of the field.')
+@click.option('--value', prompt=True, help='Value of the field.')
+@click.option('--field_to_update', prompt=True, help='Name of the field to update.')
+@click.option('--new_value', prompt=True, help='New value')
+@click.pass_context
+def update(ctx, field: str, value: str, field_to_update: str, new_value: str):
+    password_view = ctx.obj['password_view']
+    key_derivation = ctx.obj['key_derivation']
+
+    password_view.update(key_derivation, field, value, field_to_update, new_value)
+
+
+@main.command(help='Delete a specific credential by name.')
+@click.option('--name', prompt=True, help='Name of the password.')
+@click.pass_context
+def delete(ctx, name: str):
+    password_view = ctx.obj['password_view']
+    if click.confirm(f'Are you sure you want to delete {name} record?', abort=True):
+        password_view.delete(name)
+        click.echo(f'The record with name={name} has been deleted!')
 
 
 def start():

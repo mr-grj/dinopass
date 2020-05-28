@@ -24,22 +24,12 @@ class PasswordMixin:
         return session.query(cls).first()
 
     @classmethod
-    def get_all(cls, session):
-        return session.query(cls).all()
-
-    @classmethod
     def has_records(cls, session):
         return cls.get(session)
 
     @classmethod
     def purge(cls, session):
         return session.query(cls).delete()
-
-    def to_dict(self):
-        record = vars(self)
-        record.pop('_sa_instance_state')
-        record.pop('id')
-        return record
 
 
 class MasterPassword(Base, PasswordMixin):
@@ -70,6 +60,10 @@ class Password(Base, PasswordMixin):
         self.value = value
 
     @classmethod
+    def get_all(cls, session):
+        return session.query(cls).all()
+
+    @classmethod
     def get_by_name(cls, name, session):
         return session.query(cls).filter_by(name=name).first()
 
@@ -86,6 +80,12 @@ class Password(Base, PasswordMixin):
     @classmethod
     def delete_by_name(cls, name, session):
         return session.query(cls).filter_by(name=name).delete()
+
+    def to_dict(self):
+        record = vars(self)
+        record.pop('_sa_instance_state')
+        record.pop('id')
+        return record
 
 
 try:

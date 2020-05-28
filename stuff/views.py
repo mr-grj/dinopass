@@ -1,3 +1,4 @@
+from encryption import encrypt, decrypt
 from stuff.models import MasterPassword, Password
 
 from sqlalchemy.exc import IntegrityError
@@ -11,24 +12,6 @@ class PasswordViewMixin:
 
     def get(self):
         return self.model.get(self._db_session)
-
-    def get_all(self):
-        return [
-            record.to_dict()
-            for record in self.model.get_all(self._db_session)
-        ]
-
-    def create(self, **kwargs):
-        try:
-            record = self.model.create(**kwargs)
-
-            self._db_session.add(record)
-            self._db_session.commit()
-
-            return record
-        except IntegrityError as integrity_error:
-            self._db_session.rollback()
-            return {'error': f'{str(integrity_error)}'}
 
     def purge(self):
         self.model.purge(self._db_session)
@@ -51,6 +34,18 @@ class MasterPasswordView(PasswordViewMixin):
         master_password = self.model.get(self._db_session)
         return master_password.hash_key
 
+    def create(self, **kwargs):
+        try:
+            record = self.model.create(**kwargs)
+
+            self._db_session.add(record)
+            self._db_session.commit()
+
+            return record
+        except IntegrityError as integrity_error:
+            self._db_session.rollback()
+            return {'error': f'{str(integrity_error)}'}
+
     def is_valid(self, hash_key):
         return hash_key == self.hash_key
 
@@ -68,11 +63,38 @@ class PasswordView(PasswordViewMixin):
         password = self.model.get(self._db_session)
         return password.value
 
-    def get_by_name(self, name):
-        record = self.model.get_by_name(name, self._db_session)
-        return [record.to_dict()] if record else []
+    def create(self, key, name, value):
+        encrypted_value = encrypt(key, value)
 
-    def update(self, field, value, field_to_update, new_value):
+        try:
+            record = self.model.create(name=name, value=encrypted_value)
+
+            self._db_session.add(record)
+            self._db_session.commit()
+
+            return record
+        except IntegrityError as integrity_error:
+            self._db_session.rollback()
+            return {'error': f'{str(integrity_error)}'}
+
+    def get_all(self, key):
+        records = []
+        for record in self.model.get_all(self._db_session):
+            record.value = decrypt(key, record.value)
+            records.append(record.to_dict())
+        return records
+
+    def get_by_name(self, key, name):
+        record = self.model.get_by_name(name, self._db_session)
+        if record:
+            record.value = decrypt(key, record.value)
+            return [record.to_dict()]
+        return []
+
+    def update(self, key, field, value, field_to_update, new_value):
+        if field_to_update == 'value':
+            new_value = encrypt(key, new_value)
+
         try:
             self.model.update_by_field(
                 field=field,

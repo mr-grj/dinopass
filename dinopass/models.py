@@ -7,7 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 
-ENGINE = create_engine(f'sqlite:///{os.path.dirname(os.path.dirname(__file__))}/stuff.db')
+ENGINE = create_engine(f'sqlite:///{os.path.dirname(os.path.dirname(__file__))}/dinopass.db')
 SESSION = sessionmaker(bind=ENGINE)
 Base = declarative_base()
 

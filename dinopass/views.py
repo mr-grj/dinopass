@@ -1,5 +1,5 @@
+from dinopass.encryption import encrypt, decrypt
 from dinopass.models import MasterPassword, Password
-from encryption import encrypt, decrypt
 
 from sqlalchemy.exc import IntegrityError
 

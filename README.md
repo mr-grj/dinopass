@@ -67,6 +67,12 @@ Commands:
 All the arguments are mutually exclusive
 ```
 
+## TO DO
+
+* Add type annotations
+* Add tests
+* Improve readme (add installation process, how the passwords are stored, etc)
+
 
 License
 -------

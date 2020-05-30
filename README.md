@@ -12,6 +12,8 @@ DinoPass
 
 ## Description
 
+![](dinopass.gif)
+
 DinoPass was first created to satisfy my own needs. Because I tend to change my 
 passwords pretty frequently I usually find myself in a position of having to reset 
 them kinda often. So there's that. 

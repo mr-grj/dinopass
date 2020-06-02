@@ -2,14 +2,50 @@ import os
 import sys
 
 from dinopass.encryption import generate_hash_key, generate_key_derivation
-from dinopass.helpers import pp
+from dinopass.helpers import pretty_print
 from dinopass.models import SESSION
 from dinopass.views import MasterPasswordView, PasswordView
 
 import click
+import pyperclip
 
 
 SALT_LENGTH = 16
+
+
+def set_context_master_password_exists(ctx, master_password_view, password_view):
+    master_password = click.prompt(
+        'Please enter your master password: ',
+        hide_input=True
+    )
+
+    hash_key = generate_hash_key(master_password)
+    key_derivation = generate_key_derivation(master_password_view.salt, master_password)
+
+    if master_password_view.is_valid(hash_key):
+        ctx.obj['key_derivation'] = key_derivation
+        ctx.obj['password_view'] = password_view
+    else:
+        sys.exit('Invalid master password')
+
+
+def set_context_master_password_does_not_exist(ctx, master_password_view, password_view):
+    if click.confirm(f'It looks like you do not have a master password yet. '
+                     f'Would you like to create one now?', abort=True):
+
+        master_password = click.prompt(
+            'Please enter your master password: ',
+            hide_input=True
+        )
+
+        salt = os.urandom(SALT_LENGTH)
+        hash_key = generate_hash_key(master_password)
+        key_derivation = generate_key_derivation(salt, master_password)
+
+        master_password_view.create(salt=salt, hash_key=hash_key)
+
+        ctx.obj['key_derivation'] = key_derivation
+        ctx.obj['password_view'] = password_view
 
 
 @click.group(help="Simple CLI Password Manager for personal use")
@@ -21,46 +57,20 @@ def main(ctx):
     master_password_view = MasterPasswordView(session)
 
     if master_password_view.has_records():
-        master_password = click.prompt('Please enter your master password: ', hide_input=True)
-
-        hash_key = generate_hash_key(master_password)
-        key_derivation = generate_key_derivation(
-            master_password_view.salt,
-            master_password
-        )
-
-        if master_password_view.is_valid(hash_key):
-            ctx.obj['key_derivation'] = key_derivation
-            ctx.obj['password_view'] = password_view
-        else:
-            sys.exit('Invalid master password')
+        set_context_master_password_exists(ctx, master_password_view, password_view)
     else:
-        if click.confirm(f'It looks like you do not have a master password yet. '
-                         f'Would you like to create one now?', abort=True):
-
-            master_password = click.prompt('Please enter your master password: ', hide_input=True)
-
-            salt = os.urandom(SALT_LENGTH)
-            hash_key = generate_hash_key(master_password)
-            key_derivation = generate_key_derivation(salt, master_password)
-
-            master_password_view.create(salt=salt, hash_key=hash_key)
-
-            ctx.obj['key_derivation'] = key_derivation
-            ctx.obj['password_view'] = password_view
+        set_context_master_password_does_not_exist(ctx, master_password_view, password_view)
 
 
-@main.command(help='List all credentials.')
+@main.command(help='List all credentials (this command does not have clipboard option).')
 @click.pass_context
 def all(ctx):
     password_view = ctx.obj['password_view']
     key_derivation = ctx.obj['key_derivation']
 
-    data = password_view.get_all(key_derivation)
-    if not data:
-        click.echo('\n\nThere are no credentials stored yet\n\n')
-
-    pp(title='ALL CREDENTIALS', data=data)
+    if click.confirm(f'This will display all passwords in clear text. Still want to proceed ?', abort=True):
+        data = password_view.get_all(key_derivation)
+        pretty_print(title='ALL CREDENTIALS', data=data)
 
 
 @main.command(help='Purge all credentials.')
@@ -80,33 +90,34 @@ def create(ctx, name: str, password: str):
     password_view = ctx.obj['password_view']
     key_derivation = ctx.obj['key_derivation']
 
-    record = password_view.create(key_derivation, name, password)
-
-    if hasattr(record, 'name'):
-        click.echo(f'\n\nSuccessfully created record with name={name}\n\n')
-    else:
-        click.echo(f'\n\n{record["error"]}\n\n')
+    password_view.create(key_derivation, name, password)
 
 
 @main.command(help='Get a specific credential by name.')
 @click.option('--name', prompt=True, help='Name of the password.')
+@click.option('--clipboard/--no-clipboard', default=False, help='Copy password to clipboard')
 @click.pass_context
-def get(ctx, name: str):
+def get(ctx, name: str, clipboard: bool):
     password_view = ctx.obj['password_view']
     key_derivation = ctx.obj['key_derivation']
 
     data = password_view.get_by_name(key_derivation, name)
-    if not data:
-        click.echo(f'\n\nThere is no record with name={name}\n\n')
-        return
-    pp(title=f'CREDENTIAL for {name}', data=data)
+
+    if clipboard:
+        if data:
+            pyperclip.copy(data[0]['value'])
+            click.echo('Password copied to clipboard!')
+        else:
+            click.echo('No data available.')
+    else:
+        pretty_print(title=f'CREDENTIAL for {name}', data=data)
 
 
 @main.command(help='Update a credential field matching a specific condition with a new value.')
-@click.option('--field', prompt=True, help='Name of the field.')
-@click.option('--value', prompt=True, help='Value of the field.')
+@click.option('--field_name_to_lookup_for', prompt=True, help='Name of the field.')
+@click.option('--value_to_lookup_for', prompt=True, help='Value of the field.')
 @click.option('--field_to_update', prompt=True, help='Name of the field to update.')
-@click.option('--new_value', prompt=True, help='New value')
+@click.option('--new_field_value', prompt=True, help='New value')
 @click.pass_context
 def update(ctx, field: str, value: str, field_to_update: str, new_value: str):
     password_view = ctx.obj['password_view']

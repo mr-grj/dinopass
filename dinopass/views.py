@@ -1,8 +1,6 @@
 from dinopass.encryption import encrypt, decrypt
 from dinopass.models import MasterPassword, Password
 
-from sqlalchemy.exc import IntegrityError
-
 
 class PasswordViewMixin:
     model = None
@@ -36,16 +34,10 @@ class MasterPasswordView(PasswordViewMixin):
         return self.model.get(self._db_session).hash_key
 
     def create(self, **kwargs):
-        try:
-            record = self.model.create(**kwargs)
+        record = self.model.create(**kwargs)
 
-            self._db_session.add(record)
-            self._db_session.commit()
-
-            return record
-        except IntegrityError as integrity_error:
-            self._db_session.rollback()
-            return {'error': f'{str(integrity_error)}'}
+        self._db_session.add(record)
+        self._db_session.commit()
 
     def is_valid(self, hash_key):
         return hash_key == self.hash_key
@@ -64,17 +56,10 @@ class PasswordView(PasswordViewMixin):
 
     def create(self, key, name, value):
         encrypted_value = encrypt(key, value)
+        record = self.model.create(name=name, value=encrypted_value)
 
-        try:
-            record = self.model.create(name=name, value=encrypted_value)
-
-            self._db_session.add(record)
-            self._db_session.commit()
-
-            return record
-        except IntegrityError as integrity_error:
-            self._db_session.rollback()
-            return {'error': f'{str(integrity_error)}'}
+        self._db_session.add(record)
+        self._db_session.commit()
 
     def get_all(self, key):
         records = []
@@ -94,26 +79,15 @@ class PasswordView(PasswordViewMixin):
         if field_to_update == 'value':
             new_value = encrypt(key, new_value)
 
-        try:
-            self.model.update_by_field(
-                field=field,
-                value=value,
-                field_to_update=field_to_update,
-                new_value=new_value,
-                session=self._db_session
-            )
-            self._db_session.commit()
-            return f'Successfully updated record matching {field}={value} ' \
-                   f'with {field_to_update}={new_value}.'
-        except IntegrityError as integrity_error:
-            self._db_session.rollback()
-            return f'{str(integrity_error)}'
+        self.model.update_by_field(
+            field=field,
+            value=value,
+            field_to_update=field_to_update,
+            new_value=new_value,
+            session=self._db_session
+        )
+        self._db_session.commit()
 
     def delete(self, name):
-        try:
-            self.model.delete_by_name(name=name, session=self._db_session)
-            self._db_session.commit()
-            return f'Successfully deleted record with name={name}.'
-        except IntegrityError as integrity_error:
-            self._db_session.rollback()
-            return f'{str(integrity_error)}'
+        self.model.delete_by_name(name=name, session=self._db_session)
+        self._db_session.commit()

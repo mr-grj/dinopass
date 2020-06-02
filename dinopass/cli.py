@@ -76,10 +76,9 @@ def all(ctx):
 @main.command(help='Purge all credentials.')
 @click.pass_context
 def purge(ctx):
-    if click.confirm(f'Are you sure you want to purge ALL the records?', abort=True):
+    if click.confirm(f'This will DELETE ALL passwords. Still want to proceed ?', abort=True):
         password_view = ctx.obj['password_view']
         password_view.purge()
-        click.echo('\n\nALL the records have been deleted!\n\n')
 
 
 @main.command(help='Create a new password with a specific name.')
@@ -133,7 +132,6 @@ def delete(ctx, name: str):
     if click.confirm(f'Are you sure you want to delete {name} record?', abort=True):
         password_view = ctx.obj['password_view']
         password_view.delete(name)
-        click.echo(f'The record with name={name} has been deleted!')
 
 
 def start():

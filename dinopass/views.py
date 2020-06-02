@@ -88,6 +88,9 @@ class PasswordView(PasswordViewMixin):
         )
         self._db_session.commit()
 
+        print(f'Updated record with name = {field_to_update}')
+
     def delete(self, name):
         self.model.delete_by_name(name=name, session=self._db_session)
         self._db_session.commit()
+        print(f'Deleted record with name = {name}')

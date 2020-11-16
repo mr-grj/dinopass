@@ -89,8 +89,13 @@ def create(ctx, name: str, password: str):
     password_view = ctx.obj['password_view']
     key_derivation = ctx.obj['key_derivation']
 
-    password_view.create(key_derivation, name, password)
-
+    try:
+        password_view.create(key_derivation, name, password)
+    except Exception as integrity_error:
+        if 'UNIQUE constraint failed' in str(integrity_error):
+            click.echo(f'You have already created a record with this name.')
+        else:
+            click.echo(str(integrity_error))
 
 @main.command(help='Get a specific credential by name.')
 @click.option('--name', prompt=True, help='Name of the password.')

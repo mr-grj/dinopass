@@ -1,7 +1,6 @@
 import os
 import sys
 
-from psycopg2 import OperationalError
 from sqlalchemy import Column, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -90,6 +89,6 @@ class Password(Base, PasswordMixin):
 
 try:
     Base.metadata.create_all(ENGINE)
-except OperationalError as operational_error:
+except Exception as operational_error:
     sys.exit(f'Error when connecting to DB: {operational_error}. '
              f'Please make sure you have correctly set up your DB!')

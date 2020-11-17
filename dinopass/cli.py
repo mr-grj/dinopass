@@ -15,7 +15,7 @@ SALT_LENGTH = 16
 
 def set_context_master_password_exists(ctx, master_password_view, password_view):
     master_password = click.prompt(
-        'Please enter your master password: ',
+        'Please enter your master password',
         hide_input=True
     )
 
@@ -34,7 +34,7 @@ def set_context_master_password_does_not_exist(ctx, master_password_view, passwo
                      f'Would you like to create one now?', abort=True):
 
         master_password = click.prompt(
-            'Please enter your master password: ',
+            'Please enter your master password',
             hide_input=True
         )
 

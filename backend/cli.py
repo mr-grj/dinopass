@@ -1,10 +1,10 @@
 import os
 import sys
 
-from dinopass.encryption import generate_hash_key, generate_key_derivation
-from dinopass.helpers import pretty_print
-from dinopass.models import SESSION
-from dinopass.views import MasterPasswordView, PasswordView
+from backend.encryption import generate_hash_key, generate_key_derivation
+from backend import pretty_print
+from backend.models import SESSION
+from backend.views import MasterPasswordView, PasswordView
 
 import click
 import pyperclip

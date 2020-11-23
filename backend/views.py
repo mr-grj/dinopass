@@ -1,5 +1,5 @@
-from dinopass.encryption import encrypt, decrypt
-from dinopass.models import MasterPassword, Password
+from backend.encryption import encrypt, decrypt
+from backend.models import MasterPassword, Password
 
 
 class PasswordViewMixin:

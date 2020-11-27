@@ -1,8 +1,8 @@
 from contextlib import contextmanager
 
-from flask import Flask, request
+from flask import Flask
 
-from backend import api
+from backend import api, models
 from backend.extensions import db, migrate
 
 
@@ -17,8 +17,9 @@ def create_app():
 
     get_config(app)
     register_extensions(app)
-    register_validation_api()
+    register_api()
     register_blueprints(app)
+    register_shellcontext(app)
 
     return app
 
@@ -49,19 +50,24 @@ def register_extensions(app):
     migrate.init_app(app, db)
 
 
-def register_validation_api():
-    api.resources.password_api.add_resource(
-        api.resources.MasterPassword,
-        '/master_password'
-    )
-    api.resources.password_api.add_resource(
-        api.resources.Passwords,
+def register_api():
+    api.passwords.passwords_api.add_resource(
+        api.passwords.PasswordsListApi,
         '/passwords',
+    )
+    api.users.users_api.add_resource(
+        api.users.UsersListApi,
+        '/users'
+    )
+    api.users.users_api.add_resource(
+        api.users.UserListApi,
+        '/user/<int:id_>'
     )
 
 
 def register_blueprints(app):
-    app.register_blueprint(api.resources.blueprint, url_prefix='/api/')
+    app.register_blueprint(api.passwords.passwords_blueprint, url_prefix='/api/')
+    app.register_blueprint(api.users.users_blueprint, url_prefix='/api/')
 
 
 @contextmanager
@@ -79,3 +85,19 @@ def session_scope():
         raise
     finally:
         db.session.close()
+
+
+def register_shellcontext(app):
+    """Register shell context objects."""
+
+    def shell_context():
+        """Shell context objects."""
+        return dict(
+            app=app,
+            db=db,
+            User=models.user.User,
+            Password=models.password.Password,
+            MasterPassword=models.master_password.MasterPassword,
+        )
+
+    app.shell_context_processor(shell_context)

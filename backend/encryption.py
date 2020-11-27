@@ -11,7 +11,7 @@ def generate_hash_key(master_password):
     return hashlib.sha512(master_password.encode()).hexdigest()
 
 
-def generate_key_derivation(salt, master_password):
+def generate_key_derivation(salt, hash_key):
     """Generate Fernet Key:
 
     salt: os.urandom(16)
@@ -25,7 +25,7 @@ def generate_key_derivation(salt, master_password):
         iterations=100000,
         backend=default_backend()
     )
-    key = base64.urlsafe_b64encode(kdf.derive(master_password.encode()))
+    key = base64.urlsafe_b64encode(kdf.derive(hash_key.encode()))
     return key
 
 

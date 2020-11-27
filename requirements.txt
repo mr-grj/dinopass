@@ -7,4 +7,10 @@ bcrypt==3.2.0
 cryptography==3.2.1
 pyperclip==1.8.1
 pytest==6.1.2
-flask
+flask==1.1.2
+python-dotenv==0.15.0
+webargs==6.1.1
+alembic==1.4.3
+setuptools==50.3.2
+flask-marshmallow==0.14.0
+marshmallow==3.9.1

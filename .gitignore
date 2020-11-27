@@ -73,3 +73,5 @@ venv/
 ENV/
 
 *.db
+
+backend/migrations/versions/*

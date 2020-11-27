@@ -1,5 +1,6 @@
 from backend.encryption import encrypt, decrypt
-from backend.models import MasterPassword, Password
+from backend.models.master_password import MasterPassword
+from backend.models.password import Password
 
 
 class PasswordViewMixin:

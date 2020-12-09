@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 
 from flask import Flask
+from flask_cors import CORS
 
 from backend import api, models
 from backend.extensions import db, migrate
@@ -20,6 +21,8 @@ def create_app():
     register_api()
     register_blueprints(app)
     register_shellcontext(app)
+
+    CORS(app)
 
     return app
 

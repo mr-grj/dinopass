@@ -43,15 +43,15 @@ class UsersListApi(Resource):
         if User.query.filter_by(username=username).first():
             return {'message': 'Username already exists'}, 400
 
-        master_password_model = MasterPassword.create(
-            salt=os.urandom(16),
-            hash_key=generate_hash_key(master_password)
-        )
-
-        User.create(
-            username=username,
-            master_password=master_password_model
-        )
+        # master_password_model = MasterPassword.create(
+        #     salt=os.urandom(16),
+        #     hash_key=generate_hash_key(master_password)
+        # )
+        #
+        # User.create(
+        #     username=username,
+        #     master_password=master_password_model
+        # )
 
         return {'message': f'Username {username} successfully created'}, 201
 

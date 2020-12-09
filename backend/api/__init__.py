@@ -1,1 +1,1 @@
-from backend.api import resources, users, passwords
+from backend.api import users, passwords

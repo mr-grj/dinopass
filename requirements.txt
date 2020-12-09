@@ -14,3 +14,4 @@ alembic==1.4.3
 setuptools==50.3.2
 flask-marshmallow==0.14.0
 marshmallow==3.9.1
+flask-cors==3.0.9

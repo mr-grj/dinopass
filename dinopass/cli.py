@@ -85,13 +85,14 @@ def purge(ctx):
 @main.command(help='Create a new password with a specific name.')
 @click.option('--name', prompt=True, help='Name of the password.')
 @click.option('--password', prompt=True, hide_input=True, help='Your new password.')
+@click.option('--description', prompt=True, default="", help='Description of password.')
 @click.pass_context
-def create(ctx, name: str, password: str):
+def create(ctx, name: str, password: str, description: str):
     password_view = ctx.obj['password_view']
     key_derivation = ctx.obj['key_derivation']
 
     try:
-        password_view.create(key_derivation, name, password)
+        password_view.create(key_derivation, name, password, description)
     except Exception as integrity_error:
         if 'UNIQUE constraint failed' in str(integrity_error):
             click.echo(f'You have already created a record with this name.')

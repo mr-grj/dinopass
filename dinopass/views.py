@@ -55,9 +55,13 @@ class PasswordView(PasswordViewMixin):
     def password_value(self):
         return self.model.get(self._db_session).password_value
 
-    def create(self, key, name, value):
+    def create(self, key, name, value, description):
         encrypted_value = encrypt(key, value)
-        record = self.model.create(password_name=name, password_value=encrypted_value)
+        record = self.model.create(
+            password_name=name, 
+            password_value=encrypted_value,
+            description=description
+        )
 
         self._db_session.add(record)
         self._db_session.commit()

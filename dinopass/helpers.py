@@ -4,7 +4,7 @@ from rich.table import Table
 
 def pretty_print(title, data):
     console = Console()
-    columns_to_display = ('name', 'password',)
+    columns_to_display = ('name', 'password', 'description')
 
     if not data:
         console.print('\nNo data available!\n', justify="center", style="bold red")
@@ -16,6 +16,10 @@ def pretty_print(title, data):
         table.add_column(column.upper(), justify='center', style='magenta', no_wrap=True)
 
     for item in data:
-        table.add_row(item['password_name'], item['password_value'])
+        table.add_row(
+            item['password_name'], 
+            item['password_value'],
+            item['description'],
+        )
 
     console.print(table)

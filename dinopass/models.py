@@ -58,9 +58,10 @@ class Password(Base, PasswordMixin):
     def __str__(self):
         return f"<Password(password_name='{self.password_name}', password_value='***')>"
 
-    def __init__(self, password_name, password_value):
+    def __init__(self, password_name, password_value, description):
         self.password_name = password_name
         self.password_value = password_value
+        self.description = description
 
     @classmethod
     def get_all(cls, session):
@@ -88,17 +89,6 @@ class Password(Base, PasswordMixin):
                 .filter_by(**{"password_name": name})
                 .update({"password_value": new_password})
         )
-
-        
-    @classmethod
-    def update_by_field(cls, field, value, field_to_update, new_value, session):
-        if not getattr(cls, field) and not isinstance(field, str):
-            raise AttributeError(f'Invalid attribute name: {field}')
-
-        if not getattr(cls, field_to_update) and not isinstance(field_to_update, str):
-            raise AttributeError(f'Invalid field_to_update name: {field_to_update}')
-
-        return session.query(cls).filter_by(**{field: value}).update({field_to_update: new_value})
 
     @classmethod
     def delete_by_name(cls, name, session):

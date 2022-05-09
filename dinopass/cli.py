@@ -1,5 +1,6 @@
 import os
 import sys
+sys.path.insert(0, os.curdir)
 
 from dinopass.encryption import generate_hash_key, generate_key_derivation
 from dinopass.helpers import pretty_print
@@ -117,17 +118,24 @@ def get(ctx, name: str, clipboard: bool):
         pretty_print(title=f'CREDENTIAL for {name}', data=data)
 
 
-@main.command(help='Update a credential field matching a specific condition with a new value.')
-@click.option('--field_name_to_lookup_for', prompt=True, help='Name of the field.')
-@click.option('--value_to_lookup_for', prompt=True, help='Value of the field.')
-@click.option('--field_to_update', prompt=True, help='Name of the field to update.')
-@click.option('--new_field_value', prompt=True, help='New value')
+@main.command(help='Update password name.')
+@click.option('--current_name', prompt=True, help='Current name of a specific password.')
+@click.option('--new_name', prompt=True, help='New name of a specific password.')
 @click.pass_context
-def update(ctx, field: str, value: str, field_to_update: str, new_value: str):
+def update_name(ctx, current_name: str, new_name: str):
+    password_view = ctx.obj['password_view']
+    password_view.update_name(current_name, new_name)
+
+
+@main.command(help='Update password value.')
+@click.option('--name', prompt=True, help='Name of a specific password.')
+@click.option('--new_value', prompt=True, hide_input=True, help='New value of a specific password.')
+@click.pass_context
+def update_password(ctx, name: str, new_value: str):
     password_view = ctx.obj['password_view']
     key_derivation = ctx.obj['key_derivation']
 
-    password_view.update(key_derivation, field, value, field_to_update, new_value)
+    password_view.update_password(key_derivation, name, new_value)
 
 
 @main.command(help='Delete a specific credential by name.')

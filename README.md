@@ -39,7 +39,7 @@ master password these are all the options that are currently available:
 Installing DinoPass is as simple as:
 
 ```shell script
-python3.8 setup.py install
+python3.10 setup.py install
 ```
 
 ## Usage
@@ -57,14 +57,13 @@ Options:
   --help  Show this message and exit.
 
 Commands:
-  all     List all credentials.
-  create  Create a new credential with a specific name and password.
-  delete  Delete a specific credential by name.
-  get     Get a specific credential by name.
-  purge   Purge all credentials.
-  update  Update a credential field matching a specific condition with a
-          new value
-
+  all              List all credentials (this command does not have...
+  create           Create a new password with a specific name.
+  delete           Delete a specific credential by name.
+  get              Get a specific credential by name.
+  purge            Purge all credentials.
+  update-name      Update password name.
+  update-password  Update password value.
 
 All the arguments are mutually exclusive
 ```

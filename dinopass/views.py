@@ -1,3 +1,4 @@
+from hashlib import new
 from dinopass.encryption import encrypt, decrypt
 from dinopass.models import MasterPassword, Password
 
@@ -47,16 +48,16 @@ class PasswordView(PasswordViewMixin):
     model = Password
 
     @property
-    def name(self):
-        return self.model.get(self._db_session).name
+    def password_name(self):
+        return self.model.get(self._db_session).password_name
 
     @property
-    def value(self):
-        return self.model.get(self._db_session).value
+    def password_value(self):
+        return self.model.get(self._db_session).password_value
 
     def create(self, key, name, value):
         encrypted_value = encrypt(key, value)
-        record = self.model.create(name=name, value=encrypted_value)
+        record = self.model.create(password_name=name, password_value=encrypted_value)
 
         self._db_session.add(record)
         self._db_session.commit()
@@ -64,33 +65,38 @@ class PasswordView(PasswordViewMixin):
     def get_all(self, key):
         records = []
         for record in self.model.get_all(self._db_session):
-            record.value = decrypt(key, record.value)
+            record.password_value = decrypt(key, record.password_value)
             records.append(record.to_dict())
         return records
 
     def get_by_name(self, key, name):
         record = self.model.get_by_name(name, self._db_session)
         if record:
-            record.value = decrypt(key, record.value)
+            record.password_value = decrypt(key, record.password_value)
             return [record.to_dict()]
         return []
 
-    def update(self, key, field, value, field_to_update, new_value):
-        if field_to_update == 'value':
-            new_value = encrypt(key, new_value)
-
-        self.model.update_by_field(
-            field=field,
-            value=value,
-            field_to_update=field_to_update,
-            new_value=new_value,
+    def update_name(self, current_password_name, new_password_name):
+        self.model.update_name(
+            current_password_name, 
+            new_password_name,
             session=self._db_session
         )
         self._db_session.commit()
+        print(f'Updated password name from {current_password_name} to {new_password_name}')
 
-        print(f'Updated record with name = {field_to_update}')
+    def update_password(self, key, name, new_password_value):
+        new_password_value = encrypt(key, new_password_value)
+
+        self.model.update_password(
+            name,
+            new_password_value,
+            session=self._db_session
+        )
+        self._db_session.commit()
+        print(f'Successfully updated password value')
 
     def delete(self, name):
-        self.model.delete_by_name(name=name, session=self._db_session)
+        self.model.delete_by_name(password_name=name, session=self._db_session)
         self._db_session.commit()
-        print(f'Deleted record with name = {name}')
+        print(f'Deleted record with password_name = {name}')

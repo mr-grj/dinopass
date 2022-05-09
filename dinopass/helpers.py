@@ -16,6 +16,6 @@ def pretty_print(title, data):
         table.add_column(column.upper(), justify='center', style='magenta', no_wrap=True)
 
     for item in data:
-        table.add_row(item['name'], item['value'])
+        table.add_row(item['password_name'], item['password_value'])
 
     console.print(table)

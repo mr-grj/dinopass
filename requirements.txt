@@ -7,3 +7,5 @@ bcrypt==3.2.2
 cryptography==37.0.2
 pyperclip==1.8.2
 pytest==7.1.2
+pyminizip==0.2.6
+pydantic==1.9.1

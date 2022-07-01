@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  cli:
+    container_name: cli
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./dinopass:/code/dinopass
+      - ./dinopass.db:/code/dinopass.db

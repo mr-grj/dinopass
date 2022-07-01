@@ -1,15 +1,9 @@
-import os
 import sys
 
-from sqlalchemy import Column, DateTime, Integer, String, create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import Column, DateTime, Integer, String
 from sqlalchemy.sql import func
 
-
-ENGINE = create_engine(f'sqlite:///{os.path.dirname(os.path.dirname(__file__))}/dinopass.db')
-SESSION = sessionmaker(bind=ENGINE)
-Base = declarative_base()
+from dinopass.config.settings import BASE, ENGINE
 
 
 class PasswordMixin:
@@ -34,7 +28,7 @@ class PasswordMixin:
         return session.query(cls).delete()
 
 
-class MasterPassword(Base, PasswordMixin):
+class MasterPassword(BASE, PasswordMixin):
     __tablename__ = 'master_password'
 
     salt = Column(String, nullable=False)
@@ -45,7 +39,7 @@ class MasterPassword(Base, PasswordMixin):
         self.hash_key = hash_key
 
 
-class Password(Base, PasswordMixin):
+class Password(BASE, PasswordMixin):
     __tablename__ = 'passwords'
 
     password_name = Column(String, nullable=False, unique=True)
@@ -102,7 +96,7 @@ class Password(Base, PasswordMixin):
 
 
 try:
-    Base.metadata.create_all(ENGINE)
+    BASE.metadata.create_all(ENGINE)
 except Exception as operational_error:
     sys.exit(f'Error when connecting to DB: {operational_error}. '
              f'Please make sure you have correctly set up your DB!')

@@ -4,7 +4,7 @@ sys.path.insert(0, os.curdir)
 
 from dinopass.encryption import generate_hash_key, generate_key_derivation
 from dinopass.helpers import pretty_print
-from dinopass.models import SESSION
+from dinopass.config.settings import SESSION
 from dinopass.views import MasterPasswordView, PasswordView
 
 import click
@@ -146,6 +146,15 @@ def delete(ctx, name: str):
     if click.confirm(f'Are you sure you want to delete {name} record?', abort=True):
         password_view = ctx.obj['password_view']
         password_view.delete(name)
+
+
+@main.command(help='Create backup of db and send to email.')
+@click.option('--master_password', prompt=True, hide_input=True, help='Your master password (again, yes).')
+@click.pass_context
+def backup_and_email(ctx, master_password):
+    password_view = ctx.obj['password_view']
+    if click.confirm(f'Are you sure you want to backup db & send via email?', abort=True):
+        password_view.backup_and_send(master_password)
 
 
 def start():

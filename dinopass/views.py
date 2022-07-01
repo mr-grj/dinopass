@@ -1,7 +1,7 @@
-from hashlib import new
 from dinopass.encryption import encrypt, decrypt
 from dinopass.models import MasterPassword, Password
 
+from dinopass.helpers import send_protected_zip_via_email
 
 class PasswordViewMixin:
     model = None
@@ -101,6 +101,9 @@ class PasswordView(PasswordViewMixin):
         print(f'Successfully updated password value')
 
     def delete(self, name):
-        self.model.delete_by_name(password_name=name, session=self._db_session)
+        self.model.delete_by_name(name=name, session=self._db_session)
         self._db_session.commit()
         print(f'Deleted record with password_name = {name}')
+
+    def backup_and_send(self, master_password):
+        send_protected_zip_via_email(master_password)

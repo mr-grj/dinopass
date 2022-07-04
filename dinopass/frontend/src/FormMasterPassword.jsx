@@ -6,46 +6,46 @@ import {useStoreActions, useStoreState} from 'easy-peasy';
 
 const FormMasterPassword = () => {
   const {
-    checkMasterPassword,
-    createMasterPassword,
-    setMasterPassword
-  } = useStoreActions((actions) => actions);
+    check,
+    create,
+    setValue
+  } = useStoreActions((actions) => actions.dinopassModels.masterPassword);
 
   const {
-    errorMessage,
-    masterPassword,
-    masterPasswordLoading
-  } = useStoreState((state) => state)
+    error,
+    value,
+    loading
+  } = useStoreState((state) => state.dinopassModels.masterPassword)
 
   return (
     <>
-      <Form loading={masterPasswordLoading}>
+      <Form loading={loading}>
         <Form.Input
           required
           type='password'
           label='Master Password'
           placeholder='Your master password here'
-          value={masterPassword}
-          onChange={(e) => setMasterPassword(e.target.value)}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
         />
 
         <Button
-          disabled={!masterPassword}
-          onClick={() => checkMasterPassword({master_password: masterPassword})}
+          disabled={!value}
+          onClick={() => check({master_password: value})}
         >
           Submit master password
         </Button>
 
         <Button
-          disabled={!masterPassword}
-          onClick={() => createMasterPassword({master_password: masterPassword})}
+          disabled={!value}
+          onClick={() => create({master_password: value})}
         >
           Create master password
         </Button>
       </Form>
 
-      {errorMessage ?
-        <Message error header='Error' content={errorMessage}/>
+      {error ?
+        <Message error header='Error' content={error}/>
         :
         null
       }

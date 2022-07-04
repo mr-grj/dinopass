@@ -1,7 +1,6 @@
-from dinopass.encryption import encrypt, decrypt
-from dinopass.models import MasterPassword, Password
+from backend.helpers import encrypt, decrypt
+from backend.models import MasterPassword, Password
 
-from dinopass.helpers import send_protected_zip_via_email
 
 class PasswordViewMixin:
     model = None
@@ -69,7 +68,11 @@ class PasswordView(PasswordViewMixin):
     def get_all(self, key):
         records = []
         for record in self.model.get_all(self._db_session):
-            record.password_value = decrypt(key, record.password_value)
+            decrypted_value = decrypt(key, record.password_value)
+            if not decrypted_value:
+                return False
+
+            record.password_value = decrypted_value
             records.append(record.to_dict())
         return records
 
@@ -104,6 +107,3 @@ class PasswordView(PasswordViewMixin):
         self.model.delete_by_name(name=name, session=self._db_session)
         self._db_session.commit()
         print(f'Deleted record with password_name = {name}')
-
-    def backup_and_send(self, master_password):
-        send_protected_zip_via_email(master_password)

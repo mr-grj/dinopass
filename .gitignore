@@ -73,3 +73,6 @@ venv/
 ENV/
 
 *.db
+
+# frontend
+node_modules/

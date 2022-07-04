@@ -1,9 +1,7 @@
-import sys
-
 from sqlalchemy import Column, DateTime, Integer, String
 from sqlalchemy.sql import func
 
-from dinopass.config.settings import BASE, ENGINE
+from backend.db import Base
 
 
 class PasswordMixin:
@@ -28,7 +26,7 @@ class PasswordMixin:
         return session.query(cls).delete()
 
 
-class MasterPassword(BASE, PasswordMixin):
+class MasterPassword(Base, PasswordMixin):
     __tablename__ = 'master_password'
 
     salt = Column(String, nullable=False)
@@ -39,7 +37,7 @@ class MasterPassword(BASE, PasswordMixin):
         self.hash_key = hash_key
 
 
-class Password(BASE, PasswordMixin):
+class Password(Base, PasswordMixin):
     __tablename__ = 'passwords'
 
     password_name = Column(String, nullable=False, unique=True)
@@ -93,10 +91,3 @@ class Password(BASE, PasswordMixin):
         record.pop('_sa_instance_state')
         record.pop('id')
         return record
-
-
-try:
-    BASE.metadata.create_all(ENGINE)
-except Exception as operational_error:
-    sys.exit(f'Error when connecting to DB: {operational_error}. '
-             f'Please make sure you have correctly set up your DB!')

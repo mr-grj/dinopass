@@ -1,11 +1,33 @@
 version: "3.8"
 
 services:
-  cli:
-    container_name: cli
+  api:
+    container_name: api
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: dinopass/
+      dockerfile: ./docker/api/Dockerfile
+    ports:
+      - "8888:8000"
     volumes:
-      - ./dinopass:/code/dinopass
-      - ./dinopass.db:/code/dinopass.db
+      - ./dinopass/backend:/code/backend
+      - ./dinopass/db:/code/db
+
+#  cli:
+#    container_name: cli
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    volumes:
+#      - ./dinopass:/code/dinopass
+#      - ./dinopass.db:/code/dinopass.db
+
+  frontend:
+    container_name: frontend
+    build:
+      context: dinopass/
+      dockerfile: ./docker/frontend/Dockerfile
+    stdin_open: true
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./dinopass/frontend:/code/frontend

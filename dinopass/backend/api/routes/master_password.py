@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.api import crud, schemas
-from backend.db import get_db
+from backend.config.db import get_db
 
 master_password_router = APIRouter(
     prefix="/master_password",

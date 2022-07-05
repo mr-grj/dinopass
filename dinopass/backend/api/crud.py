@@ -2,7 +2,6 @@ import os
 from sqlalchemy.orm import Session
 
 from backend.helpers import generate_hash_key, generate_key_derivation
-from backend.models import Password
 from backend.views import MasterPasswordView, PasswordView
 
 SALT_LENGTH = 16

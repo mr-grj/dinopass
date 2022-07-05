@@ -1,15 +1,16 @@
 import os
 import sys
-sys.path.insert(0, os.curdir)
-
-from dinopass.encryption import generate_hash_key, generate_key_derivation
-from dinopass.helpers import pretty_print
-from dinopass.config.settings import SESSION
-from dinopass.views import MasterPasswordView, PasswordView
 
 import click
 import pyperclip
 
+from backend.config.cli_settings import SESSION
+from backend.helpers import (
+    generate_hash_key,
+    generate_key_derivation,
+    pretty_print
+)
+from backend.views import MasterPasswordView, PasswordView
 
 SALT_LENGTH = 16
 

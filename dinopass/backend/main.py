@@ -4,11 +4,11 @@ from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import RedirectResponse
 
+from backend import models
 from backend.api.routes.master_password import master_password_router
 from backend.api.routes.passwords import passwords_router
-from backend.api_settings import get_api_settings
-from backend.db import ENGINE
-from backend import models
+from config.api_settings import get_api_settings
+from config.db import ENGINE
 
 
 def get_application() -> FastAPI:

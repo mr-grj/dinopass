@@ -1,7 +1,7 @@
 from sqlalchemy import Column, DateTime, Integer, String
 from sqlalchemy.sql import func
 
-from backend.db import Base
+from backend.config.db import Base
 
 
 class PasswordMixin:

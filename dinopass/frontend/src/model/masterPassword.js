@@ -1,9 +1,11 @@
 import {action, thunk} from "easy-peasy";
 import axios from "axios";
 
+import {API_URL} from "../constants";
+import {setCookie} from "../utils";
+
 const masterPassword = {
   error: '',
-  keyDerivation: '',
   loading: false,
   value: '',
 
@@ -23,15 +25,16 @@ const masterPassword = {
 
   // thunks
   check: thunk(async (actions, masterPasswordPayload) => {
+    console.log(masterPasswordPayload)
     actions.setError('');
     actions.setLoading(true);
 
-    await axios.post('http://localhost:8888/api/master_password/check', masterPasswordPayload)
+    await axios.post(`${API_URL}/master_password/check`, masterPasswordPayload)
       .then(response => {
         const keyDerivation = response.data.context["key_derivation"]
 
-        actions.setKeyDerivation(keyDerivation)
-        actions.setLoading(false);
+        actions.setLoading(false)
+        setCookie('keyDerivation', keyDerivation)
       })
       .catch(error => {
         actions.setError(error.response.data.detail)
@@ -42,11 +45,11 @@ const masterPassword = {
     actions.setError('');
     actions.setLoading(true);
 
-    await axios.post('http://localhost:8888/api/master_password/create', masterPasswordPayload)
+    await axios.post(`${API_URL}/master_password/create`, masterPasswordPayload)
       .then(response => {
         const keyDerivation = response.data.context["key_derivation"]
 
-        actions.setKeyDerivation(keyDerivation)
+        setCookie('keyDerivation', keyDerivation)
         actions.setLoading(false);
       })
       .catch(error => {

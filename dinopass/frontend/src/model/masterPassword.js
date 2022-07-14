@@ -4,7 +4,7 @@ import axios from "axios";
 import {API_URL} from "../constants";
 import {setCookie} from "../utils";
 
-const masterPassword = {
+const MasterPassword = {
   error: '',
   loading: false,
   value: '',
@@ -25,7 +25,6 @@ const masterPassword = {
 
   // thunks
   check: thunk(async (actions, masterPasswordPayload) => {
-    console.log(masterPasswordPayload)
     actions.setError('');
     actions.setLoading(true);
 
@@ -35,6 +34,8 @@ const masterPassword = {
 
         actions.setLoading(false)
         setCookie('keyDerivation', keyDerivation)
+
+        window.location.href = '/passwords'
       })
       .catch(error => {
         actions.setError(error.response.data.detail)
@@ -59,4 +60,4 @@ const masterPassword = {
   }),
 }
 
-export default masterPassword;
+export default MasterPassword;

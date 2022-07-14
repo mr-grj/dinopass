@@ -14,3 +14,6 @@ export const setCookie = (cookieName, cookieValue) => {
     }
   )
 }
+
+export const isAuth = () =>  !!Cookies.get('keyDerivation');
+export const getKeyDerivation = () => Cookies.get('keyDerivation');

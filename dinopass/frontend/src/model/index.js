@@ -1,9 +1,9 @@
-import masterPassword from "./masterPassword";
-import menu from "./menu";
+import MasterPassword from "./masterPassword";
+import Passwords from "./passwords";
 
 const dinopassModels = {
-  masterPassword,
-  menu
+  masterPassword: MasterPassword,
+  Passwords: Passwords
 }
 
 export default dinopassModels;

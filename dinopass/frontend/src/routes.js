@@ -1,20 +1,19 @@
 import LoginPage from './pages/LoginPage'
 import PasswordsPage from './pages/PasswordsPage'
-import WelcomePage from "./pages/WelcomePage";
+import {isAuth} from "./utils";
+
+const userIsAuth = isAuth();
+
 
 const routes = [
   {
-    exact: true,
-    path: "/",
-    main: () => <WelcomePage/>
-  },
-  {
     path: "/login",
     main: () => <LoginPage/>
+
   },
   {
     path: "/passwords",
-    main: () => <PasswordsPage/>
+    main: () => userIsAuth ? <PasswordsPage/> : window.location.href = '/login'
   },
 ];
 

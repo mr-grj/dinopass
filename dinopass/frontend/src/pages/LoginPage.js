@@ -1,56 +1,38 @@
-import {useState} from "react";
-import {useStoreActions, useStoreState} from 'easy-peasy'
-import {
-  Box,
-  TextField,
-  Snackbar,
-  Stack,
-} from '@mui/material';
-import LoadingButton from '@mui/lab/LoadingButton';
-import InputIcon from '@mui/icons-material/Input';
-
+import { useStoreActions, useStoreState } from "easy-peasy";
+import { Box, Stack, TextField } from "@mui/material";
+import DinoLoadingButton from "../components/DinoLoadingButton";
+import { useSnackbar } from "notistack";
 
 const LoginPage = () => {
-  const [snackOpen, setSnackOpen] = useState({
-    open: false,
-    vertical: 'bottom',
-    horizontal: 'right',
-  });
-  const {vertical, horizontal, open} = snackOpen;
+  const { enqueueSnackbar } = useSnackbar();
 
-  const {
-    check,
-    create,
-    setValue
-  } = useStoreActions((actions) => actions.dinopassModels.masterPassword);
+  const { check, create, setValue } = useStoreActions(
+    (actions) => actions.dinopassModels.masterPassword
+  );
 
-  const {
-    error,
-    value,
-    loading
-  } = useStoreState((state) => state.dinopassModels.masterPassword)
+  const { error, value, loading } = useStoreState(
+    (state) => state.dinopassModels.masterPassword
+  );
 
   const handleClickLogin = () => {
-    check({master_password: value});
-    setSnackOpen({...snackOpen, open: true});
+    check({ master_password: value });
+    if (error) {
+      enqueueSnackbar(error, { variant: "error" });
+    }
   };
   const handleClickSignup = () => {
-    create({master_password: value});
-    setSnackOpen({...snackOpen, open: true});
-  };
-  const handleClose = () => {
-    setSnackOpen({...snackOpen, open: false});
+    create({ master_password: value });
+    if (error) {
+      enqueueSnackbar(error, { variant: "error" });
+    }
   };
 
   return (
     <>
-
       <Box
-        textAlign='center'
+        textAlign="center"
         component="form"
-        sx={{
-          '& .MuiTextField-root': {m: 1, width: '25ch'},
-        }}
+        sx={{ "& .MuiTextField-root": { m: 1, width: "25ch" } }}
         autoComplete="off"
       >
         <TextField
@@ -62,37 +44,20 @@ const LoginPage = () => {
         />
 
         <Stack direction="row" spacing={2} justifyContent="center">
-          <LoadingButton
+          <DinoLoadingButton
+            buttonText="Login"
+            handleClickLogin={handleClickLogin}
             loading={loading}
-            loadingPosition="start"
-            variant="contained"
-            startIcon={<InputIcon/>}
-            onClick={handleClickLogin}
-          >
-            Login
-          </LoadingButton>
-          <LoadingButton
+          />
+          <DinoLoadingButton
+            buttonText="Signup"
+            handleClickLogin={handleClickSignup}
             loading={loading}
-            loadingPosition="start"
-            variant="outlined"
-            startIcon={<InputIcon/>}
-            onClick={handleClickSignup}
-          >
-            Signup
-          </LoadingButton>
+          />
         </Stack>
       </Box>
-
-      <Snackbar
-        anchorOrigin={{vertical, horizontal}}
-        open={open}
-        onClose={handleClose}
-        message={error}
-        key={vertical + horizontal}
-      />
     </>
-  )
-
-}
+  );
+};
 
 export default LoginPage;

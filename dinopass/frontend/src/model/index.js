@@ -3,7 +3,7 @@ import Passwords from "./passwords";
 
 const dinopassModels = {
   masterPassword: MasterPassword,
-  Passwords: Passwords
-}
+  Passwords: Passwords,
+};
 
 export default dinopassModels;

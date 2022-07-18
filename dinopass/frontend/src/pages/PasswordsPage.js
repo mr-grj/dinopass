@@ -1,72 +1,67 @@
-import {useStoreActions, useStoreState} from "easy-peasy";
-import {useEffect, useState} from "react";
-import {getKeyDerivation, isAuth} from "../utils";
-import {Snackbar} from "@mui/material";
-import {DataGrid} from '@mui/x-data-grid';
+import { useStoreActions, useStoreState } from "easy-peasy";
+import { useEffect } from "react";
+import { getKeyDerivation, isAuth } from "../utils";
+import { useSnackbar } from "notistack";
+import { DataGrid } from "@mui/x-data-grid";
 
 const PasswordsPage = () => {
-  const [snackOpen, setSnackOpen] = useState({
-    open: false,
-    vertical: 'bottom',
-    horizontal: 'right',
-  });
-  const {vertical, horizontal, open} = snackOpen;
+  const { enqueueSnackbar } = useSnackbar();
 
-  const {get} = useStoreActions((actions) => actions.dinopassModels.Passwords);
+  const { get } = useStoreActions(
+    (actions) => actions.dinopassModels.Passwords
+  );
 
-  const {
-    error,
-    passwords,
-    loading
-  } = useStoreState((state) => state.dinopassModels.Passwords)
-
-  const handleClose = () => {
-    setSnackOpen({...snackOpen, open: false});
-  };
+  const { error, passwords } = useStoreState(
+    (state) => state.dinopassModels.Passwords
+  );
 
   useEffect(() => {
     if (isAuth()) {
       get(getKeyDerivation());
     } else {
-      setSnackOpen({...snackOpen, open: true});
+      enqueueSnackbar(error, { variant: "error" });
     }
-  }, [get, setSnackOpen, snackOpen])
+  }, [enqueueSnackbar, error, get]);
 
   const columns = [
-    {field: 'password_name', headerName: 'Password Name', width: 180, editable: true, flex: 1},
-    {field: 'password_value', headerName: 'Password Value', type: 'string', editable: true, flex: 1},
     {
-      field: 'description',
-      headerName: 'Description',
-      type: 'string',
+      field: "password_name",
+      headerName: "Password Name",
       width: 180,
       editable: true,
-      flex: 1
-    }
-  ]
+      flex: 1,
+    },
+    {
+      field: "password_value",
+      headerName: "Password Value",
+      type: "string",
+      editable: true,
+      flex: 1,
+    },
+    {
+      field: "description",
+      headerName: "Description",
+      type: "string",
+      width: 180,
+      editable: true,
+      flex: 1,
+    },
+  ];
 
   return (
     <>
       <div>
-        <div style={{height: 300, width: '100%'}}>
+        <div style={{ height: 300, width: "100%" }}>
           <DataGrid
             rows={passwords}
             columns={columns}
-            experimentalFeatures={{newEditingApi: true}}
+            experimentalFeatures={{ newEditingApi: true }}
             getRowId={(row) => row.password_name}
           />
         </div>
       </div>
-
-      <Snackbar
-        anchorOrigin={{vertical, horizontal}}
-        open={open}
-        onClose={handleClose}
-        message={error}
-        key={vertical + horizontal}
-      />
     </>
-  )
-}
+  );
+};
 
 export default PasswordsPage;

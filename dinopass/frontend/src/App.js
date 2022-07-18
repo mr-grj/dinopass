@@ -1,17 +1,19 @@
-import * as React from "react";
-import Box from "@mui/material/Box";
-import { createTheme } from "@mui/material/styles";
-import { ThemeProvider } from "@emotion/react";
-import CssBaseline from "@mui/material/CssBaseline";
-import TopMenu from "./components/TopMenu";
-import Toolbar from "@mui/material/Toolbar";
-import Container from "@mui/material/Container";
 import {
   BrowserRouter as Router,
   Route,
   Routes,
   Navigate,
 } from "react-router-dom";
+import {
+  Box,
+  Container,
+  CssBaseline,
+  Toolbar
+} from "@mui/material";
+import { ThemeProvider } from "@emotion/react";
+import { createTheme } from "@mui/material/styles";
+
+import TopMenu from "./components/TopMenu";
 import routes from "./routes";
 import { isAuth } from "./utils";
 

@@ -1,5 +1,5 @@
-import { action, thunk } from "easy-peasy";
 import axios from "axios";
+import { action, thunk } from "easy-peasy";
 
 import { API_URL } from "../constants";
 

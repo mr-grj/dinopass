@@ -9,16 +9,16 @@ import { store } from "./store";
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
-  <SnackbarProvider
-    preventDuplicate
-    maxSnack={3}
-    anchorOrigin={{
-      vertical: "bottom",
-      horizontal: "right",
-    }}
-  >
-    <StoreProvider store={store}>
+  <StoreProvider store={store}>
+    <SnackbarProvider
+      preventDuplicate
+      maxSnack={3}
+      anchorOrigin={{
+        vertical: "bottom",
+        horizontal: "right",
+      }}
+    >
       <App />
-    </StoreProvider>
-  </SnackbarProvider>
+    </SnackbarProvider>
+  </StoreProvider>
 );

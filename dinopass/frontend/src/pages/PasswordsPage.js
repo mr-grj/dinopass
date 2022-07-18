@@ -1,8 +1,9 @@
-import { useStoreActions, useStoreState } from "easy-peasy";
 import { useEffect } from "react";
-import { getKeyDerivation, isAuth } from "../utils";
-import { useSnackbar } from "notistack";
 import { DataGrid } from "@mui/x-data-grid";
+import { useStoreActions, useStoreState } from "easy-peasy";
+import { useSnackbar } from "notistack";
+
+import { getKeyDerivation, isAuth } from "../utils";
 
 const PasswordsPage = () => {
   const { enqueueSnackbar } = useSnackbar();

@@ -1,7 +1,8 @@
-import { useStoreActions, useStoreState } from "easy-peasy";
 import { Box, Stack, TextField } from "@mui/material";
-import DinoLoadingButton from "../components/DinoLoadingButton";
+import { useStoreActions, useStoreState } from "easy-peasy";
 import { useSnackbar } from "notistack";
+
+import DinoLoadingButton from "../components/DinoLoadingButton";
 
 const LoginPage = () => {
   const { enqueueSnackbar } = useSnackbar();

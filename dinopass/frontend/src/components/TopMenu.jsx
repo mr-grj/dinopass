@@ -1,12 +1,8 @@
-import * as React from "react";
-
-import Toolbar from "@mui/material/Toolbar";
+import { Link } from "react-router-dom";
+import { AppBar, Button, Toolbar } from "@mui/material";
 import Typography from "@mui/material/Typography/Typography";
 
-import { AppBar, Button } from "@mui/material";
 import { removeKeyDerivation } from "../utils";
-
-import { Link } from "react-router-dom";
 
 const TopMenu = (props) => {
   const { userIsAuth } = props;

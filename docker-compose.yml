@@ -10,16 +10,16 @@ services:
       - "8888:8000"
     volumes:
       - ./dinopass/backend:/code/backend
-      - ./dinopass/db:/code/db
+      - ./dinopass/backend/db:/code/db
 
-#  cli:
-#    container_name: cli
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#    volumes:
-#      - ./dinopass:/code/dinopass
-#      - ./dinopass.db:/code/dinopass.db
+  cli:
+    container_name: cli
+    build:
+      context: dinopass/
+      dockerfile: ./docker/cli/Dockerfile
+    volumes:
+      - ./dinopass/backend:/code/backend
+      - ./dinopass/backend/db/dinopass.db:/code/db/dinopass.db
 
   frontend:
     container_name: frontend
@@ -31,3 +31,5 @@ services:
       - "3000:3000"
     volumes:
       - ./dinopass/frontend:/code/frontend
+    depends_on:
+      - api

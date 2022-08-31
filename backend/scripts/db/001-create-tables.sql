@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS "master_password" (
   created TIMESTAMP NOT NULL DEFAULT now(),
   updated TIMESTAMP NOT NULL DEFAULT now(),
   deleted TIMESTAMP,
-  salt text,
+  salt BYTEA,
   hash_key text
 );
 
@@ -16,5 +16,3 @@ CREATE TABLE IF NOT EXISTS "password" (
   password_value text,
   description text
 );
-
-COMMIT;

@@ -1,12 +1,12 @@
-from typing import Optional
-
 from sqlalchemy import (
-    TIMESTAMP,
-    Integer,
     Column,
     FetchedValue,
+    Integer,
+    LargeBinary,
     String,
+    TIMESTAMP,
 )
+from typing import Optional
 
 from models.base import BaseModel
 
@@ -21,7 +21,7 @@ class MasterPasswordModel(BaseModel):
     updated: TIMESTAMP = Column(TIMESTAMP, server_default=FetchedValue())
     deleted: Optional[TIMESTAMP] = Column(TIMESTAMP, nullable=True, default=None)
 
-    salt = Column(String, nullable=False)
+    salt = Column(LargeBinary, nullable=False)
     hash_key = Column(String, nullable=False)
 
     def __init__(self, salt, hash_key):

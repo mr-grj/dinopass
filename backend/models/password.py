@@ -1,11 +1,12 @@
 from typing import Optional
 
 from sqlalchemy import (
-    TIMESTAMP,
-    Integer,
     Column,
     FetchedValue,
+    Integer,
+    LargeBinary,
     String,
+    TIMESTAMP,
 )
 
 from models.base import BaseModel
@@ -22,7 +23,7 @@ class PasswordModel(BaseModel):
     deleted: Optional[TIMESTAMP] = Column(TIMESTAMP, nullable=True, default=None)
 
     password_name = Column(String, nullable=False, unique=True)
-    password_value = Column(String, nullable=False)
+    password_value = Column(LargeBinary, nullable=False)
     description = Column(String, nullable=True)
 
     def __init__(self, password_name, password_value, description):

@@ -13,6 +13,6 @@ CREATE TABLE IF NOT EXISTS "password" (
   updated TIMESTAMP NOT NULL DEFAULT now(),
   deleted TIMESTAMP,
   password_name text,
-  password_value text,
+  password_value BYTEA,
   description text
 );

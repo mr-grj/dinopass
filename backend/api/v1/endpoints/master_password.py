@@ -19,7 +19,7 @@ async def check_master_password(
 
 
 @router.post("/create", response_model=MasterPassword)
-async def check_master_password(
+async def create_master_password(
     body: MasterPasswordPayload,
     case: MasterPasswordCase = Depends(master_password_case)
 ) -> MasterPassword:

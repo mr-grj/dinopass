@@ -1,4 +1,4 @@
-DinoPass 
+DinoPass
 =======================
 
 ```
@@ -14,9 +14,9 @@ DinoPass
 
 ![](dinopass.gif)
 
-DinoPass was first created to satisfy my own needs. Because I tend to change my 
-passwords pretty frequently I usually find myself in a position of having to reset 
-them kinda often. So there's that. 
+DinoPass was first created to satisfy my own needs. Because I tend to change my
+passwords pretty frequently I usually find myself in a position of having to reset
+them kinda often. So there's that.
 
 
 ## How it works and what it does
@@ -51,7 +51,7 @@ dinopass --help
 
 Usage: cli.py [OPTIONS] COMMAND [ARGS]...
 
-  DinoPass - Simple CLI Password manager
+  DinoPass - Simple CLI PasswordModel manager
 
 Options:
   --help  Show this message and exit.

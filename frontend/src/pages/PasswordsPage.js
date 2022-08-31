@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { useStoreActions, useStoreState } from "easy-peasy";
 import { useSnackbar } from "notistack";
+import {Button} from "@mui/material";
 
 import { getKeyDerivation, isAuth } from "../utils";
 
@@ -27,17 +28,21 @@ const PasswordsPage = () => {
   const columns = [
     {
       field: "password_name",
-      headerName: "Password Name",
+      headerName: "PasswordModel Name",
       width: 180,
       editable: true,
       flex: 1,
     },
     {
       field: "password_value",
-      headerName: "Password Value",
+      headerName: "PasswordModel Value",
       type: "string",
       editable: true,
       flex: 1,
+      // renderCell: (params) => {
+      //    console.log(params.row["password_value"]);
+      //    return <Button>Show</Button>
+      // }
     },
     {
       field: "description",

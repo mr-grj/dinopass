@@ -1,35 +1,51 @@
 version: "3.8"
 
 services:
-  api:
-    container_name: api
-    build:
-      context: dinopass/
-      dockerfile: ./docker/api/Dockerfile
+  db:
+    image: postgres:13-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+      - ./backend/scripts/db/:/docker-entrypoint-initdb.d/
+    env_file:
+      - ./backend/.db.env
     ports:
-      - "8888:8000"
-    volumes:
-      - ./dinopass/backend:/code/backend
-      - ./dinopass/backend/db:/code/db
+      - "5432:5432"
+    restart: always
+    networks:
+      - dinopass
 
-  cli:
-    container_name: cli
+  backend:
     build:
-      context: dinopass/
-      dockerfile: ./docker/cli/Dockerfile
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    ports:
+      - "8000:80"
     volumes:
-      - ./dinopass/backend:/code/backend
-      - ./dinopass/backend/db/dinopass.db:/code/db/dinopass.db
+      - ./backend:/home/dinopass/backend/
+    restart: always
+    depends_on:
+      - db
+    networks:
+      - dinopass
 
   frontend:
     container_name: frontend
     build:
-      context: dinopass/
+      context: .
       dockerfile: ./docker/frontend/Dockerfile
     stdin_open: true
     ports:
       - "3000:3000"
     volumes:
-      - ./dinopass/frontend:/code/frontend
+      - ./frontend:/home/dinopass/src/
     depends_on:
-      - api
+      - backend
+    networks:
+      - dinopass
+
+volumes:
+    postgres_data:
+
+networks:
+  dinopass:
+    name: dinopass

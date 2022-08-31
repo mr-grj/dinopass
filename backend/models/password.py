@@ -1,13 +1,34 @@
-from sqlalchemy import Column, DateTime, Integer, String
-from sqlalchemy.sql import func
+from typing import Optional
 
-from backend.config.db import Base
+from sqlalchemy import (
+    TIMESTAMP,
+    Integer,
+    Column,
+    FetchedValue,
+    String,
+)
+
+from models.base import BaseModel
 
 
-class PasswordMixin:
+class PasswordModel(BaseModel):
+    __tablename__ = 'password'
+
     id = Column(Integer, primary_key=True)
-    created = Column(DateTime(timezone=True), server_default=func.now())
-    updated = Column(DateTime(timezone=True), onupdate=func.now())
+    created: TIMESTAMP = Column(
+        TIMESTAMP, nullable=False, server_default=FetchedValue()
+    )
+    updated: TIMESTAMP = Column(TIMESTAMP, server_default=FetchedValue())
+    deleted: Optional[TIMESTAMP] = Column(TIMESTAMP, nullable=True, default=None)
+
+    password_name = Column(String, nullable=False, unique=True)
+    password_value = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+
+    def __init__(self, password_name, password_value, description):
+        self.password_name = password_name
+        self.password_value = password_value
+        self.description = description
 
     @classmethod
     def create(cls, **kwargs):
@@ -24,36 +45,6 @@ class PasswordMixin:
     @classmethod
     def purge(cls, session):
         return session.query(cls).delete()
-
-
-class MasterPassword(Base, PasswordMixin):
-    __tablename__ = 'master_password'
-
-    salt = Column(String, nullable=False)
-    hash_key = Column(String, nullable=False)
-
-    def __init__(self, salt, hash_key):
-        self.salt = salt
-        self.hash_key = hash_key
-
-
-class Password(Base, PasswordMixin):
-    __tablename__ = 'passwords'
-
-    password_name = Column(String, nullable=False, unique=True)
-    password_value = Column(String, nullable=False)
-    description = Column(String, nullable=True)
-
-    def __repr__(self):
-        return f"<Password(password_name='{self.password_name}')>"
-
-    def __str__(self):
-        return f"<Password(password_name='{self.password_name}', password_value='***')>"
-
-    def __init__(self, password_name, password_value, description):
-        self.password_name = password_name
-        self.password_value = password_value
-        self.description = description
 
     @classmethod
     def get_all(cls, session):
@@ -91,3 +82,6 @@ class Password(Base, PasswordMixin):
         record.pop('_sa_instance_state')
         record.pop('id')
         return record
+
+
+password_table = PasswordModel.__table__

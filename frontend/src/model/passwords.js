@@ -25,7 +25,7 @@ const Passwords = {
     await axios
       .get(`${API_URL}/passwords/${keyDerivation}`)
       .then((response) => {
-        actions.setPasswords(response.data.passwords);
+        actions.setPasswords(response.data);
         actions.setLoading(false);
       })
       .catch((error) => {

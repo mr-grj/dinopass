@@ -32,12 +32,11 @@ services:
     container_name: frontend
     build:
       context: .
-      dockerfile: ./docker/frontend/Dockerfile
-    stdin_open: true
+      dockerfile: docker/frontend/Dockerfile
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend:/home/dinopass/src/
+      - ./frontend:/home/dinopass/frontend/
     depends_on:
       - backend
     networks:

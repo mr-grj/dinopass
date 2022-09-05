@@ -1,8 +1,12 @@
 FROM node:18
 
-WORKDIR /code/frontend
+ENV APP_USER=dinopass
+ENV APP_HOME=/home/$APP_USER
+ENV SRC_FOLDER=$APP_HOME/frontend
 
-COPY frontend/package*.json .
+WORKDIR $SRC_FOLDER
+
+COPY frontend/package*.json ./
 
 RUN npm install
 

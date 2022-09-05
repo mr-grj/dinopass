@@ -31,7 +31,8 @@ const MasterPassword = {
     await axios
       .post(`${API_URL}/master_password/check`, masterPasswordPayload)
       .then((response) => {
-        const keyDerivation = response.data.context["key_derivation"];
+        console.log(response)
+        const keyDerivation = response.data["key_derivation"];
 
         actions.setLoading(false);
         setCookie("keyDerivation", keyDerivation);
@@ -39,7 +40,11 @@ const MasterPassword = {
         window.location.href = "/passwords";
       })
       .catch((error) => {
-        actions.setError(error.response.data.detail);
+          if (error.response.data !== undefined)
+            actions.setError(error.response.data.detail);
+          else {
+              actions.setError("Internal server error")
+          }
         actions.setLoading(false);
       });
   }),
@@ -50,7 +55,7 @@ const MasterPassword = {
     await axios
       .post(`${API_URL}/master_password/create`, masterPasswordPayload)
       .then((response) => {
-        const keyDerivation = response.data.context["key_derivation"];
+        const keyDerivation = response.data["key_derivation"];
 
         setCookie("keyDerivation", keyDerivation);
         actions.setLoading(false);

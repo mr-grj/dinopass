@@ -3,7 +3,7 @@ override SHELL := /bin/bash
 COMPOSE=docker-compose -f docker-compose.yml
 
 .PHONY: all
-all: clean buildup shell
+all: clean buildup
 
 .PHONY: clean
 clean:
@@ -19,10 +19,6 @@ clean:
 buildup:
 	@echo 'Building container ...'
 	${COMPOSE} up -d --build
-
-.PHONY: shell
-shell:
-	${COMPOSE} exec cli bash
 
 require-%-arg:
 	@if [ -z ${${*}} ]; then \

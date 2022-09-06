@@ -1,11 +1,30 @@
 from pydantic import BaseModel
 
 
-class MasterPassword(BaseModel):
+class MasterPasswordCheck(BaseModel):
     """
-    Master Password data.
+    Master Password data schema used as a response after
+    checking if a master password is valid or not.
     """
-    key_derivation: str
+    valid: bool
+
+
+class MasterPasswordCreate(BaseModel):
+    """
+    Master Password data schema used as a response after
+    creating a new master password.
+    """
+    created: bool
+    detail: str
+
+
+class MasterPasswordUpdate(BaseModel):
+    """
+    Master Password data schema used as a response after
+    updating a master password.
+    """
+    updated: bool
+    detail: str
 
 
 class MasterPasswordPayload(BaseModel):

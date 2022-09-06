@@ -1,17 +1,24 @@
 import os
 
 from sqlalchemy import select
+from starlette.datastructures import MutableHeaders
 
 from api.v1.exceptions import Forbidden, NotFound, TypesMismatchError
 from crud.base import BaseCRUD
 from helpers import generate_hash_key, generate_key_derivation, encrypt, decrypt
 from models.master_password import MasterPasswordModel
 from models.password import PasswordModel
-from schemas.master_password import MasterPassword
+from schemas.master_password import (
+    MasterPasswordCheck,
+    MasterPasswordCreate,
+    MasterPasswordUpdate,
+)
 
 
 class MasterPasswordCRUD(BaseCRUD):
-    async def check_master_password(self, master_password: str) -> MasterPassword:
+    async def check_master_password(
+        self, master_password: str, headers: MutableHeaders
+    ) -> MasterPasswordCheck:
         hash_key = generate_hash_key(master_password)
         query = (
             select(MasterPasswordModel)
@@ -29,11 +36,14 @@ class MasterPasswordCRUD(BaseCRUD):
             master_password
         )
         if hash_key == master_password_model.hash_key:
-            return MasterPassword(key_derivation=key_derivation)
+            headers["X-Dino-Key-Derivation"] = key_derivation.decode()
+            return MasterPasswordCheck(valid=True)
 
-        raise ValueError("Bad master password.")
+        return MasterPasswordCheck(valid=False)
 
-    async def create_master_password(self, master_password: str) -> MasterPassword:
+    async def create_master_password(
+        self, master_password: str, headers: MutableHeaders
+    ) -> MasterPasswordCreate:
         hash_key = generate_hash_key(master_password)
         query = (
             select(MasterPasswordModel).where(MasterPasswordModel.hash_key == hash_key)
@@ -50,14 +60,16 @@ class MasterPasswordCRUD(BaseCRUD):
         )
         self.session.add(master_password_model)
         await self.session.flush()
-        return MasterPassword(key_derivation=key_derivation)
+
+        headers["X-Dino-Key-Derivation"] = key_derivation.decode()
+        return MasterPasswordCreate(
+            created=True,
+            detail="Master password has been successfully created."
+        )
 
     async def update_master_password(
-        self, master_password: str, new_master_password: str
-    ) -> MasterPassword:
-        current_master_password = await self.check_master_password(master_password)
-        current_key_derivation = current_master_password.key_derivation
-
+        self, master_password: str, new_master_password: str, headers: MutableHeaders
+    ) -> MasterPasswordUpdate:
         new_salt = os.urandom(16)
         new_key_derivation = generate_key_derivation(
             new_salt,
@@ -69,7 +81,10 @@ class MasterPasswordCRUD(BaseCRUD):
                 select(PasswordModel).order_by(PasswordModel.password_name)
             )
         ).scalars():
-            decrypted_value = decrypt(current_key_derivation, password.password_value)
+            decrypted_value = decrypt(
+                headers["X-Dino-Key-Derivation"],
+                password.password_value
+            )
             if not decrypted_value:
                 raise TypesMismatchError(
                     f"Invalid key_derivation for {password.password_name}."
@@ -98,4 +113,7 @@ class MasterPasswordCRUD(BaseCRUD):
         self.session.add(master_password_model)
         await self.session.flush()
 
-        return MasterPassword(key_derivation=new_key_derivation)
+        return MasterPasswordUpdate(
+            updated=True,
+            detail="Master password has been successfully updated."
+        )

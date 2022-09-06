@@ -1,5 +1,4 @@
 from crud.master_password import MasterPasswordCRUD
-from models.master_password import MasterPasswordModel
 from schemas.master_password import MasterPassword
 
 
@@ -12,3 +11,11 @@ class MasterPasswordCase:
 
     async def create_master_password(self, master_password: str) -> MasterPassword:
         return await self.master_password_crud.create_master_password(master_password)
+
+    async def update_master_password(
+        self, master_password: str, new_master_password: str
+    ) -> MasterPassword:
+        return await self.master_password_crud.update_master_password(
+            master_password,
+            new_master_password
+        )

@@ -10,3 +10,8 @@ class MasterPassword(BaseModel):
 
 class MasterPasswordPayload(BaseModel):
     master_password: str
+
+
+class UpdateMasterPasswordPayload(BaseModel):
+    master_password: str
+    new_master_password: str

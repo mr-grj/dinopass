@@ -1,6 +1,7 @@
 from sqlalchemy import select
 
-from crud.base import BaseCRUD, DBNotFoundError, DBBadEncryptionKeyError
+from api.v1.exceptions import NotFound, TypesMismatchError
+from crud.base import BaseCRUD
 from helpers import decrypt, encrypt
 from models.password import PasswordModel
 from schemas.password import Password
@@ -16,11 +17,11 @@ class PasswordCRUD(BaseCRUD):
             await self.session.execute(query)
         ).scalar()
         if not password_model:
-            raise DBNotFoundError(f"No password matches {password_name}.")
+            raise NotFound(f"No password matches {password_name}.")
 
         decrypted_value = decrypt(key_derivation, password_model.password_value)
         if not decrypted_value:
-            raise DBBadEncryptionKeyError(
+            raise TypesMismatchError(
                 f"Invalid key_derivation for {password_model.password_name}."
             )
 
@@ -58,7 +59,7 @@ class PasswordCRUD(BaseCRUD):
         for password in passwords:
             decrypted_value = decrypt(key_derivation, password.password_value)
             if not decrypted_value:
-                raise DBBadEncryptionKeyError(
+                raise TypesMismatchError(
                     f"Invalid key_derivation for {password.password_name}."
                 )
             password.password_value = decrypted_value
@@ -71,6 +72,3 @@ class PasswordCRUD(BaseCRUD):
                 description=password.description,
             ) for password in decrypted_passwords
         ]
-
-    async def insert_password(self):
-        pass

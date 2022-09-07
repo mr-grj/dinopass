@@ -12,9 +12,9 @@ from schemas.exceptions_responses import SimpleDetailSchema
 from schemas.master_password import (
     MasterPasswordCheck,
     MasterPasswordCreate,
-    MasterPasswordPayload,
+    MasterPassword,
     MasterPasswordUpdate,
-    UpdateMasterPasswordPayload,
+    MasterPasswordUpdatePayload,
 )
 
 router = APIRouter(tags=["master-password"])
@@ -36,7 +36,7 @@ router = APIRouter(tags=["master-password"])
 @handle_not_found
 @handle_mismatch
 async def check_master_password(
-    body: MasterPasswordPayload,
+    body: MasterPassword,
     response: Response,
     case: MasterPasswordCase = Depends(master_password_case),
 ) -> MasterPasswordCheck:
@@ -62,7 +62,7 @@ async def check_master_password(
 @handle_not_found
 @handle_mismatch
 async def create_master_password(
-    body: MasterPasswordPayload,
+    body: MasterPassword,
     response: Response,
     case: MasterPasswordCase = Depends(master_password_case)
 ) -> MasterPasswordCreate:
@@ -88,7 +88,7 @@ async def create_master_password(
 @handle_not_found
 @handle_mismatch
 async def update_master_password(
-    body: UpdateMasterPasswordPayload,
+    body: MasterPasswordUpdatePayload,
     response: Response,
     case: MasterPasswordCase = Depends(master_password_case)
 ) -> MasterPasswordUpdate:

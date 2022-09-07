@@ -1,6 +1,10 @@
 from pydantic import BaseModel
 
 
+class MasterPassword(BaseModel):
+    master_password: str
+
+
 class MasterPasswordCheck(BaseModel):
     """
     Master Password data schema used as a response after
@@ -27,10 +31,6 @@ class MasterPasswordUpdate(BaseModel):
     detail: str
 
 
-class MasterPasswordPayload(BaseModel):
-    master_password: str
-
-
-class UpdateMasterPasswordPayload(BaseModel):
+class MasterPasswordUpdatePayload(BaseModel):
     master_password: str
     new_master_password: str

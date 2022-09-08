@@ -10,33 +10,49 @@ from schemas.password import Password, PasswordCreate, PasswordUpdate
 
 class PasswordCRUD(BaseCRUD):
 
-    async def get_passwords(self, headers: Headers) -> list[Password]:
+    @staticmethod
+    def _get_key_derivation(headers: Headers) -> str:
         key_derivation = headers.get("x-dino-key-derivation")
         if not key_derivation:
             raise Forbidden("Key derivation is missing.")
-        print("=" * 20)
-        print("=" * 20)
-        print("=" * 20)
-        print("=" * 20)
-        print("HERE1")
+        return key_derivation
+
+    @staticmethod
+    def _get_decrypted_password_value(key_derivation: str, password: Password) -> str:
+        decrypted_value = decrypt(key_derivation, password.password_value)
+        if not decrypted_value:
+            raise TypesMismatchError(
+                f"Invalid key_derivation for {password.password_name}."
+            )
+        return decrypted_value
+
+    async def _get_password_model(self, password_name: str) -> PasswordModel:
+        password_model = (
+            await self.session.execute(
+                select(PasswordModel).where(
+                    PasswordModel.password_name == password_name
+                )
+            )
+        ).scalar()
+        if not password_model:
+            raise NotFound(f"No password matches {password_name}.")
+        return password_model
+
+    async def get_passwords(self, headers: Headers) -> list[Password]:
+        key_derivation = self._get_key_derivation(headers)
         passwords = (
             await self.session.execute(
                 select(PasswordModel).order_by(PasswordModel.password_name)
             )
         ).scalars()
+
         decrypted_passwords = []
-
         for password in passwords:
-            decrypted_value = decrypt(key_derivation, password.password_value)
-            if not decrypted_value:
-                raise TypesMismatchError(
-                    f"Invalid key_derivation for {password.password_name}."
-                )
-            password.password_value = decrypted_value
+            decrypted_value = self._get_decrypted_password_value(
+                key_derivation, password
+            )
+            password.password_value = decrypted_value.encode("utf8")
             decrypted_passwords.append(password)
-
-        print(decrypted_passwords[0].password_value)
-        print(type(decrypted_passwords[0].password_value.encode()))
 
         return [
             Password(
@@ -47,39 +63,21 @@ class PasswordCRUD(BaseCRUD):
         ]
 
     async def get_password(self, password_name: str, headers: Headers) -> Password:
-        key_derivation = headers.get("x-dino-key-derivation")
-        if not key_derivation:
-            raise Forbidden("Key derivation is missing.")
-
-        query = (
-            select(PasswordModel)
-            .where(PasswordModel.password_name == password_name)
-        )
-        password_model = (
-            await self.session.execute(query)
-        ).scalar()
-        if not password_model:
-            raise NotFound(f"No password matches {password_name}.")
-
-        decrypted_value = decrypt(key_derivation, password_model.password_value)
-        if not decrypted_value:
-            raise TypesMismatchError(
-                f"Invalid key_derivation for {password_model.password_name}."
-            )
-
-        return Password(
+        key_derivation = self._get_key_derivation(headers)
+        password_model = await self._get_password_model(password_name)
+        password = Password(
             password_name=password_model.password_name,
-            password_value=decrypted_value,
+            password_value=password_model.password_value,
             description=password_model.description,
         )
+        decrypted_value = self._get_decrypted_password_value(key_derivation, password)
+        password.password_value = decrypted_value
+        return password
 
     async def create_password(
         self, password: Password, headers: Headers
     ) -> PasswordCreate:
-        key_derivation = headers.get("x-dino-key-derivation")
-        if not key_derivation:
-            raise Forbidden("Key derivation is missing.")
-
+        key_derivation = self._get_key_derivation(headers)
         password_model = PasswordModel(
             password_name=password.password_name,
             password_value=encrypt(key_derivation, password.password_value),
@@ -95,19 +93,8 @@ class PasswordCRUD(BaseCRUD):
     async def update_password(
         self, password: Password, new_password: Password, headers: Headers
     ) -> PasswordUpdate:
-        key_derivation = headers.get("x-dino-key-derivation")
-        if not key_derivation:
-            raise Forbidden("Key derivation is missing.")
-
-        query = (
-            select(PasswordModel)
-            .where(PasswordModel.password_name == password.password_name)
-        )
-        password_model = (
-            await self.session.execute(query)
-        ).scalar()
-        if not password_model:
-            raise NotFound(f"No password matches {password.password_name}.")
+        key_derivation = self._get_key_derivation(headers)
+        password_model = self._get_password_model(password.password_name)
 
         if password_model.password_name != new_password.password_name:
             password_model.password_name = new_password.password_name

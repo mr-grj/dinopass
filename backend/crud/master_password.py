@@ -16,27 +16,31 @@ from schemas.master_password import (
 
 
 class MasterPasswordCRUD(BaseCRUD):
+
+    async def _get_master_password_model(self, hash_key) -> MasterPasswordModel:
+        master_password_model = (
+            await self.session.execute(
+                select(MasterPasswordModel).where(
+                    MasterPasswordModel.hash_key == hash_key
+                )
+            )
+        ).scalar()
+        if not master_password_model:
+            raise NotFound("No master password matches.")
+        return master_password_model
+
     async def check_master_password(
         self, master_password: str, headers: MutableHeaders
     ) -> MasterPasswordCheck:
         hash_key = generate_hash_key(master_password)
-        query = (
-            select(MasterPasswordModel)
-            .where(MasterPasswordModel.hash_key == hash_key)
-        )
-        master_password_model = (
-            await self.session.execute(query)
-        ).scalar()
-
-        if not master_password_model:
-            raise NotFound("No master password matches.")
+        master_password_model = await self._get_master_password_model(hash_key)
 
         key_derivation = generate_key_derivation(
             master_password_model.salt,
             master_password
         )
         if hash_key == master_password_model.hash_key:
-            headers["X-Dino-Key-Derivation"] = key_derivation.decode()
+            headers["x-dino-key-derivation"] = key_derivation.decode()
             return MasterPasswordCheck(valid=True)
 
         return MasterPasswordCheck(valid=False)
@@ -45,23 +49,17 @@ class MasterPasswordCRUD(BaseCRUD):
         self, master_password: str, headers: MutableHeaders
     ) -> MasterPasswordCreate:
         hash_key = generate_hash_key(master_password)
-        query = (
-            select(MasterPasswordModel).where(MasterPasswordModel.hash_key == hash_key)
-        )
-        master_password_model = await self.session.execute(query)
-        if master_password_model.scalar():
-            raise Forbidden("Master password already exists.")
+
+        await self._get_master_password_model(hash_key)
 
         salt = os.urandom(16)
         key_derivation = generate_key_derivation(salt, master_password)
-        master_password_model = MasterPasswordModel(
-            salt=salt,
-            hash_key=hash_key,
-        )
+        master_password_model = MasterPasswordModel(salt=salt, hash_key=hash_key)
+
         self.session.add(master_password_model)
         await self.session.flush()
 
-        headers["X-Dino-Key-Derivation"] = key_derivation.decode()
+        headers["x-dino-key-derivation"] = key_derivation.decode()
         return MasterPasswordCreate(
             created=True,
             detail="Master password has been successfully created."
@@ -82,7 +80,7 @@ class MasterPasswordCRUD(BaseCRUD):
             )
         ).scalars():
             decrypted_value = decrypt(
-                headers["X-Dino-Key-Derivation"],
+                headers["x-dino-key-derivation"],
                 password.password_value
             )
             if not decrypted_value:
@@ -97,14 +95,10 @@ class MasterPasswordCRUD(BaseCRUD):
             await self.session.flush()
 
         hash_key_current_password = generate_hash_key(master_password)
-        query = (
-            select(MasterPasswordModel)
-            .where(MasterPasswordModel.hash_key == hash_key_current_password)
-        )
-        master_password_model = (
-            await self.session.execute(query)
-        ).scalar()
 
+        master_password_model = await self._get_master_password_model(
+            hash_key_current_password
+        )
         hash_key_new_password = generate_hash_key(new_master_password)
 
         master_password_model.salt = new_salt

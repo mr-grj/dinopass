@@ -3,7 +3,7 @@ import os
 from sqlalchemy import select
 from starlette.datastructures import MutableHeaders
 
-from api.v1.exceptions import Forbidden, NotFound, TypesMismatchError
+from api.v1.exceptions import NotFound, TypesMismatchError, Forbidden
 from crud.base import BaseCRUD
 from helpers import generate_hash_key, generate_key_derivation, encrypt, decrypt
 from models.master_password import MasterPasswordModel
@@ -50,7 +50,12 @@ class MasterPasswordCRUD(BaseCRUD):
     ) -> MasterPasswordCreate:
         hash_key = generate_hash_key(master_password)
 
-        await self._get_master_password_model(hash_key)
+        master_passwords = (
+            await self.session.execute(select(MasterPasswordModel))
+        ).scalars().all()
+
+        if master_passwords:
+            raise Forbidden("You already created a master password.")
 
         salt = os.urandom(16)
         key_derivation = generate_key_derivation(salt, master_password)

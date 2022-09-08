@@ -23,10 +23,8 @@ def generate_key_derivation(salt: bytes, master_password: str) -> bytes:
     return key
 
 
-def encrypt(key, value_to_encrypt):
-    f = Fernet(key)
-    encrypted_value = f.encrypt(value_to_encrypt.encode())
-    return encrypted_value
+def encrypt(key: bytes | str, value_to_encrypt: bytes) -> bytes:
+    return Fernet(key).encrypt(value_to_encrypt)
 
 
 def decrypt(key, encrypted_value):

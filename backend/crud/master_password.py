@@ -38,8 +38,7 @@ class MasterPasswordCRUD(BaseCRUD):
         return MasterPasswordCheck(valid=True, key_derivation=key_derivation.decode())
 
     async def create_master_password(self, master_password: str) -> MasterPasswordCreate:
-        existing = (await self.session.execute(select(MasterPasswordModel))).scalars().all()
-        if existing:
+        if await self.is_initialized():
             raise Forbidden("Master password already exists.")
         salt = os.urandom(16)
         key_derivation = generate_key_derivation(salt, master_password)

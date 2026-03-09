@@ -60,13 +60,16 @@ async def check_master_password(
     responses=inject_responses(
         {
             status.HTTP_403_FORBIDDEN: SimpleDetailSchema,
+            status.HTTP_429_TOO_MANY_REQUESTS: SimpleDetailSchema,
         }
     ),
 )
+@limiter.limit("5/hour")
 @handle_forbidden
 @handle_not_found
 @handle_mismatch
 async def create_master_password(
+    request: Request,
     body: MasterPassword,
     crud: MasterPasswordCRUD = Depends(get_master_password_crud),
 ) -> MasterPasswordCreate:

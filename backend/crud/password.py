@@ -19,8 +19,8 @@ class PasswordCRUD(BaseCRUD):
         return key_derivation
 
     async def _check_master_password_exists(self) -> None:
-        result = (await self.session.execute(select(MasterPasswordModel))).scalars().all()
-        if not result:
+        result = await self.session.execute(select(MasterPasswordModel).limit(1))
+        if result.scalar() is None:
             raise Forbidden("No master password set.")
 
     async def _get_password_model(self, password_name: str) -> PasswordModel:
@@ -94,6 +94,13 @@ class PasswordCRUD(BaseCRUD):
         model = await self._get_password_model(password.password_name)
 
         if model.password_name != new_password.password_name:
+            conflict = (
+                await self.session.execute(
+                    select(PasswordModel).where(PasswordModel.password_name == new_password.password_name)
+                )
+            ).scalar()
+            if conflict:
+                raise TypesMismatchError("A password with that name already exists.")
             model.password_name = new_password.password_name
 
         decrypted = self._decrypt_or_raise(key_derivation, model)

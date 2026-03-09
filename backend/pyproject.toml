@@ -2,7 +2,7 @@
 name = "backend"
 version = "0.2.0"
 description = "Dinopass Password Manager API"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.115.0",
     "bcrypt>=4.2.0",

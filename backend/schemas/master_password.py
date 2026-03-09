@@ -1,10 +1,12 @@
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MasterPassword(BaseModel):
-    master_password: str
+    master_password: str = Field(min_length=1, max_length=1024)
+
+    model_config = ConfigDict(str_strip_whitespace=True)
 
 
 class MasterPasswordCheck(BaseModel):
@@ -24,8 +26,10 @@ class MasterPasswordUpdate(BaseModel):
 
 
 class MasterPasswordUpdatePayload(BaseModel):
-    master_password: str
-    new_master_password: str
+    master_password: str = Field(min_length=1, max_length=1024)
+    new_master_password: str = Field(min_length=1, max_length=1024)
+
+    model_config = ConfigDict(str_strip_whitespace=True)
 
 
 class MasterPasswordStatus(BaseModel):

@@ -31,7 +31,7 @@ Built because resetting passwords every other week gets old fast.
 
 | Layer | Tech |
 |---|---|
-| Backend | Python 3.11, FastAPI, SQLAlchemy 2.0, asyncpg |
+| Backend | Python 3.13, FastAPI, SQLAlchemy 2.0, asyncpg |
 | Database | PostgreSQL 16 |
 | Frontend | React 18, MUI v6, easy-peasy |
 | Package manager | uv (backend), npm (frontend) |
@@ -41,7 +41,7 @@ Built because resetting passwords every other week gets old fast.
 
 - Master password is hashed with **bcrypt** — not stored in plain or reversibly
 - All passwords are encrypted with **Fernet** (symmetric AES) using a key derived via **PBKDF2-HMAC-SHA256** (600,000 iterations) from the master password and a unique random salt
-- The derived key lives only in your browser session (cookie, `SameSite=Strict`, short TTL) and is never persisted server-side
+- The derived key lives only in your browser session (`sessionStorage`) and is never persisted server-side — closing the tab clears it automatically
 - Updating the master password re-encrypts every stored password transparently
 
 ## Running locally

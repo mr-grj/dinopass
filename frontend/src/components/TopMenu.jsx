@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { AppBar, Button, Toolbar, Typography } from "@mui/material";
 
 import { isAuth, removeKeyDerivation } from "../utils";
@@ -6,6 +6,11 @@ import { isAuth, removeKeyDerivation } from "../utils";
 const TopMenu = () => {
   const userIsAuth = isAuth();
   const { pathname } = useLocation();
+
+  const handleLogout = () => {
+    removeKeyDerivation();
+    window.location.replace("/login");
+  };
 
   return (
     <AppBar position="absolute">
@@ -15,12 +20,12 @@ const TopMenu = () => {
         </Typography>
 
         {userIsAuth ? (
-          <Button component={Link} to="/login" color="inherit" onClick={removeKeyDerivation}>
+          <Button color="inherit" onClick={handleLogout}>
             Log out
           </Button>
         ) : (
           pathname !== "/login" && (
-            <Button component={Link} to="/login" color="inherit">
+            <Button href="/login" color="inherit">
               Log in
             </Button>
           )

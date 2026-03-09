@@ -1,23 +1,32 @@
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Request, status
 
-from api.v1.endpoints.deps import master_password_case
-from api.v1.exceptions import (
-    handle_forbidden,
-    handle_not_found,
-    handle_mismatch,
-)
+from api.rate_limit import limiter
+from api.v1.endpoints.deps import get_master_password_crud
+from api.v1.exceptions import handle_forbidden, handle_mismatch, handle_not_found
 from api.v1.responses import inject_responses
-from cases.master_password import MasterPasswordCase
+from crud.master_password import MasterPasswordCRUD
 from schemas.exceptions_responses import SimpleDetailSchema
 from schemas.master_password import (
+    MasterPassword,
     MasterPasswordCheck,
     MasterPasswordCreate,
-    MasterPassword,
+    MasterPasswordStatus,
     MasterPasswordUpdate,
     MasterPasswordUpdatePayload,
 )
 
 router = APIRouter(tags=["master-password"])
+
+
+@router.get(
+    "/status",
+    name="master-password:status",
+    response_model=MasterPasswordStatus,
+)
+async def get_status(
+    crud: MasterPasswordCRUD = Depends(get_master_password_crud),
+) -> MasterPasswordStatus:
+    return MasterPasswordStatus(initialized=await crud.is_initialized())
 
 
 @router.post(
@@ -28,22 +37,20 @@ router = APIRouter(tags=["master-password"])
         {
             status.HTTP_404_NOT_FOUND: SimpleDetailSchema,
             status.HTTP_403_FORBIDDEN: SimpleDetailSchema,
-            status.HTTP_400_BAD_REQUEST: SimpleDetailSchema
+            status.HTTP_429_TOO_MANY_REQUESTS: SimpleDetailSchema,
         }
-    )
+    ),
 )
+@limiter.limit("10/hour")
 @handle_forbidden
 @handle_not_found
 @handle_mismatch
 async def check_master_password(
+    request: Request,
     body: MasterPassword,
-    response: Response,
-    case: MasterPasswordCase = Depends(master_password_case),
+    crud: MasterPasswordCRUD = Depends(get_master_password_crud),
 ) -> MasterPasswordCheck:
-    return await case.check_master_password(
-        master_password=body.master_password,
-        headers=response.headers
-    )
+    return await crud.check_master_password(master_password=body.master_password)
 
 
 @router.post(
@@ -52,24 +59,18 @@ async def check_master_password(
     response_model=MasterPasswordCreate,
     responses=inject_responses(
         {
-            status.HTTP_404_NOT_FOUND: SimpleDetailSchema,
             status.HTTP_403_FORBIDDEN: SimpleDetailSchema,
-            status.HTTP_400_BAD_REQUEST: SimpleDetailSchema
         }
-    )
+    ),
 )
 @handle_forbidden
 @handle_not_found
 @handle_mismatch
 async def create_master_password(
     body: MasterPassword,
-    response: Response,
-    case: MasterPasswordCase = Depends(master_password_case)
+    crud: MasterPasswordCRUD = Depends(get_master_password_crud),
 ) -> MasterPasswordCreate:
-    return await case.create_master_password(
-        master_password=body.master_password,
-        headers=response.headers
-    )
+    return await crud.create_master_password(master_password=body.master_password)
 
 
 @router.patch(
@@ -80,20 +81,20 @@ async def create_master_password(
         {
             status.HTTP_404_NOT_FOUND: SimpleDetailSchema,
             status.HTTP_403_FORBIDDEN: SimpleDetailSchema,
-            status.HTTP_400_BAD_REQUEST: SimpleDetailSchema
+            status.HTTP_400_BAD_REQUEST: SimpleDetailSchema,
         }
-    )
+    ),
 )
 @handle_forbidden
 @handle_not_found
 @handle_mismatch
 async def update_master_password(
     body: MasterPasswordUpdatePayload,
-    response: Response,
-    case: MasterPasswordCase = Depends(master_password_case)
+    request: Request,
+    crud: MasterPasswordCRUD = Depends(get_master_password_crud),
 ) -> MasterPasswordUpdate:
-    return await case.update_master_password(
+    return await crud.update_master_password(
         master_password=body.master_password,
         new_master_password=body.new_master_password,
-        headers=response.headers
+        headers=request.headers,
     )

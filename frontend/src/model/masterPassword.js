@@ -1,69 +1,64 @@
-import axios from "axios";
 import { action, thunk } from "easy-peasy";
 
-import { API_URL } from "../constants";
-import { setCookie } from "../utils";
+import apiClient from "../api/client";
+import { setKeyDerivation } from "../utils";
 
 const MasterPassword = {
-  error: "",
+  initialized: null, // null = unknown, true = set up, false = first time
+  error: null,
   loading: false,
   value: "",
+  confirm: "",
 
-  // actions
-  setValue: action((state, value) => {
-    state.value = value;
-  }),
-  setKeyDerivation: action((state, keyDerivation) => {
-    state.keyDerivation = keyDerivation;
-  }),
-  setError: action((state, error) => {
-    state.error = error;
-  }),
-  setLoading: action((state, loading) => {
-    state.loading = loading;
+  setInitialized: action((state, val) => { state.initialized = val; }),
+  setValue: action((state, value) => { state.value = value; }),
+  setConfirm: action((state, value) => { state.confirm = value; }),
+  setError: action((state, error) => { state.error = error; }),
+  setLoading: action((state, loading) => { state.loading = loading; }),
+
+  fetchStatus: thunk(async (actions) => {
+    try {
+      const { data } = await apiClient.get("/master_password/status");
+      actions.setInitialized(data.initialized);
+    } catch {
+      actions.setInitialized(true); // safe fallback: assume set up
+    }
   }),
 
-  // thunks
   check: thunk(async (actions, masterPasswordPayload) => {
-    actions.setError("");
+    actions.setError(null);
     actions.setLoading(true);
-
-    await axios
-      .post(`${API_URL}/master_password/check`, masterPasswordPayload)
-      .then((response) => {
-        console.log(response)
-        const keyDerivation = response.data["key_derivation"];
-
-        actions.setLoading(false);
-        setCookie("keyDerivation", keyDerivation);
-
-        window.location.href = "/passwords";
-      })
-      .catch((error) => {
-          if (error.response.data !== undefined)
-            actions.setError(error.response.data.detail);
-          else {
-              actions.setError("Internal server error")
-          }
-        actions.setLoading(false);
-      });
+    try {
+      const { data } = await apiClient.post("/master_password/check", masterPasswordPayload);
+      if (data.valid && data.key_derivation) {
+        setKeyDerivation(data.key_derivation);
+        window.location.replace("/passwords");
+      } else {
+        actions.setError("Invalid master password.");
+      }
+    } catch (err) {
+      const msg =
+        err.response?.status === 429
+          ? "Too many attempts. Please try again in an hour."
+          : err.response?.data?.detail ?? "An error occurred.";
+      actions.setError(msg);
+    } finally {
+      actions.setLoading(false);
+    }
   }),
+
   create: thunk(async (actions, masterPasswordPayload) => {
-    actions.setError("");
+    actions.setError(null);
     actions.setLoading(true);
-
-    await axios
-      .post(`${API_URL}/master_password/create`, masterPasswordPayload)
-      .then((response) => {
-        const keyDerivation = response.data["key_derivation"];
-
-        setCookie("keyDerivation", keyDerivation);
-        actions.setLoading(false);
-      })
-      .catch((error) => {
-        actions.setError(error.response.data.detail);
-        actions.setLoading(false);
-      });
+    try {
+      const { data } = await apiClient.post("/master_password/create", masterPasswordPayload);
+      setKeyDerivation(data.key_derivation);
+      window.location.replace("/passwords");
+    } catch (err) {
+      actions.setError(err.response?.data?.detail ?? "An error occurred.");
+    } finally {
+      actions.setLoading(false);
+    }
   }),
 };
 

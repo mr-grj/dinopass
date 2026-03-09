@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -6,27 +8,17 @@ class MasterPassword(BaseModel):
 
 
 class MasterPasswordCheck(BaseModel):
-    """
-    Master Password data schema used as a response after
-    checking if a master password is valid or not.
-    """
     valid: bool
+    key_derivation: Optional[str] = None
 
 
 class MasterPasswordCreate(BaseModel):
-    """
-    Master Password data schema used as a response after
-    creating a new master password.
-    """
     created: bool
     detail: str
+    key_derivation: str
 
 
 class MasterPasswordUpdate(BaseModel):
-    """
-    Master Password data schema used as a response after
-    updating a master password.
-    """
     updated: bool
     detail: str
 
@@ -34,3 +26,7 @@ class MasterPasswordUpdate(BaseModel):
 class MasterPasswordUpdatePayload(BaseModel):
     master_password: str
     new_master_password: str
+
+
+class MasterPasswordStatus(BaseModel):
+    initialized: bool

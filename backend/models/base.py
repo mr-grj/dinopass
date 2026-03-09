@@ -1,7 +1,3 @@
-from sqlalchemy.ext.declarative import as_declarative
+from sqlalchemy.orm import declarative_base
 
-
-@as_declarative()
-class BaseModel:
-    __mapper_args__ = {"eager_defaults": True}
-    __name__: str
+BaseModel = declarative_base()

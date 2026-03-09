@@ -1,14 +1,17 @@
 import base64
-import hashlib
 
+import bcrypt
 from cryptography.fernet import Fernet, InvalidToken
-from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 
-def generate_hash_key(master_password: str) -> str:
-    return hashlib.sha512(master_password.encode()).hexdigest()
+def hash_master_password(master_password: str) -> str:
+    return bcrypt.hashpw(master_password.encode(), bcrypt.gensalt()).decode()
+
+
+def verify_master_password(master_password: str, hash_key: str) -> bool:
+    return bcrypt.checkpw(master_password.encode(), hash_key.encode())
 
 
 def generate_key_derivation(salt: bytes, master_password: str) -> bytes:
@@ -16,20 +19,17 @@ def generate_key_derivation(salt: bytes, master_password: str) -> bytes:
         algorithm=hashes.SHA256(),
         length=32,
         salt=salt,
-        iterations=100000,
-        backend=default_backend()
+        iterations=600_000,
     )
-    key = base64.urlsafe_b64encode(kdf.derive(master_password.encode()))
-    return key
+    return base64.urlsafe_b64encode(kdf.derive(master_password.encode()))
 
 
-def encrypt(key: bytes | str, value_to_encrypt: bytes) -> bytes:
-    return Fernet(key).encrypt(value_to_encrypt)
+def encrypt(key: bytes | str, value: bytes) -> bytes:
+    return Fernet(key).encrypt(value)
 
 
-def decrypt(key, encrypted_value):
-    f = Fernet(key)
+def decrypt(key: bytes | str, encrypted_value: bytes) -> str | None:
     try:
-        return f.decrypt(encrypted_value).decode()
+        return Fernet(key).decrypt(encrypted_value).decode()
     except InvalidToken:
-        return b''
+        return None

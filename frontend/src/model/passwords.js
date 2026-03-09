@@ -1,14 +1,12 @@
-import axios from "axios";
 import { action, thunk } from "easy-peasy";
 
-import { API_URL } from "../constants";
+import apiClient from "../api/client";
 
 const Passwords = {
-  error: "",
+  error: null,
   loading: false,
   passwords: [],
 
-  // actions
   setError: action((state, error) => {
     state.error = error;
   }),
@@ -19,19 +17,44 @@ const Passwords = {
     state.passwords = passwords;
   }),
 
-  // thunks
-  get: thunk(async (actions, keyDerivation) => {
+  get: thunk(async (actions) => {
     actions.setLoading(true);
-    await axios
-      .get(`${API_URL}/passwords/${keyDerivation}`)
-      .then((response) => {
-        actions.setPasswords(response.data);
-        actions.setLoading(false);
-      })
-      .catch((error) => {
-        actions.setError(error.response.data.detail);
-        actions.setLoading(false);
-      });
+    actions.setError(null);
+    try {
+      const { data } = await apiClient.get("/passwords");
+      actions.setPasswords(data);
+    } catch (err) {
+      actions.setError(err.response?.data?.detail ?? "Failed to load passwords.");
+    } finally {
+      actions.setLoading(false);
+    }
+  }),
+
+  create: thunk(async (actions, payload) => {
+    try {
+      await apiClient.post("/passwords/create", payload);
+      await actions.get();
+    } catch (err) {
+      throw new Error(err.response?.data?.detail ?? "Failed to create password.");
+    }
+  }),
+
+  update: thunk(async (actions, payload) => {
+    try {
+      await apiClient.patch("/passwords/update", payload);
+      await actions.get();
+    } catch (err) {
+      throw new Error(err.response?.data?.detail ?? "Failed to update password.");
+    }
+  }),
+
+  remove: thunk(async (actions, passwordName) => {
+    try {
+      await apiClient.delete(`/passwords/${encodeURIComponent(passwordName)}`);
+      await actions.get();
+    } catch (err) {
+      throw new Error(err.response?.data?.detail ?? "Failed to delete password.");
+    }
   }),
 };
 

@@ -1,12 +1,12 @@
 from sqlalchemy import select
 from starlette.datastructures import Headers
 
-from api.v1.exceptions import NotFound, TypesMismatchError, Forbidden
+from api.v1.exceptions import Forbidden, NotFound, TypesMismatchError
 from crud.base import BaseCRUD
 from helpers import decrypt, encrypt
 from models.master_password import MasterPasswordModel
 from models.password import PasswordModel
-from schemas.password import Password, PasswordCreate, PasswordUpdate
+from schemas.password import Password, PasswordCreate, PasswordDelete, PasswordUpdate
 
 
 class PasswordCRUD(BaseCRUD):
@@ -18,137 +18,99 @@ class PasswordCRUD(BaseCRUD):
             raise Forbidden("Key derivation is missing.")
         return key_derivation
 
-    @staticmethod
-    def _get_decrypted_password_value(key_derivation: str, password: Password) -> str:
-        decrypted_value = decrypt(key_derivation, password.password_value.encode())
-        if not decrypted_value:
-            raise TypesMismatchError(
-                f"Invalid key_derivation for {password.password_name}."
-            )
-        return decrypted_value
+    async def _check_master_password_exists(self) -> None:
+        result = (await self.session.execute(select(MasterPasswordModel))).scalars().all()
+        if not result:
+            raise Forbidden("No master password set.")
 
     async def _get_password_model(self, password_name: str) -> PasswordModel:
-        password_model = (
+        result = (
             await self.session.execute(
-                select(PasswordModel).where(
-                    PasswordModel.password_name == password_name
-                )
+                select(PasswordModel).where(PasswordModel.password_name == password_name)
             )
         ).scalar()
-        if not password_model:
-            raise NotFound(f"No password matches {password_name}.")
-        return password_model
+        if not result:
+            raise NotFound(f"No password found for '{password_name}'.")
+        return result
 
-    async def _check_master_password(self):
-        master_password = (
-            await self.session.execute(
-                select(MasterPasswordModel)
-            )
-        ).scalars().all()
-        if not master_password:
-            raise Forbidden("There's no master password. Denied!")
+    def _decrypt_or_raise(self, key_derivation: str, model: PasswordModel) -> str:
+        decrypted = decrypt(key_derivation, model.password_value)
+        if decrypted is None:
+            raise TypesMismatchError(f"Invalid key for '{model.password_name}'.")
+        return decrypted
 
     async def get_passwords(self, headers: Headers) -> list[Password]:
-        await self._check_master_password()
-
+        await self._check_master_password_exists()
         key_derivation = self._get_key_derivation(headers)
         passwords = (
-            await self.session.execute(
-                select(PasswordModel).order_by(PasswordModel.password_name)
-            )
+            await self.session.execute(select(PasswordModel).order_by(PasswordModel.password_name))
         ).scalars()
-
-        decrypted_passwords = []
-        for password in passwords:
-            decrypted_value = self._get_decrypted_password_value(
-                key_derivation, password
-            )
-            password.password_value = decrypted_value.encode("utf8")
-            decrypted_passwords.append(password)
-
         return [
             Password(
-                password_name=password.password_name,
-                password_value=password.password_value,
-                description=password.description,
-            ) for password in decrypted_passwords
+                password_name=p.password_name,
+                password_value=self._decrypt_or_raise(key_derivation, p),
+                description=p.description,
+            )
+            for p in passwords
         ]
 
     async def get_password(self, password_name: str, headers: Headers) -> Password:
-        await self._check_master_password()
-
+        await self._check_master_password_exists()
         key_derivation = self._get_key_derivation(headers)
-        password_model = await self._get_password_model(password_name)
-        password = Password(
-            password_name=password_model.password_name,
-            password_value=password_model.password_value,
-            description=password_model.description,
+        model = await self._get_password_model(password_name)
+        return Password(
+            password_name=model.password_name,
+            password_value=self._decrypt_or_raise(key_derivation, model),
+            description=model.description,
         )
-        decrypted_value = self._get_decrypted_password_value(key_derivation, password)
-        password.password_value = decrypted_value
-        return password
 
-    async def create_password(
-        self, password: Password, headers: Headers
-) -> PasswordCreate:
-        await self._check_master_password()
+    async def create_password(self, password: Password, headers: Headers) -> PasswordCreate:
+        await self._check_master_password_exists()
+        key_derivation = self._get_key_derivation(headers)
 
-        password_model = (
+        existing = (
             await self.session.execute(
-                select(PasswordModel).where(
-                    PasswordModel.password_name == password.password_name
-                )
+                select(PasswordModel).where(PasswordModel.password_name == password.password_name)
             )
         ).scalar()
-        if password_model:
-            raise TypesMismatchError(
-                "This password name already exists. "
-                "Please choose a different one."
-            )
+        if existing:
+            raise TypesMismatchError("A password with that name already exists.")
 
-        key_derivation = self._get_key_derivation(headers)
-        password_model = PasswordModel(
-            password_name=password.password_name,
-            password_value=encrypt(key_derivation, password.password_value.encode()),
-            description=password.description
+        self.session.add(
+            PasswordModel(
+                password_name=password.password_name,
+                password_value=encrypt(key_derivation, password.password_value.encode()),
+                description=password.description,
+            )
         )
-        self.session.add(password_model)
         await self.session.flush()
-        return PasswordCreate(
-            created=True,
-            detail="Password has been successfully created."
-        )
+        return PasswordCreate(created=True, detail="Password created successfully.")
 
     async def update_password(
         self, password: Password, new_password: Password, headers: Headers
     ) -> PasswordUpdate:
-        await self._check_master_password()
+        await self._check_master_password_exists()
         key_derivation = self._get_key_derivation(headers)
-        password_model = await self._get_password_model(password.password_name)
+        model = await self._get_password_model(password.password_name)
 
-        if password_model.password_name != new_password.password_name:
-            password_model.password_name = new_password.password_name
+        if model.password_name != new_password.password_name:
+            model.password_name = new_password.password_name
 
-        decrypted_value = self._get_decrypted_password_value(
-            key_derivation,
-            password
-        )
-        print("HERE5")
-        print(decrypted_value)
-        print(new_password.password_value)
-        if decrypted_value != new_password.password_value:
-            password_model.password_value = encrypt(
-                key_derivation,
-                new_password.password_value.encode()
-            )
+        decrypted = self._decrypt_or_raise(key_derivation, model)
+        if decrypted != new_password.password_value:
+            model.password_value = encrypt(key_derivation, new_password.password_value.encode())
 
-        if password_model.description != new_password.description:
-            password_model.description = new_password.description
+        if model.description != new_password.description:
+            model.description = new_password.description
 
-        self.session.add(password_model)
+        self.session.add(model)
         await self.session.flush()
+        return PasswordUpdate(updated=True, detail="Password updated successfully.")
 
-        return PasswordUpdate(
-            updated=True,
-            detail="Password has been successfully updated."
-        )
+    async def delete_password(self, password_name: str, headers: Headers) -> PasswordDelete:
+        await self._check_master_password_exists()
+        self._get_key_derivation(headers)
+        model = await self._get_password_model(password_name)
+        await self.session.delete(model)
+        await self.session.flush()
+        return PasswordDelete(deleted=True, detail="Password deleted successfully.")

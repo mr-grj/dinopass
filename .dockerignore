@@ -1,22 +1,18 @@
-docker-compose.*
-docs
 .git
-.mypy_cache
-.pytest_cache
-.adr-dir
-.*env*
-.gitignore
-README.md
-Makefile
-.mypy_cache
-.pytest_cache
-.local_certs/
-.rx_local_certs/
-.circleci
-.DS_Store
-.editorconfig
-config/
 .idea
-scripts/db/
-scripts/aws/
-infrastructure/
+.DS_Store
+
+# Python
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.venv
+**/.pytest_cache
+**/.mypy_cache
+
+# Node
+frontend/node_modules
+frontend/build
+
+# Secrets — never copy into image
+backend/.db.env

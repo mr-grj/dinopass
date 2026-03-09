@@ -1,18 +1,10 @@
-import Cookies from "js-cookie";
+const KEY = "keyDerivation";
 
-import { EXPIRE_COOKIE } from "./constants";
-
-export const setCookie = (cookieName, cookieValue) => {
-  if (!cookieValue) return null;
-  if (Cookies.get(cookieName)) return null;
-
-  Cookies.set(cookieName, cookieValue, {
-    expires: new Date().getDate() + EXPIRE_COOKIE * 60 * 1000,
-    path: "/",
-  });
+export const setKeyDerivation = (value) => {
+  if (!value) return;
+  sessionStorage.setItem(KEY, value);
 };
 
-export const isAuth = () => !!Cookies.get("keyDerivation");
-export const getKeyDerivation = () => Cookies.get("keyDerivation");
-export const removeKeyDerivation = () =>
-  Cookies.remove("keyDerivation", { path: "/" });
+export const isAuth = () => !!sessionStorage.getItem(KEY);
+export const getKeyDerivation = () => sessionStorage.getItem(KEY);
+export const removeKeyDerivation = () => sessionStorage.removeItem(KEY);

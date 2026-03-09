@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class DBSettings(BaseSettings):
@@ -11,13 +11,9 @@ class DBSettings(BaseSettings):
     postgres_password: str = "dinopass"
     pool_recycle: int = 900
 
-    class Config:
-        env_file = ".db.env"
+    model_config = SettingsConfigDict(env_file=".db.env")
 
 
-@lru_cache()
+@lru_cache
 def get_db_settings() -> DBSettings:
     return DBSettings()
-
-
-db_settings = DBSettings()

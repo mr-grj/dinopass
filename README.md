@@ -1,71 +1,117 @@
-DinoPass - your personal password manager!
-=======================
+# 🦖 Dinopass
+
+> A self-hosted password manager for people who are tired of forgetting passwords (and resetting them, again).
 
 ```
                __
-              / _) -- I'm DinoPass and I can help you administer
-     _.----._/ /          your passwords in a dino-easy way!
+              / _)  -- Rawr. Your passwords are safe with me.
+     _.----._/ /
     /         /
  __/ (  | (  |
 /__.-'|_|--|_|
 ```
 
-## Description
+---
 
-DinoPass was created to satisfy my own needs. Because I tend to change my
-passwords pretty frequently I usually find myself in a position of having to reset
-them kinda often. So there's that.
+## What is this?
 
+Dinopass is a personal, self-hosted password manager. One master password unlocks everything. All stored passwords are encrypted using a key derived from that master password — so even if someone gets the database, they get nothing useful without it.
 
-## How it works and what it does
+Built because resetting passwords every other week gets old fast.
 
-Everything is meant to be as easy and intuitive as possible. You're going to be asked
-for a master password which is going to be the only one that you'll need to remember
-(so please make sure it's going to be as complex as possible!). After you'll enter your
-master password these are all the options that are currently available:
+## Features
 
-* List all your passwords  (WARNING: It's going to be in clear text!)
-* Purge all your passwords (WARNING: This is permanent so do it at your own risk!)
-* Create a new password
-* Update an existing password
-* Retrieve an existing password (by name)
-* Delete an existing password
+- Single master password to rule them all
+- All passwords encrypted at rest with Fernet (AES-128-CBC) via PBKDF2-derived keys
+- REST API backend (FastAPI + PostgreSQL)
+- Web UI (React + MUI) — create, view, edit, delete passwords
+- One-command setup with Docker
 
-## Technical details
+## Tech stack
 
-This tool uses the following technologies:
+| Layer | Tech |
+|---|---|
+| Backend | Python 3.11, FastAPI, SQLAlchemy 2.0, asyncpg |
+| Database | PostgreSQL 16 |
+| Frontend | React 18, MUI v6, easy-peasy |
+| Package manager | uv (backend), npm (frontend) |
+| Infrastructure | Docker, docker-compose |
 
-* Python >= 3.10 + FastAPI + SQLAlchemy
-* Poetry
-* PostgreSQL
-* React + JS
-* Docker & docker-compose
+## Security model
 
-I've decided that I want this service to be powered by an API backend, so that I can
-easily extend it. The interface was created out of boredom so don't expect it to be
-too professional.
+- Master password is hashed with **bcrypt** — not stored in plain or reversibly
+- All passwords are encrypted with **Fernet** (symmetric AES) using a key derived via **PBKDF2-HMAC-SHA256** (600,000 iterations) from the master password and a unique random salt
+- The derived key lives only in your browser session (cookie, `SameSite=Strict`, short TTL) and is never persisted server-side
+- Updating the master password re-encrypts every stored password transparently
 
-### Workflow
+## Running locally
 
-There are (currently) only two tables stored in our DB: `master_password` and
-`password`. The former stores the main / master password, which is encrypted
-using SHA-512 algorithm. The latest, is going to store all of your passwords,
-which get encrypted using your master password's hash.
+### Prerequisites
 
-## Usage
+- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/)
 
-Because I wanted to make things as easy as they can get, I've used `docker` and
-`docker-compose` for almost everything. So, to get this up & running you have to:
+### 1. Configure the database
+
+Copy the env template and fill in your values:
 
 ```shell
-docker-compose up --build
+cp backend/.db.env.template backend/.db.env
 ```
 
-License
--------
+```dotenv
+# backend/.db.env
+POSTGRES_HOST=db
+POSTGRES_DB=dinopass
+POSTGRES_USER=youruser
+POSTGRES_PASSWORD=a-strong-password
+PGDATA=/var/lib/postgresql/data/pgdata
+```
 
-This is free and unencumbered software released into the public domain.
+### 2. Start everything
 
-Anyone is free to copy, modify, publish, use, compile, sell, or
-distribute this software, either in source code form or as a compiled
-binary, for any purpose, commercial or non-commercial, and by any means.
+```shell
+docker compose up --build
+```
+
+That's it. Docker will:
+1. Start PostgreSQL and wait for it to be healthy
+2. Build and start the FastAPI backend on `http://localhost:8000`
+3. Build and serve the React frontend on `http://localhost:3000`
+
+### 3. Open the app
+
+Go to [http://localhost:3000](http://localhost:3000), set a master password, and start adding passwords.
+
+The API docs are available at [http://localhost:8000/docs](http://localhost:8000/docs).
+
+### Stopping
+
+```shell
+docker compose down
+```
+
+To also wipe the database volume:
+
+```shell
+docker compose down -v
+```
+
+## Configuration
+
+The backend reads these environment variables (all optional, with sensible defaults):
+
+| Variable | Default | Description |
+|---|---|---|
+| `CORS_ORIGINS` | `["http://localhost:3000"]` | Allowed frontend origins |
+| `DISABLE_DOCS` | `false` | Set `true` to hide `/docs` and `/redoc` |
+| `DEBUG` | `false` | FastAPI debug mode |
+
+The frontend reads:
+
+| Variable | Default | Description |
+|---|---|---|
+| `REACT_APP_API_URL` | `http://localhost:8000/api` | Backend API base URL |
+
+## License
+
+MIT — see [LICENSE](./LICENSE).

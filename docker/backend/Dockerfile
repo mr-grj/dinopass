@@ -1,53 +1,32 @@
-FROM python:3.10-slim-bullseye AS builder
+FROM python:3.11-slim-bookworm AS builder
 
-ENV APP_USER=dinopass
-ENV APP_HOME=/home/$APP_USER
-ENV SRC_FOLDER=$APP_HOME/backend
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-ENV PYTHONFAULTHANDLER=1 \
-    PYTHONUNBUFFERED=1 \
-    PYTHONHASHSEED=random \
-    PIP_NO_CACHE_DIR=off \
-    PIP_DISABLE_PIP_VERSION_CHECK=on \
-    PIP_DEFAULT_TIMEOUT=100 \
-    PIP_VERSION=22.1 \
-    POETRY_VERSION=1.1.7 \
-    POETRY_LIB_DIR="$APP_HOME/.local/bin" \
-    PYSETUP_PATH="$APP_HOME/.pysetup" \
-    POETRY_CACHE_DIR="$APP_HOME/.cache/poetry" \
-    PYTHONPATH=$SRC_FOLDER
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=never
+
+WORKDIR /app
+
+COPY backend/pyproject.toml backend/uv.lock ./
+
+RUN uv sync --frozen --no-install-project --no-group dev
 
 
-ENV POETRY_VENV_DIR="$PYSETUP_PATH/.venv"
-ENV PATH="$POETRY_LIB_DIR:$POETRY_VENV_DIR:$PATH"
+FROM python:3.11-slim-bookworm AS runtime
 
+ENV PYTHONUNBUFFERED=1 \
+    VIRTUAL_ENV=/app/.venv \
+    PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH=/app/src
 
-RUN useradd -ms /bin/bash $APP_USER && \
-    apt-get update  -y && \
-    apt-get upgrade -y && \
-    apt-get install --fix-missing --no-install-recommends -y curl sudo gcc linux-libc-dev libc6-dev && \
-    apt-get autoremove && \
-    apt-get clean && \
-    adduser $APP_USER sudo && \
-    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+RUN useradd -ms /bin/bash dinopass
 
+WORKDIR /app/src
 
-USER $APP_USER
+COPY --from=builder /app/.venv /app/.venv
+COPY backend/ .
 
-RUN pip install pip==$PIP_VERSION poetry==$POETRY_VERSION && \
-    poetry config cache-dir $POETRY_CACHE_DIR && \
-    poetry config virtualenvs.path $POETRY_VENV_DIR && \
-    poetry config virtualenvs.in-project false && \
-    poetry config virtualenvs.create false && \
-    mkdir $SRC_FOLDER $PYSETUP_PATH
+USER dinopass
 
-
-WORKDIR $SRC_FOLDER
-
-COPY backend/poetry.lock backend/pyproject.toml ./
-COPY backend/alembic.ini ./
-COPY backend/migrations ./migrations
-
-RUN poetry install --no-root --no-dev
-
-CMD ["uvicorn", "main:app", "--reload", "--workers", "1", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "main:app", "--workers", "1", "--host", "0.0.0.0", "--port", "80"]

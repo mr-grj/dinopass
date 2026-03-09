@@ -1,21 +1,15 @@
-import InputIcon from "@mui/icons-material/Input";
 import LoadingButton from "@mui/lab/LoadingButton";
 
-const DinoLoadingButton = (props) => {
-  const { buttonText, handleClickLogin, loading } = props;
-
-  return (
-    <LoadingButton
-      loading={loading}
-      loadingPosition="start"
-      onClick={handleClickLogin}
-      startIcon={<InputIcon />}
-      type="submit"
-      variant="contained"
-    >
-      {buttonText}
-    </LoadingButton>
-  );
-};
+const DinoLoadingButton = ({ buttonText, loading, onClick, variant = "contained", fullWidth = false }) => (
+  <LoadingButton
+    fullWidth={fullWidth}
+    loading={loading}
+    onClick={onClick}
+    variant={variant}
+    size="large"
+  >
+    {buttonText}
+  </LoadingButton>
+);
 
 export default DinoLoadingButton;

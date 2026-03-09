@@ -1,18 +1,21 @@
-version: "3.8"
-
 services:
   db:
-    image: postgres:13-alpine
+    image: postgres:16-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data/
       - ./backend/scripts/db/:/docker-entrypoint-initdb.d/
     env_file:
       - ./backend/.db.env
-    ports:
-      - "5432:5432"
-    restart: always
+    restart: unless-stopped
     networks:
       - dinopass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
 
   backend:
     build:
@@ -20,30 +23,33 @@ services:
       dockerfile: docker/backend/Dockerfile
     ports:
       - "8000:80"
-    volumes:
-      - ./backend:/home/dinopass/backend/
-    restart: always
+    env_file:
+      - ./backend/.db.env
+    environment:
+      CORS_ORIGINS: '["http://localhost:3000"]'
+    restart: unless-stopped
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - dinopass
 
   frontend:
-    container_name: frontend
     build:
       context: .
       dockerfile: docker/frontend/Dockerfile
+      args:
+        REACT_APP_API_URL: http://localhost:8000/api
     ports:
       - "3000:3000"
-    volumes:
-      - ./frontend:/home/dinopass/frontend/
+    restart: unless-stopped
     depends_on:
       - backend
     networks:
       - dinopass
 
 volumes:
-    postgres_data:
+  postgres_data:
 
 networks:
   dinopass:

@@ -1,27 +1,26 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 
 class Password(BaseModel):
     password_name: str
-    password_value: str | bytes
-    description: str
+    password_value: str
+    description: Optional[str] = None
 
 
 class PasswordCreate(BaseModel):
-    """
-    Password data schema used as a response after
-    creating a new password.
-    """
     created: bool
     detail: str
 
 
 class PasswordUpdate(BaseModel):
-    """
-    Password data schema used as a response after
-    updating a password.
-    """
     updated: bool
+    detail: str
+
+
+class PasswordDelete(BaseModel):
+    deleted: bool
     detail: str
 
 

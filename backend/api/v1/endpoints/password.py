@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Depends, Request, status
 
-from api.v1.endpoints.deps import password_case
-from api.v1.exceptions import handle_forbidden, handle_not_found, handle_mismatch
+from api.v1.endpoints.deps import get_password_crud
+from api.v1.exceptions import handle_forbidden, handle_mismatch, handle_not_found
 from api.v1.responses import inject_responses
-from cases.password import PasswordCase
+from crud.password import PasswordCRUD
 from schemas.exceptions_responses import SimpleDetailSchema
 from schemas.password import (
     Password,
     PasswordCreate,
+    PasswordDelete,
     PasswordUpdate,
     PasswordUpdatePayload,
 )
@@ -19,22 +20,16 @@ router = APIRouter(tags=["passwords"])
     "",
     name="passwords:get",
     response_model=list[Password],
-    responses=inject_responses(
-        {
-            status.HTTP_404_NOT_FOUND: SimpleDetailSchema,
-            status.HTTP_403_FORBIDDEN: SimpleDetailSchema,
-            status.HTTP_400_BAD_REQUEST: SimpleDetailSchema
-        }
-    )
+    responses=inject_responses({status.HTTP_403_FORBIDDEN: SimpleDetailSchema}),
 )
 @handle_forbidden
 @handle_not_found
 @handle_mismatch
 async def get_passwords(
     request: Request,
-    case: PasswordCase = Depends(password_case)
+    crud: PasswordCRUD = Depends(get_password_crud),
 ) -> list[Password]:
-    return await case.get_passwords(request.headers)
+    return await crud.get_passwords(request.headers)
 
 
 @router.get(
@@ -45,9 +40,8 @@ async def get_passwords(
         {
             status.HTTP_404_NOT_FOUND: SimpleDetailSchema,
             status.HTTP_403_FORBIDDEN: SimpleDetailSchema,
-            status.HTTP_400_BAD_REQUEST: SimpleDetailSchema
         }
-    )
+    ),
 )
 @handle_forbidden
 @handle_not_found
@@ -55,9 +49,9 @@ async def get_passwords(
 async def get_password(
     password_name: str,
     request: Request,
-    case: PasswordCase = Depends(password_case)
+    crud: PasswordCRUD = Depends(get_password_crud),
 ) -> Password:
-    return await case.get_password(password_name, request.headers)
+    return await crud.get_password(password_name, request.headers)
 
 
 @router.post(
@@ -66,11 +60,10 @@ async def get_password(
     response_model=PasswordCreate,
     responses=inject_responses(
         {
-            status.HTTP_404_NOT_FOUND: SimpleDetailSchema,
             status.HTTP_403_FORBIDDEN: SimpleDetailSchema,
-            status.HTTP_400_BAD_REQUEST: SimpleDetailSchema
+            status.HTTP_400_BAD_REQUEST: SimpleDetailSchema,
         }
-    )
+    ),
 )
 @handle_forbidden
 @handle_not_found
@@ -78,9 +71,9 @@ async def get_password(
 async def create_password(
     password: Password,
     request: Request,
-    case: PasswordCase = Depends(password_case)
+    crud: PasswordCRUD = Depends(get_password_crud),
 ) -> PasswordCreate:
-    return await case.create_password(password, request.headers)
+    return await crud.create_password(password, request.headers)
 
 
 @router.patch(
@@ -91,9 +84,9 @@ async def create_password(
         {
             status.HTTP_404_NOT_FOUND: SimpleDetailSchema,
             status.HTTP_403_FORBIDDEN: SimpleDetailSchema,
-            status.HTTP_400_BAD_REQUEST: SimpleDetailSchema
+            status.HTTP_400_BAD_REQUEST: SimpleDetailSchema,
         }
-    )
+    ),
 )
 @handle_forbidden
 @handle_not_found
@@ -101,10 +94,32 @@ async def create_password(
 async def update_password(
     body: PasswordUpdatePayload,
     request: Request,
-    case: PasswordCase = Depends(password_case)
+    crud: PasswordCRUD = Depends(get_password_crud),
 ) -> PasswordUpdate:
-    return await case.update_password(
+    return await crud.update_password(
         password=body.password,
         new_password=body.new_password,
-        headers=request.headers
+        headers=request.headers,
     )
+
+
+@router.delete(
+    "/{password_name}",
+    name="passwords:delete",
+    response_model=PasswordDelete,
+    responses=inject_responses(
+        {
+            status.HTTP_404_NOT_FOUND: SimpleDetailSchema,
+            status.HTTP_403_FORBIDDEN: SimpleDetailSchema,
+        }
+    ),
+)
+@handle_forbidden
+@handle_not_found
+@handle_mismatch
+async def delete_password(
+    password_name: str,
+    request: Request,
+    crud: PasswordCRUD = Depends(get_password_crud),
+) -> PasswordDelete:
+    return await crud.delete_password(password_name, request.headers)

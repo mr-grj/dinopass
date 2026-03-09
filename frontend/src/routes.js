@@ -1,18 +1,26 @@
+import { Navigate } from "react-router-dom";
+
 import LoginPage from "./pages/LoginPage";
 import PasswordsPage from "./pages/PasswordsPage";
 import { isAuth } from "./utils";
 
-const userIsAuth = isAuth();
+const ProtectedRoute = ({ children }) => {
+  if (!isAuth()) return <Navigate to="/login" replace />;
+  return children;
+};
 
 const routes = [
   {
     path: "/login",
-    main: () => <LoginPage />,
+    element: <LoginPage />,
   },
   {
     path: "/passwords",
-    main: () =>
-      userIsAuth ? <PasswordsPage /> : (window.location.href = "/login"),
+    element: (
+      <ProtectedRoute>
+        <PasswordsPage />
+      </ProtectedRoute>
+    ),
   },
 ];
 

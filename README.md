@@ -37,7 +37,7 @@ Built because resetting passwords every other week gets old fast.
 | Database | PostgreSQL 16 |
 | Frontend | React 18, MUI v6, easy-peasy |
 | Package manager | uv (backend), npm (frontend) |
-| Infrastructure | Docker, docker-compose |
+| Infrastructure | Docker, Docker Compose v2 |
 
 ## Security model
 
@@ -97,6 +97,21 @@ To also wipe the database volume:
 ```shell
 docker compose down -v
 ```
+
+## Development
+
+All `make` commands run **locally** (not inside Docker) and target the backend unless noted.
+
+| Command | What it does |
+|---|---|
+| `make all` | Full clean + rebuild (`clean` then `buildup`) |
+| `make buildup` | Build images and start all containers in the background |
+| `make clean` | Stop and remove containers, volumes, images, and `__pycache__` files |
+| `make lint` | Run `ruff check` — report linting issues |
+| `make format` | Run `ruff format` — auto-format source files in place |
+| `make check` | Run lint + format check together (no writes) — suitable for CI |
+
+`make lint`, `make format`, and `make check` require [uv](https://docs.astral.sh/uv/) and the dev dependencies installed (`uv sync --group dev` inside `backend/`).
 
 ## Configuration
 

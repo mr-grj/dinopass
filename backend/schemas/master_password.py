@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -11,7 +9,7 @@ class MasterPassword(BaseModel):
 
 class MasterPasswordCheck(BaseModel):
     valid: bool
-    key_derivation: Optional[str] = None
+    key_derivation: str | None = None
 
 
 class MasterPasswordCreate(BaseModel):

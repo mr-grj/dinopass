@@ -14,3 +14,15 @@ clean:
 buildup:
 	@echo 'Building and starting containers...'
 	docker compose up -d --build
+
+.PHONY: lint
+lint:
+	cd backend && uv run ruff check .
+
+.PHONY: format
+format:
+	cd backend && uv run ruff format .
+
+.PHONY: check
+check:
+	cd backend && uv run ruff check . && uv run ruff format --check .

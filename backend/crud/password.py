@@ -6,11 +6,16 @@ from crud.base import BaseCRUD
 from helpers import create_encrypted_zip, decrypt, encrypt, verify_master_password
 from models.master_password import MasterPasswordModel
 from models.password import PasswordModel
-from schemas.password import PasswordCreate, PasswordDelete, PasswordResponse, PasswordUpdate, Password
+from schemas.password import (
+    Password,
+    PasswordCreate,
+    PasswordDelete,
+    PasswordResponse,
+    PasswordUpdate,
+)
 
 
 class PasswordCRUD(BaseCRUD):
-
     @staticmethod
     def _get_key_derivation(headers: Headers) -> str:
         key_derivation = headers.get("x-dino-key-derivation")
@@ -26,7 +31,9 @@ class PasswordCRUD(BaseCRUD):
     async def _get_password_model(self, password_name: str) -> PasswordModel:
         result = (
             await self.session.execute(
-                select(PasswordModel).where(PasswordModel.password_name == password_name)
+                select(PasswordModel).where(
+                    PasswordModel.password_name == password_name
+                )
             )
         ).scalar()
         if not result:
@@ -39,7 +46,9 @@ class PasswordCRUD(BaseCRUD):
             raise TypesMismatchError(f"Invalid key for '{model.password_name}'.")
         return decrypted
 
-    def _to_response(self, model: PasswordModel, key_derivation: str) -> PasswordResponse:
+    def _to_response(
+        self, model: PasswordModel, key_derivation: str
+    ) -> PasswordResponse:
         return PasswordResponse(
             password_name=model.password_name,
             password_value=self._decrypt_or_raise(key_derivation, model),
@@ -51,23 +60,31 @@ class PasswordCRUD(BaseCRUD):
         await self._check_master_password_exists()
         key_derivation = self._get_key_derivation(headers)
         models = (
-            await self.session.execute(select(PasswordModel).order_by(PasswordModel.password_name))
+            await self.session.execute(
+                select(PasswordModel).order_by(PasswordModel.password_name)
+            )
         ).scalars()
         return [self._to_response(m, key_derivation) for m in models]
 
-    async def get_password(self, password_name: str, headers: Headers) -> PasswordResponse:
+    async def get_password(
+        self, password_name: str, headers: Headers
+    ) -> PasswordResponse:
         await self._check_master_password_exists()
         key_derivation = self._get_key_derivation(headers)
         model = await self._get_password_model(password_name)
         return self._to_response(model, key_derivation)
 
-    async def create_password(self, password: Password, headers: Headers) -> PasswordCreate:
+    async def create_password(
+        self, password: Password, headers: Headers
+    ) -> PasswordCreate:
         await self._check_master_password_exists()
         key_derivation = self._get_key_derivation(headers)
 
         existing = (
             await self.session.execute(
-                select(PasswordModel).where(PasswordModel.password_name == password.password_name)
+                select(PasswordModel).where(
+                    PasswordModel.password_name == password.password_name
+                )
             )
         ).scalar()
         if existing:
@@ -76,7 +93,9 @@ class PasswordCRUD(BaseCRUD):
         self.session.add(
             PasswordModel(
                 password_name=password.password_name,
-                password_value=encrypt(key_derivation, password.password_value.encode()),
+                password_value=encrypt(
+                    key_derivation, password.password_value.encode()
+                ),
                 description=password.description,
             )
         )
@@ -93,7 +112,9 @@ class PasswordCRUD(BaseCRUD):
         if model.password_name != new_password.password_name:
             conflict = (
                 await self.session.execute(
-                    select(PasswordModel).where(PasswordModel.password_name == new_password.password_name)
+                    select(PasswordModel).where(
+                        PasswordModel.password_name == new_password.password_name
+                    )
                 )
             ).scalar()
             if conflict:
@@ -102,7 +123,9 @@ class PasswordCRUD(BaseCRUD):
 
         decrypted = self._decrypt_or_raise(key_derivation, model)
         if decrypted != new_password.password_value:
-            model.password_value = encrypt(key_derivation, new_password.password_value.encode())
+            model.password_value = encrypt(
+                key_derivation, new_password.password_value.encode()
+            )
 
         if model.description != new_password.description:
             model.description = new_password.description
@@ -112,7 +135,9 @@ class PasswordCRUD(BaseCRUD):
         await self.session.flush()
         return PasswordUpdate(updated=True, detail="Password updated successfully.")
 
-    async def delete_password(self, password_name: str, headers: Headers) -> PasswordDelete:
+    async def delete_password(
+        self, password_name: str, headers: Headers
+    ) -> PasswordDelete:
         await self._check_master_password_exists()
         self._get_key_derivation(headers)
         model = await self._get_password_model(password_name)
@@ -131,8 +156,14 @@ class PasswordCRUD(BaseCRUD):
             raise Forbidden("Incorrect master password.")
 
         passwords = (
-            await self.session.execute(select(PasswordModel).order_by(PasswordModel.password_name))
-        ).scalars().all()
+            (
+                await self.session.execute(
+                    select(PasswordModel).order_by(PasswordModel.password_name)
+                )
+            )
+            .scalars()
+            .all()
+        )
 
         entries = [
             {

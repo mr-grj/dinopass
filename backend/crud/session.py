@@ -14,4 +14,6 @@ engine = create_async_engine(
     pool_recycle=_settings.pool_recycle,
 )
 
-AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+AsyncSessionLocal = async_sessionmaker(
+    engine, expire_on_commit=False, class_=AsyncSession
+)

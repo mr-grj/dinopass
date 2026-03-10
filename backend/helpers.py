@@ -1,7 +1,7 @@
 import base64
 import io
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import bcrypt
 import pyzipper
@@ -41,13 +41,15 @@ def decrypt(key: bytes | str, encrypted_value: bytes) -> str | None:
 
 def create_encrypted_zip(entries: list[dict], password: str) -> bytes:
     payload = json.dumps(
-        {"exported_at": datetime.now(timezone.utc).isoformat(), "passwords": entries},
+        {"exported_at": datetime.now(UTC).isoformat(), "passwords": entries},
         indent=2,
         ensure_ascii=False,
     ).encode("utf-8")
 
     buf = io.BytesIO()
-    with pyzipper.AESZipFile(buf, "w", compression=pyzipper.ZIP_DEFLATED, encryption=pyzipper.WZ_AES) as zf:
+    with pyzipper.AESZipFile(
+        buf, "w", compression=pyzipper.ZIP_DEFLATED, encryption=pyzipper.WZ_AES
+    ) as zf:
         zf.setpassword(password.encode())
         zf.writestr("dinopass_backup.json", payload)
     return buf.getvalue()

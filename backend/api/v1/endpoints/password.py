@@ -1,5 +1,5 @@
 import io
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Request, status
 from starlette.responses import StreamingResponse
@@ -153,7 +153,7 @@ async def backup_passwords(
     crud: PasswordCRUD = Depends(get_password_crud),
 ) -> StreamingResponse:
     data = await crud.create_backup(body.master_password, request.headers)
-    filename = f"dinopass_backup_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.zip"
+    filename = f"dinopass_backup_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.zip"
     return StreamingResponse(
         io.BytesIO(data),
         media_type="application/zip",

@@ -2,10 +2,11 @@ import asyncio
 from logging.config import fileConfig
 
 from alembic import context
-from crud.session import engine
-from models.base import BaseModel
+
 import models.master_password  # noqa: F401 - ensure models are registered
 import models.password  # noqa: F401 - ensure models are registered
+from crud.session import engine
+from models.base import BaseModel
 
 config = context.config
 

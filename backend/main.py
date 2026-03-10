@@ -38,6 +38,7 @@ def get_application() -> FastAPI:
         return response
 
     if not settings.disable_docs:
+
         @server.get("/", include_in_schema=False)
         def redirect_to_docs() -> RedirectResponse:
             return RedirectResponse(settings.docs_url)

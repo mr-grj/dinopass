@@ -1,6 +1,4 @@
-from typing import Optional
-
-from sqlalchemy import Column, Integer, LargeBinary, String, TIMESTAMP, func
+from sqlalchemy import TIMESTAMP, Column, Integer, LargeBinary, String, func
 
 from models.base import BaseModel
 
@@ -10,8 +8,10 @@ class MasterPasswordModel(BaseModel):
 
     id = Column(Integer, primary_key=True)
     created = Column(TIMESTAMP, nullable=False, server_default=func.now())
-    updated = Column(TIMESTAMP, nullable=False, server_default=func.now(), onupdate=func.now())
-    deleted: Optional[TIMESTAMP] = Column(TIMESTAMP, nullable=True, default=None)
+    updated = Column(
+        TIMESTAMP, nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+    deleted: TIMESTAMP | None = Column(TIMESTAMP, nullable=True, default=None)
 
     salt = Column(LargeBinary, nullable=False)
     hash_key = Column(String, nullable=False)

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, TIMESTAMP, func
+from sqlalchemy import TIMESTAMP, Column, Integer, func
 
 from models.base import BaseModel
 
@@ -8,7 +8,9 @@ class SettingsModel(BaseModel):
 
     id = Column(Integer, primary_key=True)
     created = Column(TIMESTAMP, nullable=False, server_default=func.now())
-    updated = Column(TIMESTAMP, nullable=False, server_default=func.now(), onupdate=func.now())
+    updated = Column(
+        TIMESTAMP, nullable=False, server_default=func.now(), onupdate=func.now()
+    )
 
     inactivity_ms = Column(Integer, nullable=False, server_default="120000")
     warn_before_ms = Column(Integer, nullable=False, server_default="60000")

@@ -14,11 +14,14 @@ from helpers import (
 )
 from models.master_password import MasterPasswordModel
 from models.password import PasswordModel
-from schemas.master_password import MasterPasswordCheck, MasterPasswordCreate, MasterPasswordUpdate
+from schemas.master_password import (
+    MasterPasswordCheck,
+    MasterPasswordCreate,
+    MasterPasswordUpdate,
+)
 
 
 class MasterPasswordCRUD(BaseCRUD):
-
     async def is_initialized(self) -> bool:
         result = await self.session.execute(select(MasterPasswordModel).limit(1))
         return result.scalar() is not None
@@ -37,12 +40,18 @@ class MasterPasswordCRUD(BaseCRUD):
         key_derivation = generate_key_derivation(model.salt, master_password)
         return MasterPasswordCheck(valid=True, key_derivation=key_derivation.decode())
 
-    async def create_master_password(self, master_password: str) -> MasterPasswordCreate:
+    async def create_master_password(
+        self, master_password: str
+    ) -> MasterPasswordCreate:
         if await self.is_initialized():
             raise Forbidden("Master password already exists.")
         salt = os.urandom(16)
         key_derivation = generate_key_derivation(salt, master_password)
-        self.session.add(MasterPasswordModel(salt=salt, hash_key=hash_master_password(master_password)))
+        self.session.add(
+            MasterPasswordModel(
+                salt=salt, hash_key=hash_master_password(master_password)
+            )
+        )
         await self.session.flush()
         return MasterPasswordCreate(
             created=True,
@@ -65,13 +74,17 @@ class MasterPasswordCRUD(BaseCRUD):
         new_key_derivation = generate_key_derivation(new_salt, new_master_password)
 
         passwords = (
-            await self.session.execute(select(PasswordModel).order_by(PasswordModel.password_name))
+            await self.session.execute(
+                select(PasswordModel).order_by(PasswordModel.password_name)
+            )
         ).scalars()
 
         for pwd in passwords:
             decrypted = decrypt(key_derivation, pwd.password_value)
             if decrypted is None:
-                raise TypesMismatchError(f"Could not decrypt password '{pwd.password_name}'.")
+                raise TypesMismatchError(
+                    f"Could not decrypt password '{pwd.password_name}'."
+                )
             pwd.password_value = encrypt(new_key_derivation, decrypted.encode())
             self.session.add(pwd)
 
@@ -80,4 +93,6 @@ class MasterPasswordCRUD(BaseCRUD):
         self.session.add(model)
         await self.session.flush()
 
-        return MasterPasswordUpdate(updated=True, detail="Master password updated successfully.")
+        return MasterPasswordUpdate(
+            updated=True, detail="Master password updated successfully."
+        )

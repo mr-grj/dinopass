@@ -14,7 +14,6 @@ _DEFAULTS = dict(
 
 
 class SettingsCRUD(BaseCRUD):
-
     async def _get_or_create(self) -> SettingsModel:
         model = (await self.session.execute(select(SettingsModel).limit(1))).scalar()
         if model is None:

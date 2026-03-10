@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable
+from typing import Any
 
 from fastapi import HTTPException, Request, status
 from fastapi.responses import JSONResponse
@@ -26,7 +27,9 @@ def handle_forbidden(func: Callable) -> Callable:
         try:
             return await func(*args, **kwargs)
         except Forbidden as e:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail=str(e)
+            ) from e
 
     return wrapper
 
@@ -37,7 +40,9 @@ def handle_not_found(func: Callable) -> Callable:
         try:
             return await func(*args, **kwargs)
         except NotFound as e:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
+            ) from e
 
     return wrapper
 
@@ -48,7 +53,9 @@ def handle_mismatch(func: Callable) -> Callable:
         try:
             return await func(*args, **kwargs)
         except (TypeError, TypesMismatchError) as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+            ) from e
 
     return wrapper
 

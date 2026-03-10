@@ -26,7 +26,8 @@ WORKDIR /app/src
 
 COPY --from=builder /app/.venv /app/.venv
 COPY backend/ .
+RUN chmod +x entrypoint.sh
 
 USER dinopass
 
-CMD ["uvicorn", "main:app", "--workers", "1", "--host", "0.0.0.0", "--port", "80"]
+CMD ["./entrypoint.sh"]

@@ -54,8 +54,6 @@ Built because resetting passwords every other week gets old fast.
 
 ### 1. Configure the database
 
-Copy the env template and fill in your values:
-
 ```shell
 cp backend/.db.env.template backend/.db.env
 ```
@@ -69,49 +67,68 @@ POSTGRES_PASSWORD=a-strong-password
 PGDATA=/var/lib/postgresql/data/pgdata
 ```
 
-### 2. Start everything
+### 2. Start
 
+Two compose files are provided:
+
+| File | Purpose | When to use |
+|---|---|---|
+| `docker-compose.yml` | Production: optimised multi-stage images, static frontend build | Deploying or testing a production-like build |
+| `docker-compose.dev.yml` | Development overlay: source mounts, hot-reload | Actively working on the code |
+
+**Production:**
 ```shell
+make buildup          # build and start in background
+# or
 docker compose up --build
 ```
 
-That's it. Docker will:
-1. Start PostgreSQL and wait for it to be healthy
-2. Build and start the FastAPI backend on `http://localhost:8000`
-3. Build and serve the React frontend on `http://localhost:3000`
+**Development (hot-reload):**
+```shell
+make dev
+# or
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
 
-### 3. Open the app
+In dev mode the backend restarts on any `.py` change and the React dev server picks up frontend changes instantly via HMR. No rebuild needed.
 
-Go to [http://localhost:3000](http://localhost:3000), set a master password, and start adding passwords.
-
-The API docs are available at [http://localhost:8000/docs](http://localhost:8000/docs).
+Both modes start on the same addresses: `http://localhost:3000` (UI) and `http://localhost:8000` (API). API docs at `http://localhost:8000/docs`.
 
 ### Stopping
 
 ```shell
-docker compose down
-```
-
-To also wipe the database volume:
-
-```shell
-docker compose down -v
+docker compose down       # stop containers
+docker compose down -v    # stop and wipe the database volume
 ```
 
 ## Development
 
-All `make` commands run **locally** (not inside Docker) and target the backend unless noted.
+All `make` commands run **locally** (not inside Docker).
 
 | Command | What it does |
 |---|---|
 | `make all` | Full clean + rebuild (`clean` then `buildup`) |
 | `make buildup` | Build images and start all containers in the background |
-| `make clean` | Stop and remove containers, volumes, images, and `__pycache__` files |
-| `make lint` | Run `ruff check` — report linting issues |
-| `make format` | Run `ruff format` — auto-format source files in place |
-| `make check` | Run lint + format check together (no writes) — suitable for CI |
+| `make dev` | Start with hot-reload (`docker-compose.yml` + `docker-compose.dev.yml`) |
+| `make clean` | Stop containers, remove volumes/images, delete `__pycache__` |
+| `make lint` | `ruff check`: report linting issues |
+| `make format` | `ruff format`: auto-format source files in place |
+| `make check` | Lint + format check, no writes (suitable for CI) |
 
-`make lint`, `make format`, and `make check` require [uv](https://docs.astral.sh/uv/) and the dev dependencies installed (`uv sync --group dev` inside `backend/`).
+`make lint/format/check` require [uv](https://docs.astral.sh/uv/) with dev deps: `uv sync --group dev` inside `backend/`.
+
+### Database migrations
+
+Schema is managed with **Alembic**. On every startup the backend runs `alembic upgrade head` automatically: no manual steps needed.
+
+To create a migration after changing a model (requires a running database):
+
+```shell
+cd backend
+uv run alembic revision --autogenerate -m "describe the change"
+```
+
+Migration files land in `migrations/dinopass/versions/` and are auto-formatted with ruff.
 
 ## Configuration
 

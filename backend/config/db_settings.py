@@ -11,7 +11,7 @@ class DBSettings(BaseSettings):
     postgres_password: str = "dinopass"
     pool_recycle: int = 900
 
-    model_config = SettingsConfigDict(env_file=".db.env")
+    model_config = SettingsConfigDict(env_file=".db.env", extra="ignore")
 
 
 @lru_cache

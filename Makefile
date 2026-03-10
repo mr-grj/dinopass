@@ -15,6 +15,11 @@ buildup:
 	@echo 'Building and starting containers...'
 	docker compose up -d --build
 
+.PHONY: dev
+dev:
+	@echo 'Starting in development mode (hot-reload)...'
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
+
 .PHONY: lint
 lint:
 	cd backend && uv run ruff check .

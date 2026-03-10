@@ -5,6 +5,7 @@ from alembic import context
 
 import models.master_password  # noqa: F401 - ensure models are registered
 import models.password  # noqa: F401 - ensure models are registered
+import models.settings  # noqa: F401 - ensure models are registered
 from crud.session import engine
 from models.base import BaseModel
 

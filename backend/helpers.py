@@ -1,6 +1,10 @@
 import base64
+import io
+import json
+from datetime import datetime, timezone
 
 import bcrypt
+import pyzipper
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -33,3 +37,17 @@ def decrypt(key: bytes | str, encrypted_value: bytes) -> str | None:
         return Fernet(key).decrypt(encrypted_value).decode()
     except InvalidToken:
         return None
+
+
+def create_encrypted_zip(entries: list[dict], password: str) -> bytes:
+    payload = json.dumps(
+        {"exported_at": datetime.now(timezone.utc).isoformat(), "passwords": entries},
+        indent=2,
+        ensure_ascii=False,
+    ).encode("utf-8")
+
+    buf = io.BytesIO()
+    with pyzipper.AESZipFile(buf, "w", compression=pyzipper.ZIP_DEFLATED, encryption=pyzipper.WZ_AES) as zf:
+        zf.setpassword(password.encode())
+        zf.writestr("dinopass_backup.json", payload)
+    return buf.getvalue()

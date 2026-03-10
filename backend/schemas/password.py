@@ -11,6 +11,10 @@ class Password(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
 
+class PasswordResponse(Password):
+    backed_up: bool
+
+
 class PasswordCreate(BaseModel):
     created: bool
     detail: str

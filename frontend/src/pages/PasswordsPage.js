@@ -18,9 +18,12 @@ import {
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
+import DownloadIcon from "@mui/icons-material/Download";
 import EditIcon from "@mui/icons-material/Edit";
+import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useStoreActions, useStoreState } from "easy-peasy";
@@ -32,7 +35,7 @@ const CLIPBOARD_CLEAR_MS = 30_000;
 const PasswordsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
 
-  const { get, create, update, remove } = useStoreActions(
+  const { get, create, update, remove, backup } = useStoreActions(
     (actions) => actions.dinopassModels.passwords
   );
   const { error, loading, passwords } = useStoreState(
@@ -42,6 +45,7 @@ const PasswordsPage = () => {
   const clipboardClearAtRef = useRef(null);
 
   const [visibleRows, setVisibleRows] = useState(new Set());
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [editTarget, setEditTarget] = useState(null);
@@ -50,12 +54,30 @@ const PasswordsPage = () => {
   const [showFormValue, setShowFormValue] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const [backupDialogOpen, setBackupDialogOpen] = useState(false);
+  const [backupPassword, setBackupPassword] = useState("");
+  const [backupPasswordError, setBackupPasswordError] = useState("");
+  const [showBackupPassword, setShowBackupPassword] = useState(false);
+  const [backupLoading, setBackupLoading] = useState(false);
+
   useEffect(() => { get(); }, [get]);
 
   useEffect(() => {
     if (error) enqueueSnackbar(error, { variant: "error" });
   }, [error, enqueueSnackbar]);
 
+  // Clipboard clear
+  useEffect(() => {
+    const handleFocus = () => {
+      const clearAt = clipboardClearAtRef.current;
+      if (clearAt && Date.now() >= clearAt - 5_000) {
+        clipboardClearAtRef.current = null;
+        navigator.clipboard.writeText("").catch(() => {});
+      }
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, []);
 
   const toggleVisibility = useCallback((name) => {
     setVisibleRows((prev) => {
@@ -150,6 +172,42 @@ const PasswordsPage = () => {
     }
   };
 
+  const openBackupDialog = () => {
+    setBackupPassword("");
+    setBackupPasswordError("");
+    setShowBackupPassword(false);
+    setBackupDialogOpen(true);
+  };
+
+  const closeBackupDialog = () => {
+    if (backupLoading) return;
+    setBackupDialogOpen(false);
+  };
+
+  const handleBackup = async () => {
+    if (!backupPassword.trim()) { setBackupPasswordError("Master password is required."); return; }
+    setBackupLoading(true);
+    try {
+      await backup(backupPassword);
+      setBackupDialogOpen(false);
+      enqueueSnackbar("Backup created — keep this file safe.", { variant: "success" });
+    } catch (err) {
+      setBackupPasswordError(err.message);
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
+  const subtitle = (() => {
+    if (loading) return "Loading…";
+    if (passwords.length === 0) return "Nothing here yet. Your dino is hungry for passwords.";
+    const n = passwords.length;
+    const word = n === 1 ? "password" : "passwords";
+    if (passwords.every((p) => p.backed_up)) return `${n} ${word}, all backed up and locked tight.`;
+    if (passwords.some((p) => p.backed_up)) return `${n} ${word} - backup is outdated.`;
+    return `${n} ${word} stored — no backup yet.`;
+  })();
+
   const columns = [
     {
       field: "password_name",
@@ -193,7 +251,7 @@ const PasswordsPage = () => {
     {
       field: "actions",
       headerName: "Actions",
-      width: 180,
+      width: 220,
       sortable: false,
       align: "center",
       headerAlign: "center",
@@ -203,9 +261,7 @@ const PasswordsPage = () => {
           <Stack direction="row" alignItems="center" spacing={0} height="100%">
             <Tooltip title={visible ? "Hide password" : "Reveal password"}>
               <IconButton size="small" onClick={() => toggleVisibility(params.row.password_name)}>
-                {visible
-                  ? <VisibilityOffIcon fontSize="small" />
-                  : <VisibilityIcon fontSize="small" />}
+                {visible ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
               </IconButton>
             </Tooltip>
             <Tooltip title="Copy password">
@@ -226,6 +282,15 @@ const PasswordsPage = () => {
                 <DeleteIcon fontSize="small" />
               </IconButton>
             </Tooltip>
+
+            <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 1 }} />
+            <Tooltip title={params.row.backed_up ? "Password backed up" : "Password not backed up"}>
+              <Box display="flex" alignItems="center">
+                {params.row.backed_up
+                  ? <CheckCircleOutlineIcon fontSize="small" sx={{ color: "success.main" }} />
+                  : <HighlightOffIcon fontSize="small" sx={{ color: "warning.main" }} />}
+              </Box>
+            </Tooltip>
           </Stack>
         );
       },
@@ -240,19 +305,25 @@ const PasswordsPage = () => {
       <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={3}>
         <Box>
           <Typography variant="h5" fontWeight={700} lineHeight={1.2}>
-            Your Vault
+            Dino Vault
           </Typography>
           <Typography variant="body2" color="text.secondary" mt={0.5}>
-            {loading
-              ? "Loading…"
-              : passwords.length === 0
-              ? "Nothing here yet. Your dino is hungry for passwords."
-              : `${passwords.length} password${passwords.length === 1 ? "" : "s"}, all locked up tight.`}
+            {subtitle}
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={openAddDialog}>
-          Add Password
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={openBackupDialog}
+            disabled={passwords.length === 0}
+          >
+            Backup
+          </Button>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={openAddDialog}>
+            Add Password
+          </Button>
+        </Stack>
       </Stack>
 
       {/* Loading */}
@@ -278,9 +349,7 @@ const PasswordsPage = () => {
             borderColor: "divider",
           }}
         >
-          <Typography fontSize={64} lineHeight={1} role="img" aria-label="dino">
-            🦕
-          </Typography>
+          <Box component="img" src="/dino.svg" alt="dino" sx={{ width: 96, height: 96, mb: 1 }} />
           <Typography variant="h6" fontWeight={600}>
             The vault is empty
           </Typography>
@@ -307,13 +376,8 @@ const PasswordsPage = () => {
           sx={{
             bgcolor: "background.paper",
             borderRadius: 2,
-            "& .MuiDataGrid-cell": {
-              display: "flex",
-              alignItems: "center",
-            },
-            "& .MuiDataGrid-columnHeader": {
-              bgcolor: "grey.50",
-            },
+            "& .MuiDataGrid-cell": { display: "flex", alignItems: "center" },
+            "& .MuiDataGrid-columnHeader": { bgcolor: "grey.50" },
             "& .MuiDataGrid-cell:focus": { outline: "none" },
             "& .MuiDataGrid-cell:focus-within": { outline: "none" },
           }}
@@ -362,9 +426,7 @@ const PasswordsPage = () => {
               placeholder="e.g. Personal account, work email…"
             />
             {formError && (
-              <Typography variant="body2" color="error">
-                {formError}
-              </Typography>
+              <Typography variant="body2" color="error">{formError}</Typography>
             )}
           </Stack>
         </DialogContent>
@@ -372,6 +434,46 @@ const PasswordsPage = () => {
           <Button onClick={closeDialog} disabled={submitting}>Cancel</Button>
           <Button variant="contained" onClick={handleSubmit} disabled={submitting}>
             {submitting ? <CircularProgress size={20} /> : editTarget ? "Update" : "Create"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Backup Dialog */}
+      <Dialog open={backupDialogOpen} onClose={closeBackupDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Create Backup</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} mt={1}>
+            <Typography variant="body2" color="text.secondary">
+              Your passwords will be exported as an AES-256 encrypted ZIP file.
+              Open it with your master password.
+            </Typography>
+            <TextField
+              label="Master Password"
+              type={showBackupPassword ? "text" : "password"}
+              value={backupPassword}
+              onChange={(e) => { setBackupPassword(e.target.value); setBackupPasswordError(""); }}
+              error={!!backupPasswordError}
+              helperText={backupPasswordError}
+              required
+              fullWidth
+              autoFocus
+              onKeyDown={(e) => { if (e.key === "Enter") handleBackup(); }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowBackupPassword((v) => !v)} edge="end">
+                      {showBackupPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeBackupDialog} disabled={backupLoading}>Cancel</Button>
+          <Button variant="contained" onClick={handleBackup} disabled={backupLoading}>
+            {backupLoading ? <CircularProgress size={20} /> : "Create Backup"}
           </Button>
         </DialogActions>
       </Dialog>

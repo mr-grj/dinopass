@@ -3,10 +3,10 @@ from starlette.datastructures import Headers
 
 from api.v1.exceptions import Forbidden, NotFound, TypesMismatchError
 from crud.base import BaseCRUD
-from helpers import decrypt, encrypt
+from helpers import create_encrypted_zip, decrypt, encrypt, verify_master_password
 from models.master_password import MasterPasswordModel
 from models.password import PasswordModel
-from schemas.password import Password, PasswordCreate, PasswordDelete, PasswordUpdate
+from schemas.password import PasswordCreate, PasswordDelete, PasswordResponse, PasswordUpdate, Password
 
 
 class PasswordCRUD(BaseCRUD):
@@ -39,30 +39,27 @@ class PasswordCRUD(BaseCRUD):
             raise TypesMismatchError(f"Invalid key for '{model.password_name}'.")
         return decrypted
 
-    async def get_passwords(self, headers: Headers) -> list[Password]:
-        await self._check_master_password_exists()
-        key_derivation = self._get_key_derivation(headers)
-        passwords = (
-            await self.session.execute(select(PasswordModel).order_by(PasswordModel.password_name))
-        ).scalars()
-        return [
-            Password(
-                password_name=p.password_name,
-                password_value=self._decrypt_or_raise(key_derivation, p),
-                description=p.description,
-            )
-            for p in passwords
-        ]
-
-    async def get_password(self, password_name: str, headers: Headers) -> Password:
-        await self._check_master_password_exists()
-        key_derivation = self._get_key_derivation(headers)
-        model = await self._get_password_model(password_name)
-        return Password(
+    def _to_response(self, model: PasswordModel, key_derivation: str) -> PasswordResponse:
+        return PasswordResponse(
             password_name=model.password_name,
             password_value=self._decrypt_or_raise(key_derivation, model),
             description=model.description,
+            backed_up=model.backed_up,
         )
+
+    async def get_passwords(self, headers: Headers) -> list[PasswordResponse]:
+        await self._check_master_password_exists()
+        key_derivation = self._get_key_derivation(headers)
+        models = (
+            await self.session.execute(select(PasswordModel).order_by(PasswordModel.password_name))
+        ).scalars()
+        return [self._to_response(m, key_derivation) for m in models]
+
+    async def get_password(self, password_name: str, headers: Headers) -> PasswordResponse:
+        await self._check_master_password_exists()
+        key_derivation = self._get_key_derivation(headers)
+        model = await self._get_password_model(password_name)
+        return self._to_response(model, key_derivation)
 
     async def create_password(self, password: Password, headers: Headers) -> PasswordCreate:
         await self._check_master_password_exists()
@@ -110,6 +107,7 @@ class PasswordCRUD(BaseCRUD):
         if model.description != new_password.description:
             model.description = new_password.description
 
+        model.backed_up = False
         self.session.add(model)
         await self.session.flush()
         return PasswordUpdate(updated=True, detail="Password updated successfully.")
@@ -121,3 +119,33 @@ class PasswordCRUD(BaseCRUD):
         await self.session.delete(model)
         await self.session.flush()
         return PasswordDelete(deleted=True, detail="Password deleted successfully.")
+
+    async def create_backup(self, master_password: str, headers: Headers) -> bytes:
+        key_derivation = self._get_key_derivation(headers)
+
+        mp_result = await self.session.execute(select(MasterPasswordModel).limit(1))
+        mp_model = mp_result.scalar()
+        if not mp_model:
+            raise NotFound("No master password found.")
+        if not verify_master_password(master_password, mp_model.hash_key):
+            raise Forbidden("Incorrect master password.")
+
+        passwords = (
+            await self.session.execute(select(PasswordModel).order_by(PasswordModel.password_name))
+        ).scalars().all()
+
+        entries = [
+            {
+                "name": p.password_name,
+                "value": self._decrypt_or_raise(key_derivation, p),
+                "description": p.description,
+            }
+            for p in passwords
+        ]
+
+        for p in passwords:
+            p.backed_up = True
+            self.session.add(p)
+        await self.session.flush()
+
+        return create_encrypted_zip(entries, master_password)

@@ -1,12 +1,19 @@
 import { BrowserRouter as Router, Navigate, Route, Routes } from "react-router-dom";
-import { Box, Container, CssBaseline, Toolbar } from "@mui/material";
+import { Box, Container, CssBaseline, GlobalStyles, Toolbar } from "@mui/material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 
 import TopMenu from "./components/TopMenu";
 import useAutoLogout from "./hooks/useAutoLogout";
 import routes from "./routes";
 
-const theme = createTheme();
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: "#000000",
+      contrastText: "#ffffff",
+    },
+  },
+});
 
 const AppContent = () => {
   useAutoLogout();
@@ -39,9 +46,21 @@ const AppContent = () => {
   );
 };
 
+const snackbarStyles = (
+  <GlobalStyles
+    styles={{
+      ".notistack-MuiContent-success": {
+        backgroundColor: "#000000 !important",
+        color: "#ffffff !important",
+      },
+    }}
+  />
+);
+
 const App = () => (
   <Router>
     <ThemeProvider theme={theme}>
+      {snackbarStyles}
       <AppContent />
     </ThemeProvider>
   </Router>

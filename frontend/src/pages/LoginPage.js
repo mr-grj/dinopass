@@ -10,7 +10,6 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useStoreActions, useStoreState } from "easy-peasy";
@@ -121,19 +120,7 @@ const LoginPage = () => {
       >
         {/* Icon + heading */}
         <Box display="flex" flexDirection="column" alignItems="center" gap={1} mb={0.5}>
-          <Box
-            sx={{
-              width: 52,
-              height: 52,
-              borderRadius: "50%",
-              bgcolor: "primary.main",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <LockOutlinedIcon sx={{ color: "white", fontSize: 28 }} />
-          </Box>
+          <Box component="img" src="/dino.svg" alt="dino" sx={{ width: 64, height: 64 }} />
           <Typography variant="h6" fontWeight={700}>
             {initialized ? "Welcome back" : "Set up your vault"}
           </Typography>

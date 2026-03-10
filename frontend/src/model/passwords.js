@@ -7,15 +7,9 @@ const Passwords = {
   loading: false,
   passwords: [],
 
-  setError: action((state, error) => {
-    state.error = error;
-  }),
-  setLoading: action((state, loading) => {
-    state.loading = loading;
-  }),
-  setPasswords: action((state, passwords) => {
-    state.passwords = passwords;
-  }),
+  setError: action((state, error) => { state.error = error; }),
+  setLoading: action((state, loading) => { state.loading = loading; }),
+  setPasswords: action((state, passwords) => { state.passwords = passwords; }),
 
   get: thunk(async (actions) => {
     actions.setLoading(true);
@@ -54,6 +48,34 @@ const Passwords = {
       await actions.get();
     } catch (err) {
       throw new Error(err.response?.data?.detail ?? "Failed to delete password.");
+    }
+  }),
+
+  backup: thunk(async (actions, masterPassword) => {
+    try {
+      const response = await apiClient.post(
+        "/passwords/backup",
+        { master_password: masterPassword },
+        { responseType: "blob" },
+      );
+      const url = URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `dinopass_backup_${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.zip`;
+      link.click();
+      URL.revokeObjectURL(url);
+      await actions.get();
+    } catch (err) {
+      let detail = "Backup failed.";
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          detail = JSON.parse(text).detail ?? detail;
+        } catch {}
+      } else {
+        detail = err.response?.data?.detail ?? detail;
+      }
+      throw new Error(detail);
     }
   }),
 };

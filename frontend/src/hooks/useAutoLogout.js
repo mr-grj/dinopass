@@ -4,9 +4,9 @@ import { useSnackbar } from "notistack";
 
 import { isAuth, removeKeyDerivation } from "../utils";
 
-const INACTIVITY_MS = 15 * 60 * 1000;   // 15 minutes
-const WARN_BEFORE_MS = 2 * 60 * 1000;   // warn 2 minutes before logout
-const HIDDEN_MS = 10 * 60 * 1000;       // 10 minutes while tab is hidden
+const INACTIVITY_MS = 2 * 60 * 1000;   // 2 minutes
+const WARN_BEFORE_MS = 1 * 60 * 1000;   // warn 1 minute before logout
+const HIDDEN_MS = 1 * 60 * 1000;       // 1 minute while tab is hidden
 const DEBOUNCE_MS = 1_000;              // only reset timers once per second max
 
 const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "touchstart", "scroll"];
@@ -27,9 +27,9 @@ const useAutoLogout = () => {
     clearTimeout(hiddenRef.current);
     if (warnKeyRef.current) closeSnackbar(warnKeyRef.current);
     removeKeyDerivation();
-    enqueueSnackbar("Logged out due to inactivity. Stay safe 🦖", { variant: "info" });
+    sessionStorage.setItem("logout_notice", "Logged out due to inactivity.");
     window.location.replace("/login");
-  }, [enqueueSnackbar, closeSnackbar]);
+  }, [closeSnackbar]);
 
   const reset = useCallback(() => {
     if (!isAuth()) return;
@@ -48,7 +48,7 @@ const useAutoLogout = () => {
 
     warnRef.current = setTimeout(() => {
       warnKeyRef.current = enqueueSnackbar(
-        "You'll be logged out in 2 minutes due to inactivity.",
+        "You'll be logged out in 1 minute due to inactivity.",
         {
           variant: "warning",
           persist: true,

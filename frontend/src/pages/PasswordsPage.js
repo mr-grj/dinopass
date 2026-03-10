@@ -190,7 +190,7 @@ const PasswordsPage = () => {
     try {
       await backup(backupPassword);
       setBackupDialogOpen(false);
-      enqueueSnackbar("Backup created — keep this file safe.", { variant: "success" });
+      enqueueSnackbar("Backup created: keep this file safe.", { variant: "success" });
     } catch (err) {
       setBackupPasswordError(err.message);
     } finally {
@@ -205,7 +205,7 @@ const PasswordsPage = () => {
     const word = n === 1 ? "password" : "passwords";
     if (passwords.every((p) => p.backed_up)) return `${n} ${word}, all backed up and locked tight.`;
     if (passwords.some((p) => p.backed_up)) return `${n} ${word} - backup is outdated.`;
-    return `${n} ${word} stored — no backup yet.`;
+    return `${n} ${word} stored: no backup yet.`;
   })();
 
   const columns = [

@@ -49,7 +49,7 @@ const AppContent = () => {
 const snackbarStyles = (
   <GlobalStyles
     styles={{
-      ".notistack-MuiContent-success": {
+      ".notistack-MuiContent-success, .notistack-MuiContent-warning, .notistack-MuiContent-info": {
         backgroundColor: "#000000 !important",
         color: "#ffffff !important",
       },

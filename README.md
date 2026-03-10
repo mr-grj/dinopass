@@ -15,7 +15,7 @@
 
 ## What is this?
 
-Dinopass is a personal, self-hosted password manager. One master password unlocks everything. All stored passwords are encrypted using a key derived from that master password — so even if someone gets the database, they get nothing useful without it.
+Dinopass is a personal, self-hosted password manager. One master password unlocks everything. All stored passwords are encrypted using a key derived from that master password: so even if someone gets the database, they get nothing useful without it.
 
 Built because resetting passwords every other week gets old fast.
 
@@ -24,7 +24,9 @@ Built because resetting passwords every other week gets old fast.
 - Single master password to rule them all
 - All passwords encrypted at rest with Fernet (AES-128-CBC) via PBKDF2-derived keys
 - REST API backend (FastAPI + PostgreSQL)
-- Web UI (React + MUI) — create, view, edit, delete passwords
+- Web UI (React + MUI): create, view, edit, delete passwords
+- Encrypted backup export: generates an AES-256 password-protected ZIP you can open with your master password
+- Per-password backup status tracked in the database, visible in the UI
 - One-command setup with Docker
 
 ## Tech stack
@@ -39,9 +41,9 @@ Built because resetting passwords every other week gets old fast.
 
 ## Security model
 
-- Master password is hashed with **bcrypt** — not stored in plain or reversibly
+- Master password is hashed with **bcrypt**: not stored in plain or reversibly
 - All passwords are encrypted with **Fernet** (symmetric AES) using a key derived via **PBKDF2-HMAC-SHA256** (600,000 iterations) from the master password and a unique random salt
-- The derived key lives only in your browser session (`sessionStorage`) and is never persisted server-side — closing the tab clears it automatically
+- The derived key lives only in your browser session (`sessionStorage`) and is never persisted server-side: closing the tab clears it automatically
 - Updating the master password re-encrypts every stored password transparently
 
 ## Running locally
@@ -114,4 +116,4 @@ The frontend reads:
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+MIT: see [LICENSE](./LICENSE).

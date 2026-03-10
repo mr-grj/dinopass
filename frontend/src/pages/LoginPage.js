@@ -69,7 +69,12 @@ const LoginPage = () => {
 
   useEffect(() => {
     fetchStatus();
-  }, [fetchStatus]);
+    const notice = sessionStorage.getItem("logout_notice");
+    if (notice) {
+      sessionStorage.removeItem("logout_notice");
+      enqueueSnackbar(notice, { variant: "info" });
+    }
+  }, [fetchStatus, enqueueSnackbar]);
 
   useEffect(() => {
     if (error) enqueueSnackbar(error, { variant: "error" });
@@ -77,7 +82,10 @@ const LoginPage = () => {
 
   const strength = initialized === false ? getStrength(value) : null;
 
-  const handleLogin = () => check({ master_password: value });
+  const handleLogin = () => {
+    if (!value.trim()) { enqueueSnackbar("Please enter your master password.", { variant: "error" }); return; }
+    check({ master_password: value });
+  };
 
   const handleCreate = () => {
     if (!value) { setError("Please enter a master password."); return; }
@@ -140,7 +148,6 @@ const LoginPage = () => {
           autoFocus
         />
 
-        {/* Strength indicator — only on setup */}
         {!initialized && value && strength && (
           <Box>
             <LinearProgress
@@ -155,7 +162,6 @@ const LoginPage = () => {
           </Box>
         )}
 
-        {/* Confirm field — only on setup */}
         {!initialized && (
           <PasswordField
             label="Confirm Master Password"
@@ -165,7 +171,6 @@ const LoginPage = () => {
           />
         )}
 
-        {/* Recovery warning — only on setup */}
         {!initialized && (
           <Alert severity="warning" variant="outlined" sx={{ py: 0.5 }}>
             <Typography variant="caption">

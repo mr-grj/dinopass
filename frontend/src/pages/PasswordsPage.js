@@ -29,8 +29,9 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useStoreActions, useStoreState } from "easy-peasy";
 import { useSnackbar } from "notistack";
 
+import { formatDuration } from "../utils";
+
 const EMPTY_FORM = { password_name: "", password_value: "", description: "" };
-const CLIPBOARD_CLEAR_MS = 30_000;
 
 const PasswordsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -40,6 +41,9 @@ const PasswordsPage = () => {
   );
   const { error, loading, passwords } = useStoreState(
     (state) => state.dinopassModels.passwords
+  );
+  const clipboardClearMs = useStoreState(
+    (s) => s.dinopassModels.settings.settings.clipboard_clear_ms
   );
 
   const clipboardClearAtRef = useRef(null);
@@ -89,17 +93,17 @@ const PasswordsPage = () => {
 
   const copyToClipboard = useCallback((value) => {
     navigator.clipboard.writeText(value).then(() => {
-      enqueueSnackbar("Copied! Clipboard clears in 30s 🦖", { variant: "success" });
-      const clearAt = Date.now() + CLIPBOARD_CLEAR_MS;
+      enqueueSnackbar(`Copied! Clipboard clears in ${formatDuration(clipboardClearMs)}.`, { variant: "success" });
+      const clearAt = Date.now() + clipboardClearMs;
       clipboardClearAtRef.current = clearAt;
       setTimeout(() => {
         if (clipboardClearAtRef.current === clearAt && document.hasFocus()) {
           clipboardClearAtRef.current = null;
           navigator.clipboard.writeText("").catch(() => {});
         }
-      }, CLIPBOARD_CLEAR_MS);
+      }, clipboardClearMs);
     });
-  }, [enqueueSnackbar]);
+  }, [enqueueSnackbar, clipboardClearMs]);
 
   const openAddDialog = () => {
     setEditTarget(null);

@@ -1,11 +1,13 @@
-import { useLocation } from "react-router-dom";
-import { AppBar, Box, Button, Toolbar, Typography } from "@mui/material";
+import { useLocation, useNavigate } from "react-router-dom";
+import { AppBar, Box, Button, IconButton, Toolbar, Tooltip, Typography } from "@mui/material";
+import SettingsIcon from "@mui/icons-material/Settings";
 
 import { isAuth, removeKeyDerivation } from "../utils";
 
 const TopMenu = () => {
   const userIsAuth = isAuth();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     removeKeyDerivation();
@@ -32,9 +34,20 @@ const TopMenu = () => {
         </Typography>
 
         {userIsAuth ? (
-          <Button color="inherit" onClick={handleLogout}>
-            Log out
-          </Button>
+          <>
+            <Tooltip title="Settings">
+              <IconButton
+                color="inherit"
+                onClick={() => navigate("/settings")}
+                sx={{ mr: 0.5 }}
+              >
+                <SettingsIcon />
+              </IconButton>
+            </Tooltip>
+            <Button color="inherit" onClick={handleLogout}>
+              Log out
+            </Button>
+          </>
         ) : (
           pathname !== "/login" && (
             <Button href="/login" color="inherit">

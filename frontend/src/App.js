@@ -1,10 +1,13 @@
+import { useEffect } from "react";
 import { BrowserRouter as Router, Navigate, Route, Routes } from "react-router-dom";
 import { Box, Container, CssBaseline, GlobalStyles, Toolbar } from "@mui/material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { useStoreActions } from "easy-peasy";
 
 import TopMenu from "./components/TopMenu";
 import useAutoLogout from "./hooks/useAutoLogout";
 import routes from "./routes";
+import { isAuth } from "./utils";
 
 const theme = createTheme({
   palette: {
@@ -17,6 +20,11 @@ const theme = createTheme({
 
 const AppContent = () => {
   useAutoLogout();
+
+  const getSettings = useStoreActions((a) => a.dinopassModels.settings.get);
+  useEffect(() => {
+    if (isAuth()) getSettings();
+  }, [getSettings]);
 
   return (
     <Box sx={{ display: "flex" }}>

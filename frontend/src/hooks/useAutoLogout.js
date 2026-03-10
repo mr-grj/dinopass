@@ -1,25 +1,27 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Button } from "@mui/material";
+import { useStoreState } from "easy-peasy";
 import { useSnackbar } from "notistack";
 
-import { isAuth, removeKeyDerivation } from "../utils";
-
-const INACTIVITY_MS = 2 * 60 * 1000;   // 2 minutes
-const WARN_BEFORE_MS = 1 * 60 * 1000;   // warn 1 minute before logout
-const HIDDEN_MS = 1 * 60 * 1000;       // 1 minute while tab is hidden
-const DEBOUNCE_MS = 1_000;              // only reset timers once per second max
+import { formatDuration, isAuth, removeKeyDerivation } from "../utils";
 
 const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "touchstart", "scroll"];
 
 const useAutoLogout = () => {
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
+  const settings = useStoreState((s) => s.dinopassModels.settings.settings);
+  const inactivityMs = settings.inactivity_ms;
+  const warnBeforeMs = settings.warn_before_ms;
+  const hiddenMs = settings.hidden_ms;
+  const debounceMs = settings.debounce_ms;
+
   const inactivityRef = useRef(null);
   const warnRef = useRef(null);
   const hiddenRef = useRef(null);
   const warnKeyRef = useRef(null);
   const lastResetRef = useRef(0);
-  const resetRef = useRef(null); // stable ref so warning action button can call latest reset
+  const resetRef = useRef(null);
 
   const logout = useCallback(() => {
     clearTimeout(inactivityRef.current);
@@ -35,7 +37,7 @@ const useAutoLogout = () => {
     if (!isAuth()) return;
 
     const now = Date.now();
-    if (now - lastResetRef.current < DEBOUNCE_MS) return;
+    if (now - lastResetRef.current < debounceMs) return;
     lastResetRef.current = now;
 
     clearTimeout(inactivityRef.current);
@@ -48,7 +50,7 @@ const useAutoLogout = () => {
 
     warnRef.current = setTimeout(() => {
       warnKeyRef.current = enqueueSnackbar(
-        "You'll be logged out in 1 minute due to inactivity.",
+        `You'll be logged out in ${formatDuration(warnBeforeMs)} due to inactivity.`,
         {
           variant: "warning",
           persist: true,
@@ -64,17 +66,15 @@ const useAutoLogout = () => {
           ),
         }
       );
-    }, INACTIVITY_MS - WARN_BEFORE_MS);
+    }, inactivityMs - warnBeforeMs);
 
-    inactivityRef.current = setTimeout(logout, INACTIVITY_MS);
-  }, [enqueueSnackbar, closeSnackbar, logout]);
+    inactivityRef.current = setTimeout(logout, inactivityMs);
+  }, [inactivityMs, warnBeforeMs, debounceMs, enqueueSnackbar, closeSnackbar, logout]);
 
-  // Keep resetRef pointing at latest reset so the warning action button always works
   useEffect(() => {
     resetRef.current = reset;
   }, [reset]);
 
-  // Activity listeners
   useEffect(() => {
     if (!isAuth()) return;
     reset();
@@ -87,13 +87,12 @@ const useAutoLogout = () => {
     };
   }, [reset, closeSnackbar]);
 
-  // Tab visibility listener
   useEffect(() => {
     if (!isAuth()) return;
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        hiddenRef.current = setTimeout(logout, HIDDEN_MS);
+        hiddenRef.current = setTimeout(logout, hiddenMs);
       } else {
         clearTimeout(hiddenRef.current);
         if (!isAuth()) {
@@ -109,7 +108,7 @@ const useAutoLogout = () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       clearTimeout(hiddenRef.current);
     };
-  }, [logout, reset]);
+  }, [logout, reset, hiddenMs]);
 };
 
 export default useAutoLogout;

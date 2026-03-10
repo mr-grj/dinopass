@@ -70,7 +70,6 @@ const PasswordsPage = () => {
     if (error) enqueueSnackbar(error, { variant: "error" });
   }, [error, enqueueSnackbar]);
 
-  // Clipboard clear
   useEffect(() => {
     const handleFocus = () => {
       const clearAt = clipboardClearAtRef.current;
@@ -436,7 +435,14 @@ const PasswordsPage = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDialog} disabled={submitting}>Cancel</Button>
-          <Button variant="contained" onClick={handleSubmit} disabled={submitting}>
+          <Button
+            variant="contained"
+            onClick={handleSubmit}
+            disabled={submitting || (!!editTarget && (
+              form.password_value === editTarget.password_value &&
+              form.description === (editTarget.description ?? "")
+            ))}
+          >
             {submitting ? <CircularProgress size={20} /> : editTarget ? "Update" : "Create"}
           </Button>
         </DialogActions>

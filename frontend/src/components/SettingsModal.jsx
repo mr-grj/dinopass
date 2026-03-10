@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import {
-  Box,
   Button,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   InputAdornment,
   Stack,
   TextField,
@@ -54,31 +57,28 @@ const FIELDS = [
 const toSec = (ms) => Math.round(ms / 1000);
 const toMs = (sec) => Math.round(Number(sec)) * 1000;
 
-const SettingsPage = () => {
+const toForm = (settings) =>
+  Object.fromEntries(FIELDS.map(({ key }) => [key, toSec(settings[key])]));
+
+const isDirty = (form, settings) =>
+  FIELDS.some(({ key }) => Number(form[key]) !== toSec(settings[key]));
+
+const SettingsModal = ({ open, onClose }) => {
   const { enqueueSnackbar } = useSnackbar();
 
-  const { get, update } = useStoreActions((a) => a.dinopassModels.settings);
-  const { settings, loading } = useStoreState((s) => s.dinopassModels.settings);
+  const { update } = useStoreActions((a) => a.dinopassModels.settings);
+  const settings = useStoreState((s) => s.dinopassModels.settings.settings);
 
-  const [form, setForm] = useState(null);
+  const [form, setForm] = useState(() => toForm(settings));
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (settings) {
-      setForm({
-        inactivity_ms: toSec(settings.inactivity_ms),
-        warn_before_ms: toSec(settings.warn_before_ms),
-        hidden_ms: toSec(settings.hidden_ms),
-        debounce_ms: toSec(settings.debounce_ms),
-        clipboard_clear_ms: toSec(settings.clipboard_clear_ms),
-      });
+    if (open) {
+      setForm(toForm(settings));
+      setFormError("");
     }
-  }, [settings]);
-
-  useEffect(() => {
-    get();
-  }, [get]);
+  }, [open, settings]);
 
   const handleChange = (key) => (e) => {
     setForm((prev) => ({ ...prev, [key]: e.target.value }));
@@ -86,24 +86,15 @@ const SettingsPage = () => {
   };
 
   const handleSave = async () => {
-    const inactivity = Number(form.inactivity_ms);
-    const warnBefore = Number(form.warn_before_ms);
-
-    if (warnBefore >= inactivity) {
+    if (Number(form.warn_before_ms) >= Number(form.inactivity_ms)) {
       setFormError("Warning before logout must be less than the inactivity timeout.");
       return;
     }
-
     setSaving(true);
     try {
-      await update({
-        inactivity_ms: toMs(form.inactivity_ms),
-        warn_before_ms: toMs(form.warn_before_ms),
-        hidden_ms: toMs(form.hidden_ms),
-        debounce_ms: toMs(form.debounce_ms),
-        clipboard_clear_ms: toMs(form.clipboard_clear_ms),
-      });
+      await update(Object.fromEntries(FIELDS.map(({ key }) => [key, toMs(form[key])])));
       enqueueSnackbar("Settings saved.", { variant: "success" });
+      onClose();
     } catch (err) {
       setFormError(err.message);
     } finally {
@@ -111,35 +102,13 @@ const SettingsPage = () => {
     }
   };
 
-  if (loading || !form) {
-    return (
-      <Box display="flex" justifyContent="center" mt={8}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const dirty = isDirty(form, settings);
 
   return (
-    <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={3}>
-        <Box>
-          <Typography variant="h5" fontWeight={700} lineHeight={1.2}>
-            Settings
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mt={0.5}>
-            Configure security and session behaviour.
-          </Typography>
-        </Box>
-      </Stack>
-
-      <Box
-        sx={{
-          bgcolor: "background.paper",
-          borderRadius: 2,
-          p: 3,
-        }}
-      >
-        <Stack spacing={2.5}>
+    <Dialog open={open} onClose={saving ? undefined : onClose} maxWidth="xs" fullWidth>
+      <DialogTitle>Settings</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2} mt={1}>
           {FIELDS.map(({ key, label, tooltip, min, max }) => (
             <TextField
               key={key}
@@ -161,23 +130,19 @@ const SettingsPage = () => {
               helperText="seconds"
             />
           ))}
-
           {formError && (
             <Typography variant="body2" color="error">{formError}</Typography>
           )}
-
-          <Button
-            variant="contained"
-            onClick={handleSave}
-            disabled={saving}
-            sx={{ alignSelf: "flex-start" }}
-          >
-            {saving ? <CircularProgress size={20} /> : "Save"}
-          </Button>
         </Stack>
-      </Box>
-    </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} disabled={saving}>Cancel</Button>
+        <Button variant="contained" onClick={handleSave} disabled={saving || !dirty}>
+          {saving ? <CircularProgress size={20} /> : "Save"}
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
 
-export default SettingsPage;
+export default SettingsModal;

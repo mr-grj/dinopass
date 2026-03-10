@@ -4,7 +4,7 @@ import apiClient from "../api/client";
 import { setKeyDerivation } from "../utils";
 
 const MasterPassword = {
-  initialized: null, // null = unknown, true = set up, false = first time
+  initialized: null,
   error: null,
   loading: false,
   value: "",
@@ -21,7 +21,7 @@ const MasterPassword = {
       const { data } = await apiClient.get("/master_password/status");
       actions.setInitialized(data.initialized);
     } catch {
-      actions.setInitialized(true); // safe fallback: assume set up
+      actions.setInitialized(true);
     }
   }),
 

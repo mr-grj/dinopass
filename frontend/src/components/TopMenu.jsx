@@ -1,13 +1,15 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { AppBar, Box, Button, IconButton, Toolbar, Tooltip, Typography } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
 
 import { isAuth, removeKeyDerivation } from "../utils";
+import SettingsModal from "./SettingsModal";
 
 const TopMenu = () => {
   const userIsAuth = isAuth();
   const { pathname } = useLocation();
-  const navigate = useNavigate();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const handleLogout = () => {
     removeKeyDerivation();
@@ -38,7 +40,7 @@ const TopMenu = () => {
             <Tooltip title="Settings">
               <IconButton
                 color="inherit"
-                onClick={() => navigate("/settings")}
+                onClick={() => setSettingsOpen(true)}
                 sx={{ mr: 0.5 }}
               >
                 <SettingsIcon />
@@ -47,6 +49,7 @@ const TopMenu = () => {
             <Button color="inherit" onClick={handleLogout}>
               Log out
             </Button>
+            <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
           </>
         ) : (
           pathname !== "/login" && (

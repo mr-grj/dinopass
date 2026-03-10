@@ -94,7 +94,6 @@ const LoginPage = () => {
     create({ master_password: value });
   };
 
-  // Still checking status
   if (initialized === null) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">

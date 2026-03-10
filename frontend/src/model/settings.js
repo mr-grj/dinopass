@@ -25,7 +25,6 @@ const Settings = {
       const { data } = await apiClient.get("/settings");
       actions.setSettings(data);
     } catch {
-      // keep defaults on failure
     } finally {
       actions.setLoading(false);
     }

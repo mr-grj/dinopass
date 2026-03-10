@@ -1,9 +1,18 @@
-import { useCallback, useEffect, useRef } from "react";
-import { Button } from "@mui/material";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useStoreState } from "easy-peasy";
 import { useSnackbar } from "notistack";
 
-import { formatDuration, isAuth, removeKeyDerivation } from "../utils";
+import { isAuth, removeKeyDerivation } from "../utils";
+
+const CountdownMessage = ({ seconds }) => {
+  const [remaining, setRemaining] = useState(seconds);
+  useEffect(() => {
+    if (remaining <= 0) return;
+    const t = setTimeout(() => setRemaining((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [remaining]);
+  return `You'll be logged out in ${remaining}s due to inactivity.`;
+};
 
 const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "touchstart", "scroll"];
 
@@ -21,7 +30,6 @@ const useAutoLogout = () => {
   const hiddenRef = useRef(null);
   const warnKeyRef = useRef(null);
   const lastResetRef = useRef(0);
-  const resetRef = useRef(null);
 
   const logout = useCallback(() => {
     clearTimeout(inactivityRef.current);
@@ -50,30 +58,13 @@ const useAutoLogout = () => {
 
     warnRef.current = setTimeout(() => {
       warnKeyRef.current = enqueueSnackbar(
-        `You'll be logged out in ${formatDuration(warnBeforeMs)} due to inactivity.`,
-        {
-          variant: "warning",
-          persist: true,
-          action: (key) => (
-            <Button
-              size="small"
-              color="inherit"
-              sx={{ fontWeight: 700 }}
-              onClick={() => { closeSnackbar(key); resetRef.current?.(); }}
-            >
-              Stay logged in
-            </Button>
-          ),
-        }
+        <CountdownMessage seconds={Math.round(warnBeforeMs / 1000)} />,
+        { variant: "warning", persist: true }
       );
     }, inactivityMs - warnBeforeMs);
 
     inactivityRef.current = setTimeout(logout, inactivityMs);
   }, [inactivityMs, warnBeforeMs, debounceMs, enqueueSnackbar, closeSnackbar, logout]);
-
-  useEffect(() => {
-    resetRef.current = reset;
-  }, [reset]);
 
   useEffect(() => {
     if (!isAuth()) return;

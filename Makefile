@@ -24,6 +24,10 @@ dev:
 lint:
 	cd backend && uv run ruff check .
 
+.PHONY: typecheck
+typecheck:
+	cd backend && uv run ty check .
+
 .PHONY: format
 format:
 	cd backend && uv run ruff format .
@@ -31,5 +35,5 @@ format:
 
 .PHONY: check
 check:
-	cd backend && uv run ruff check . && uv run ruff format --check .
+	cd backend && uv run ruff check . && uv run ruff format --check . && uv run ty check .
 	cd frontend && npm run format:check

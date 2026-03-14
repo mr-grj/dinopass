@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from starlette.middleware.base import RequestResponseEndpoint
 from starlette.middleware.cors import CORSMiddleware
-from starlette.responses import RedirectResponse
+from starlette.responses import RedirectResponse, Response
 
 from api.rate_limit import limiter
 from api.routes import make_api_exceptions, make_api_router
@@ -28,10 +28,10 @@ def get_application() -> FastAPI:
     server = FastAPI(**settings.fastapi_kwargs)
 
     server.state.limiter = limiter
-    server.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    server.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
     server.add_middleware(
-        CORSMiddleware,
+        CORSMiddleware,  # type: ignore[arg-type]
         allow_origins=settings.cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
@@ -39,7 +39,9 @@ def get_application() -> FastAPI:
     )
 
     @server.middleware("http")
-    async def add_security_headers(request: Request, call_next) -> JSONResponse:
+    async def add_security_headers(
+        request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         response = await call_next(request)
         response.headers.update(_SECURITY_HEADERS)
         return response

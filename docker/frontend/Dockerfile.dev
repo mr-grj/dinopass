@@ -6,7 +6,7 @@ COPY frontend/package*.json ./
 
 RUN npm ci
 
-# src/ and public/ are bind-mounted at runtime — not baked in
+# src/ and public/ are bind-mounted at runtime, not baked in
 ENV WATCHPACK_POLLING=true
 
 CMD ["npm", "start"]

@@ -6,8 +6,6 @@ from starlette.datastructures import Headers
 from api.exceptions import Forbidden, NotFound, TypesMismatchError
 from crud.base import BaseCRUD
 from helpers import (
-    KDF_V1_PBKDF2,
-    KDF_V2_ARGON2ID,
     decrypt,
     encrypt,
     generate_key_derivation,
@@ -38,47 +36,6 @@ class MasterPasswordCRUD(BaseCRUD):
         model = await self._get_model()
         if not verify_master_password(master_password, model.hash_key):
             return MasterPasswordCheck(valid=False)
-
-        if model.kdf_version == KDF_V1_PBKDF2:
-            # Transparent migration to Argon2id.
-            # Verify all passwords are decryptable before touching anything.
-            old_key = generate_key_derivation(
-                model.salt, master_password, kdf_version=KDF_V1_PBKDF2
-            )
-            passwords = (
-                (
-                    await self.session.execute(
-                        select(PasswordModel).order_by(PasswordModel.password_name)
-                    )
-                )
-                .scalars()
-                .all()
-            )
-
-            decrypted_map: dict[int, str] = {}
-            for pwd in passwords:
-                plaintext = decrypt(old_key, pwd.password_value)
-                if plaintext is None:
-                    # Corrupted entry — abort migration, return old key
-                    return MasterPasswordCheck(
-                        valid=True, key_derivation=old_key.decode()
-                    )
-                decrypted_map[pwd.id] = plaintext
-
-            new_salt = os.urandom(16)
-            new_key = generate_key_derivation(
-                new_salt, master_password, kdf_version=KDF_V2_ARGON2ID
-            )
-            for pwd in passwords:
-                pwd.password_value = encrypt(new_key, decrypted_map[pwd.id].encode())
-                self.session.add(pwd)
-
-            model.salt = new_salt
-            model.kdf_version = KDF_V2_ARGON2ID
-            self.session.add(model)
-            await self.session.flush()
-            return MasterPasswordCheck(valid=True, key_derivation=new_key.decode())
-
         key_derivation = generate_key_derivation(model.salt, master_password)
         return MasterPasswordCheck(valid=True, key_derivation=key_derivation.decode())
 
@@ -93,7 +50,6 @@ class MasterPasswordCRUD(BaseCRUD):
             MasterPasswordModel(
                 salt=salt,
                 hash_key=hash_master_password(master_password),
-                kdf_version=KDF_V2_ARGON2ID,
             )
         )
         await self.session.flush()
@@ -134,7 +90,6 @@ class MasterPasswordCRUD(BaseCRUD):
 
         model.salt = new_salt
         model.hash_key = hash_master_password(new_master_password)
-        model.kdf_version = KDF_V2_ARGON2ID
         self.session.add(model)
         await self.session.flush()
 

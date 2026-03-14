@@ -39,12 +39,13 @@ Built because resetting passwords every other week gets old fast.
 | Frontend | React 18, MUI v6, easy-peasy |
 | Package manager | uv (backend), npm (frontend) |
 | Code style | ruff (backend), Prettier (frontend) |
+| Type checking | ty (backend) |
 | Infrastructure | Docker, Docker Compose v2 |
 
 ## Security model
 
 - Master password is hashed with **bcrypt**: not stored in plain or reversibly
-- All passwords are encrypted with **Fernet** (symmetric AES) using a key derived via **Argon2id** (64 MiB memory, 3 iterations, 4 lanes — OWASP 2024 interactive profile) from the master password and a unique random salt; existing vaults using the legacy PBKDF2 derivation are transparently migrated on first login
+- All passwords are encrypted with **Fernet** (symmetric AES) using a key derived via **Argon2id** (64 MiB memory, 3 iterations, 4 lanes - OWASP 2024 interactive profile) from the master password and a unique random salt
 - The derived key lives only in your browser session (`sessionStorage`) and is never persisted server-side: closing the tab clears it automatically
 - Updating the master password re-encrypts every stored password transparently
 
@@ -107,17 +108,18 @@ docker compose down -v    # stop and wipe the database volume
 
 All `make` commands run **locally** (not inside Docker).
 
-| Command | What it does |
-|---|---|
-| `make all` | Full clean + rebuild (`clean` then `buildup`) |
-| `make buildup` | Build images and start all containers in the background |
+| Command | What it does                                                            |
+|---|-------------------------------------------------------------------------|
+| `make all` | Full clean + rebuild (`clean` then `buildup`)                           |
+| `make buildup` | Build images and start all containers in the background                 |
 | `make dev` | Start with hot-reload (`docker-compose.yml` + `docker-compose.dev.yml`) |
-| `make clean` | Stop containers, remove volumes/images, delete `__pycache__` |
-| `make lint` | `ruff check`: report linting issues (backend) |
-| `make format` | Auto-format backend (ruff) and frontend (Prettier) in place |
-| `make check` | Lint + format check, no writes — suitable for CI |
+| `make clean` | Stop containers, remove volumes/images, delete `__pycache__`            |
+| `make lint` | `ruff check`: report linting issues (backend)                           |
+| `make typecheck` | `ty check`: run static type analysis (backend)                          |
+| `make format` | Auto-format backend (ruff) and frontend (Prettier) in place             |
+| `make check` | Lint + type check + format check, no writes - suitable for CI           |
 
-`make lint/format/check` require [uv](https://docs.astral.sh/uv/) with dev deps (`uv sync --group dev` inside `backend/`) and Node.js with npm deps installed (`npm install` inside `frontend/`).
+`make lint/typecheck/format/check` require [uv](https://docs.astral.sh/uv/) with dev deps (`uv sync --group dev` inside `backend/`) and Node.js with npm deps installed (`npm install` inside `frontend/`).
 
 ### Database migrations
 

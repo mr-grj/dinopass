@@ -322,7 +322,7 @@ const PasswordsPage = () => {
           color={params.value ? "text.primary" : "text.disabled"}
           sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
         >
-          {params.value || "—"}
+          {params.value || "-"}
         </Typography>
       ),
     },

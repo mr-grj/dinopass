@@ -26,6 +26,7 @@ Built because resetting passwords every other week gets old fast.
 - REST API backend (FastAPI + PostgreSQL)
 - Web UI (React + MUI): create, view, edit, delete passwords
 - Encrypted backup export: generates an AES-256 password-protected ZIP you can open with your master password
+- Backup import: restore passwords from a dinopass backup ZIP, with skip or overwrite conflict strategy
 - Per-password backup status tracked in the database, visible in the UI
 - One-command setup with Docker
 

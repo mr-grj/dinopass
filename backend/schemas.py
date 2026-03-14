@@ -1,3 +1,5 @@
+from enum import StrEnum
+
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -88,3 +90,15 @@ class SettingsUpdate(BaseModel):
     hidden_ms: int = Field(ge=10_000, le=3_600_000)
     debounce_ms: int = Field(ge=100, le=10_000)
     clipboard_clear_ms: int = Field(ge=5_000, le=600_000)
+
+
+class OnConflict(StrEnum):
+    skip = "skip"
+    overwrite = "overwrite"
+
+
+class PasswordImportResult(BaseModel):
+    imported: int
+    skipped: int
+    overwritten: int
+    total: int

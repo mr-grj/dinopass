@@ -1,3 +1,7 @@
+import io
+import json
+
+import pyzipper
 from sqlalchemy import select
 from starlette.datastructures import Headers
 
@@ -11,9 +15,11 @@ from helpers import (
 )
 from models import MasterPasswordModel, PasswordModel
 from schemas import (
+    OnConflict,
     Password,
     PasswordCreate,
     PasswordDelete,
+    PasswordImportResult,
     PasswordResponse,
     PasswordUpdate,
 )
@@ -184,3 +190,82 @@ class PasswordCRUD(BaseCRUD):
         await self.session.flush()
 
         return create_encrypted_zip(entries, master_password)
+
+    async def import_passwords(
+        self,
+        file_bytes: bytes,
+        master_password: str,
+        headers: Headers,
+        on_conflict: OnConflict,
+    ) -> PasswordImportResult:
+        key_derivation = self._get_key_derivation(headers)
+
+        mp_result = await self.session.execute(select(MasterPasswordModel).limit(1))
+        mp_model = mp_result.scalar()
+        if not mp_model:
+            raise NotFound("No master password found.")
+        if not verify_master_password(master_password, mp_model.hash_key):
+            raise Forbidden("Incorrect master password.")
+
+        try:
+            with pyzipper.AESZipFile(io.BytesIO(file_bytes), "r") as zf:
+                zf.setpassword(master_password.encode())
+                raw = zf.read("dinopass_backup.json")
+        except Exception as e:
+            raise TypesMismatchError(
+                "Could not read backup file. Ensure it is a valid dinopass backup."
+            ) from e
+
+        try:
+            entries = json.loads(raw)["passwords"]
+            if not isinstance(entries, list):
+                raise ValueError
+        except (json.JSONDecodeError, KeyError, ValueError) as e:
+            raise TypesMismatchError("Invalid backup file format.") from e
+
+        imported = skipped = overwritten = 0
+
+        for entry in entries:
+            try:
+                name = entry["name"]
+                value = entry["value"]
+            except (KeyError, TypeError):
+                continue
+
+            if not name or not value:
+                continue
+
+            description = entry.get("description")
+
+            existing = (
+                await self.session.execute(
+                    select(PasswordModel).where(PasswordModel.password_name == name)
+                )
+            ).scalar()
+
+            if existing:
+                if on_conflict == OnConflict.skip:
+                    skipped += 1
+                else:
+                    existing.password_value = encrypt(key_derivation, value.encode())
+                    existing.description = description
+                    existing.backed_up = False
+                    self.session.add(existing)
+                    overwritten += 1
+            else:
+                self.session.add(
+                    PasswordModel(
+                        password_name=name,
+                        password_value=encrypt(key_derivation, value.encode()),
+                        description=description,
+                    )
+                )
+                imported += 1
+
+        await self.session.flush()
+        return PasswordImportResult(
+            imported=imported,
+            skipped=skipped,
+            overwritten=overwritten,
+            total=imported + skipped + overwritten,
+        )

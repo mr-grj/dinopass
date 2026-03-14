@@ -4,7 +4,9 @@ from datetime import UTC, datetime
 from fastapi import (
     APIRouter,
     Depends,
+    Form,
     Request,
+    UploadFile,
     status,
 )
 from starlette.responses import StreamingResponse
@@ -20,9 +22,11 @@ from api.responses import inject_responses
 from crud.password import PasswordCRUD
 from schemas import (
     MasterPassword,
+    OnConflict,
     Password,
     PasswordCreate,
     PasswordDelete,
+    PasswordImportResult,
     PasswordResponse,
     PasswordUpdate,
     PasswordUpdatePayload,
@@ -139,6 +143,39 @@ async def delete_password(
     crud: PasswordCRUD = Depends(get_password_crud),
 ) -> PasswordDelete:
     return await crud.delete_password(password_name, request.headers)
+
+
+@router.post(
+    "/import",
+    name="passwords:import",
+    response_model=PasswordImportResult,
+    responses=inject_responses(
+        {
+            status.HTTP_403_FORBIDDEN: SimpleDetailSchema,
+            status.HTTP_404_NOT_FOUND: SimpleDetailSchema,
+            status.HTTP_400_BAD_REQUEST: SimpleDetailSchema,
+            status.HTTP_429_TOO_MANY_REQUESTS: SimpleDetailSchema,
+        }
+    ),
+)
+@limiter.limit("5/hour")
+@handle_forbidden
+@handle_not_found
+@handle_mismatch
+async def import_passwords(
+    request: Request,
+    file: UploadFile,
+    master_password: str = Form(...),
+    on_conflict: OnConflict = Form(OnConflict.skip),
+    crud: PasswordCRUD = Depends(get_password_crud),
+) -> PasswordImportResult:
+    file_bytes = await file.read()
+    return await crud.import_passwords(
+        file_bytes=file_bytes,
+        master_password=master_password,
+        headers=request.headers,
+        on_conflict=on_conflict,
+    )
 
 
 @router.post(

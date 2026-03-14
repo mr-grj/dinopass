@@ -9,8 +9,13 @@ import {
   DialogContentText,
   DialogTitle,
   Divider,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
   IconButton,
   InputAdornment,
+  Radio,
+  RadioGroup,
   Stack,
   TextField,
   Tooltip,
@@ -24,6 +29,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
 import EditIcon from "@mui/icons-material/Edit";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useStoreActions, useStoreState } from "easy-peasy";
@@ -36,7 +42,7 @@ const EMPTY_FORM = { password_name: "", password_value: "", description: "" };
 const PasswordsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
 
-  const { get, create, update, remove, backup } = useStoreActions(
+  const { get, create, update, remove, backup, importPasswords } = useStoreActions(
     (actions) => actions.dinopassModels.passwords
   );
   const { error, loading, passwords } = useStoreState(
@@ -63,6 +69,15 @@ const PasswordsPage = () => {
   const [backupPasswordError, setBackupPasswordError] = useState("");
   const [showBackupPassword, setShowBackupPassword] = useState(false);
   const [backupLoading, setBackupLoading] = useState(false);
+
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importPassword, setImportPassword] = useState("");
+  const [importPasswordError, setImportPasswordError] = useState("");
+  const [showImportPassword, setShowImportPassword] = useState(false);
+  const [importOnConflict, setImportOnConflict] = useState("skip");
+  const [importLoading, setImportLoading] = useState(false);
+  const [importResult, setImportResult] = useState(null);
 
   useEffect(() => { get(); }, [get]);
 
@@ -201,6 +216,39 @@ const PasswordsPage = () => {
     }
   };
 
+  const openImportDialog = () => {
+    setImportFile(null);
+    setImportPassword("");
+    setImportPasswordError("");
+    setShowImportPassword(false);
+    setImportOnConflict("skip");
+    setImportResult(null);
+    setImportDialogOpen(true);
+  };
+
+  const closeImportDialog = () => {
+    if (importLoading) return;
+    setImportDialogOpen(false);
+  };
+
+  const handleImport = async () => {
+    if (!importFile) { setImportPasswordError("Please select a backup file."); return; }
+    if (!importPassword.trim()) { setImportPasswordError("Master password is required."); return; }
+    setImportLoading(true);
+    try {
+      const result = await importPasswords({
+        file: importFile,
+        masterPassword: importPassword,
+        onConflict: importOnConflict,
+      });
+      setImportResult(result);
+    } catch (err) {
+      setImportPasswordError(err.message);
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   const subtitle = (() => {
     if (loading) return "Loading…";
     if (passwords.length === 0) return "Nothing here yet. Your dino is hungry for passwords.";
@@ -322,6 +370,13 @@ const PasswordsPage = () => {
             disabled={passwords.length === 0}
           >
             Backup
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<UploadFileIcon />}
+            onClick={openImportDialog}
+          >
+            Import
           </Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={openAddDialog}>
             Add Password
@@ -485,6 +540,107 @@ const PasswordsPage = () => {
           <Button variant="contained" onClick={handleBackup} disabled={backupLoading}>
             {backupLoading ? <CircularProgress size={20} /> : "Create Backup"}
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Import Dialog */}
+      <Dialog open={importDialogOpen} onClose={closeImportDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>{importResult ? "Import Complete" : "Import Backup"}</DialogTitle>
+        <DialogContent>
+          {importResult ? (
+            <Stack spacing={1} mt={1}>
+              {importResult.total === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  No passwords found in the backup file.
+                </Typography>
+              ) : (
+                <>
+                  {importResult.imported > 0 && (
+                    <Typography variant="body2">
+                      <strong>{importResult.imported}</strong> password{importResult.imported !== 1 ? "s" : ""} added.
+                    </Typography>
+                  )}
+                  {importResult.overwritten > 0 && (
+                    <Typography variant="body2">
+                      <strong>{importResult.overwritten}</strong> password{importResult.overwritten !== 1 ? "s" : ""} overwritten.
+                    </Typography>
+                  )}
+                  {importResult.skipped > 0 && (
+                    <Typography variant="body2" color="text.secondary">
+                      <strong>{importResult.skipped}</strong> password{importResult.skipped !== 1 ? "s" : ""} skipped (already exist).
+                    </Typography>
+                  )}
+                </>
+              )}
+            </Stack>
+          ) : (
+            <Stack spacing={2} mt={1}>
+              <Typography variant="body2" color="text.secondary">
+                Upload a dinopass backup ZIP and enter your master password to restore passwords.
+              </Typography>
+              <Button
+                component="label"
+                variant="outlined"
+                startIcon={<UploadFileIcon />}
+                fullWidth
+                sx={{ justifyContent: "flex-start", textTransform: "none" }}
+              >
+                {importFile ? importFile.name : "Choose backup file (.zip)"}
+                <input
+                  type="file"
+                  hidden
+                  accept=".zip"
+                  onChange={(e) => {
+                    setImportFile(e.target.files[0] ?? null);
+                    setImportPasswordError("");
+                  }}
+                />
+              </Button>
+              <TextField
+                label="Master Password"
+                type={showImportPassword ? "text" : "password"}
+                value={importPassword}
+                onChange={(e) => { setImportPassword(e.target.value); setImportPasswordError(""); }}
+                error={!!importPasswordError}
+                helperText={importPasswordError}
+                required
+                fullWidth
+                autoFocus
+                onKeyDown={(e) => { if (e.key === "Enter") handleImport(); }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowImportPassword((v) => !v)} edge="end">
+                        {showImportPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <FormControl>
+                <FormLabel sx={{ fontSize: "0.875rem" }}>If a password already exists</FormLabel>
+                <RadioGroup
+                  value={importOnConflict}
+                  onChange={(e) => setImportOnConflict(e.target.value)}
+                >
+                  <FormControlLabel value="skip" control={<Radio size="small" />} label="Keep existing (skip)" />
+                  <FormControlLabel value="overwrite" control={<Radio size="small" />} label="Overwrite with imported value" />
+                </RadioGroup>
+              </FormControl>
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          {importResult ? (
+            <Button variant="contained" onClick={closeImportDialog}>Done</Button>
+          ) : (
+            <>
+              <Button onClick={closeImportDialog} disabled={importLoading}>Cancel</Button>
+              <Button variant="contained" onClick={handleImport} disabled={importLoading}>
+                {importLoading ? <CircularProgress size={20} /> : "Import"}
+              </Button>
+            </>
+          )}
         </DialogActions>
       </Dialog>
 

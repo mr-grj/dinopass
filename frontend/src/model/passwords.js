@@ -51,6 +51,20 @@ const Passwords = {
     }
   }),
 
+  importPasswords: thunk(async (actions, { file, masterPassword, onConflict }) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("master_password", masterPassword);
+      formData.append("on_conflict", onConflict);
+      const { data } = await apiClient.post("/passwords/import", formData);
+      await actions.get();
+      return data;
+    } catch (err) {
+      throw new Error(err.response?.data?.detail ?? "Import failed.");
+    }
+  }),
+
   backup: thunk(async (actions, masterPassword) => {
     try {
       const response = await apiClient.post(

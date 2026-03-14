@@ -2,7 +2,7 @@ from urllib.parse import quote
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from config.db_settings import get_db_settings
+from settings import get_db_settings
 
 _settings = get_db_settings()
 

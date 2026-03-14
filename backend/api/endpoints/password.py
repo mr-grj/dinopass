@@ -1,23 +1,32 @@
 import io
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    Request,
+    status,
+)
 from starlette.responses import StreamingResponse
 
+from api.endpoints.deps import get_password_crud
+from api.exceptions import (
+    handle_forbidden,
+    handle_mismatch,
+    handle_not_found,
+)
 from api.rate_limit import limiter
-from api.v1.endpoints.deps import get_password_crud
-from api.v1.exceptions import handle_forbidden, handle_mismatch, handle_not_found
-from api.v1.responses import inject_responses
+from api.responses import inject_responses
 from crud.password import PasswordCRUD
-from schemas.exceptions_responses import SimpleDetailSchema
-from schemas.master_password import MasterPassword
-from schemas.password import (
+from schemas import (
+    MasterPassword,
     Password,
     PasswordCreate,
     PasswordDelete,
     PasswordResponse,
     PasswordUpdate,
     PasswordUpdatePayload,
+    SimpleDetailSchema,
 )
 
 router = APIRouter(tags=["passwords"])

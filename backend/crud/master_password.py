@@ -3,7 +3,7 @@ import os
 from sqlalchemy import select
 from starlette.datastructures import Headers
 
-from api.v1.exceptions import Forbidden, NotFound, TypesMismatchError
+from api.exceptions import Forbidden, NotFound, TypesMismatchError
 from crud.base import BaseCRUD
 from helpers import (
     decrypt,
@@ -12,9 +12,8 @@ from helpers import (
     hash_master_password,
     verify_master_password,
 )
-from models.master_password import MasterPasswordModel
-from models.password import PasswordModel
-from schemas.master_password import (
+from models import MasterPasswordModel, PasswordModel
+from schemas import (
     MasterPasswordCheck,
     MasterPasswordCreate,
     MasterPasswordUpdate,

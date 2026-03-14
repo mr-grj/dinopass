@@ -1,18 +1,27 @@
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    Request,
+    status,
+)
 
+from api.endpoints.deps import get_master_password_crud
+from api.exceptions import (
+    handle_forbidden,
+    handle_mismatch,
+    handle_not_found,
+)
 from api.rate_limit import limiter
-from api.v1.endpoints.deps import get_master_password_crud
-from api.v1.exceptions import handle_forbidden, handle_mismatch, handle_not_found
-from api.v1.responses import inject_responses
+from api.responses import inject_responses
 from crud.master_password import MasterPasswordCRUD
-from schemas.exceptions_responses import SimpleDetailSchema
-from schemas.master_password import (
+from schemas import (
     MasterPassword,
     MasterPasswordCheck,
     MasterPasswordCreate,
     MasterPasswordStatus,
     MasterPasswordUpdate,
     MasterPasswordUpdatePayload,
+    SimpleDetailSchema,
 )
 
 router = APIRouter(tags=["master-password"])

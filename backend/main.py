@@ -7,7 +7,7 @@ from starlette.responses import RedirectResponse
 
 from api.rate_limit import limiter
 from api.routes import make_api_exceptions, make_api_router
-from config.api_settings import get_api_settings
+from settings import get_api_settings
 
 _SECURITY_HEADERS = {
     "X-Content-Type-Options": "nosniff",

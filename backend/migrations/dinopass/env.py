@@ -3,18 +3,15 @@ from logging.config import fileConfig
 
 from alembic import context
 
-import models.master_password  # noqa: F401 - ensure models are registered
-import models.password  # noqa: F401 - ensure models are registered
-import models.settings  # noqa: F401 - ensure models are registered
+import models  # noqa: F401 - ensure models are registered
 from crud.session import engine
-from models.base import BaseModel
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = BaseModel.metadata
+target_metadata = models.BaseModel.metadata
 
 
 def run_migrations_offline() -> None:

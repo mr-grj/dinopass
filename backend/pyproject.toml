@@ -40,6 +40,9 @@ exclude = [".git", "__pycache__", ".mypy_cache", ".pytest_cache"]
 select = ["E", "W", "F", "I", "B", "UP"]
 ignore = ["B008"]  # FastAPI Depends() in function signatures is idiomatic
 
+[tool.ruff.lint.isort]
+split-on-trailing-comma = true
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"

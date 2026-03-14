@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 
-from api.v1.endpoints.deps import get_settings_crud
+from api.endpoints.deps import get_settings_crud
 from crud.settings import SettingsCRUD
-from schemas.settings import SettingsResponse, SettingsUpdate
+from schemas import SettingsResponse, SettingsUpdate
 
 router = APIRouter(tags=["settings"])
 

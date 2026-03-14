@@ -1,8 +1,8 @@
 from sqlalchemy import select
 
 from crud.base import BaseCRUD
-from models.settings import SettingsModel
-from schemas.settings import SettingsResponse, SettingsUpdate
+from models import SettingsModel
+from schemas import SettingsResponse, SettingsUpdate
 
 _DEFAULTS = dict(
     inactivity_ms=120_000,

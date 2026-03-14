@@ -3,7 +3,11 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any
 
-from fastapi import HTTPException, Request, status
+from fastapi import (
+    HTTPException,
+    Request,
+    status,
+)
 from fastapi.responses import JSONResponse
 
 logger = logging.getLogger(__name__)

@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Any
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class APISettings(BaseSettings):
@@ -31,6 +31,22 @@ class APISettings(BaseSettings):
     model_config = {"validate_assignment": True}
 
 
+class DBSettings(BaseSettings):
+    postgres_host: str = "127.0.0.1"
+    postgres_port: int = 5432
+    postgres_db: str = "dinopass"
+    postgres_user: str = "dinopass"
+    postgres_password: str = "dinopass"
+    pool_recycle: int = 900
+
+    model_config = SettingsConfigDict(env_file=".db.env", extra="ignore")
+
+
 @lru_cache
 def get_api_settings() -> APISettings:
     return APISettings()
+
+
+@lru_cache
+def get_db_settings() -> DBSettings:
+    return DBSettings()

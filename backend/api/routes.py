@@ -1,8 +1,12 @@
 from fastapi import APIRouter, FastAPI
 
-from api.v1.endpoints import master_password, password, settings
-from api.v1.exceptions import internal_error_handler
-from api.v1.responses import inject_responses
+from api.endpoints import (
+    master_password,
+    password,
+    settings,
+)
+from api.exceptions import internal_error_handler
+from api.responses import inject_responses
 
 
 def make_api_router() -> APIRouter:

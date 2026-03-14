@@ -1,6 +1,6 @@
 from fastapi import status
 
-from schemas.exceptions_responses import SimpleDetailSchema
+from schemas import SimpleDetailSchema
 
 
 def inject_responses(response_status_codes: dict | None = None) -> dict:

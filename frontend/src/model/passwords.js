@@ -7,9 +7,15 @@ const Passwords = {
   loading: false,
   passwords: [],
 
-  setError: action((state, error) => { state.error = error; }),
-  setLoading: action((state, loading) => { state.loading = loading; }),
-  setPasswords: action((state, passwords) => { state.passwords = passwords; }),
+  setError: action((state, error) => {
+    state.error = error;
+  }),
+  setLoading: action((state, loading) => {
+    state.loading = loading;
+  }),
+  setPasswords: action((state, passwords) => {
+    state.passwords = passwords;
+  }),
 
   get: thunk(async (actions) => {
     actions.setLoading(true);
@@ -70,7 +76,7 @@ const Passwords = {
       const response = await apiClient.post(
         "/passwords/backup",
         { master_password: masterPassword },
-        { responseType: "blob" },
+        { responseType: "blob" }
       );
       const url = URL.createObjectURL(response.data);
       const link = document.createElement("a");

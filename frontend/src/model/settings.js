@@ -15,9 +15,15 @@ const Settings = {
   error: null,
   settings: DEFAULTS,
 
-  setSettings: action((state, settings) => { state.settings = settings; }),
-  setLoading: action((state, loading) => { state.loading = loading; }),
-  setError: action((state, error) => { state.error = error; }),
+  setSettings: action((state, settings) => {
+    state.settings = settings;
+  }),
+  setLoading: action((state, loading) => {
+    state.loading = loading;
+  }),
+  setError: action((state, error) => {
+    state.error = error;
+  }),
 
   get: thunk(async (actions) => {
     actions.setLoading(true);

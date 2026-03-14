@@ -45,9 +45,7 @@ const PasswordsPage = () => {
   const { get, create, update, remove, backup, importPasswords } = useStoreActions(
     (actions) => actions.dinopassModels.passwords
   );
-  const { error, loading, passwords } = useStoreState(
-    (state) => state.dinopassModels.passwords
-  );
+  const { error, loading, passwords } = useStoreState((state) => state.dinopassModels.passwords);
   const clipboardClearMs = useStoreState(
     (s) => s.dinopassModels.settings.settings.clipboard_clear_ms
   );
@@ -79,7 +77,9 @@ const PasswordsPage = () => {
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState(null);
 
-  useEffect(() => { get(); }, [get]);
+  useEffect(() => {
+    get();
+  }, [get]);
 
   useEffect(() => {
     if (error) enqueueSnackbar(error, { variant: "error" });
@@ -105,19 +105,24 @@ const PasswordsPage = () => {
     });
   }, []);
 
-  const copyToClipboard = useCallback((value) => {
-    navigator.clipboard.writeText(value).then(() => {
-      enqueueSnackbar(`Copied! Clipboard clears in ${formatDuration(clipboardClearMs)}.`, { variant: "success" });
-      const clearAt = Date.now() + clipboardClearMs;
-      clipboardClearAtRef.current = clearAt;
-      setTimeout(() => {
-        if (clipboardClearAtRef.current === clearAt && document.hasFocus()) {
-          clipboardClearAtRef.current = null;
-          navigator.clipboard.writeText("").catch(() => {});
-        }
-      }, clipboardClearMs);
-    });
-  }, [enqueueSnackbar, clipboardClearMs]);
+  const copyToClipboard = useCallback(
+    (value) => {
+      navigator.clipboard.writeText(value).then(() => {
+        enqueueSnackbar(`Copied! Clipboard clears in ${formatDuration(clipboardClearMs)}.`, {
+          variant: "success",
+        });
+        const clearAt = Date.now() + clipboardClearMs;
+        clipboardClearAtRef.current = clearAt;
+        setTimeout(() => {
+          if (clipboardClearAtRef.current === clearAt && document.hasFocus()) {
+            clipboardClearAtRef.current = null;
+            navigator.clipboard.writeText("").catch(() => {});
+          }
+        }, clipboardClearMs);
+      });
+    },
+    [enqueueSnackbar, clipboardClearMs]
+  );
 
   const openAddDialog = () => {
     setEditTarget(null);
@@ -139,7 +144,10 @@ const PasswordsPage = () => {
     setDialogOpen(true);
   };
 
-  const closeDialog = () => { setDialogOpen(false); setEditTarget(null); };
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setEditTarget(null);
+  };
 
   const handleFormChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -147,8 +155,14 @@ const PasswordsPage = () => {
   };
 
   const handleSubmit = async () => {
-    if (!form.password_name.trim()) { setFormError("Name is required."); return; }
-    if (!form.password_value.trim()) { setFormError("Password value is required."); return; }
+    if (!form.password_name.trim()) {
+      setFormError("Name is required.");
+      return;
+    }
+    if (!form.password_value.trim()) {
+      setFormError("Password value is required.");
+      return;
+    }
     setSubmitting(true);
     try {
       const entry = {
@@ -203,7 +217,10 @@ const PasswordsPage = () => {
   };
 
   const handleBackup = async () => {
-    if (!backupPassword.trim()) { setBackupPasswordError("Master password is required."); return; }
+    if (!backupPassword.trim()) {
+      setBackupPasswordError("Master password is required.");
+      return;
+    }
     setBackupLoading(true);
     try {
       await backup(backupPassword);
@@ -232,8 +249,14 @@ const PasswordsPage = () => {
   };
 
   const handleImport = async () => {
-    if (!importFile) { setImportPasswordError("Please select a backup file."); return; }
-    if (!importPassword.trim()) { setImportPasswordError("Master password is required."); return; }
+    if (!importFile) {
+      setImportPasswordError("Please select a backup file.");
+      return;
+    }
+    if (!importPassword.trim()) {
+      setImportPasswordError("Master password is required.");
+      return;
+    }
     setImportLoading(true);
     try {
       const result = await importPasswords({
@@ -277,7 +300,11 @@ const PasswordsPage = () => {
         return (
           <Typography
             variant="body2"
-            sx={{ fontFamily: "monospace", letterSpacing: visible ? 0 : 2, color: "text.secondary" }}
+            sx={{
+              fontFamily: "monospace",
+              letterSpacing: visible ? 0 : 2,
+              color: "text.secondary",
+            }}
           >
             {visible ? params.value : "••••••••••••"}
           </Typography>
@@ -312,7 +339,11 @@ const PasswordsPage = () => {
           <Stack direction="row" alignItems="center" spacing={0} height="100%">
             <Tooltip title={visible ? "Hide password" : "Reveal password"}>
               <IconButton size="small" onClick={() => toggleVisibility(params.row.password_name)}>
-                {visible ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                {visible ? (
+                  <VisibilityOffIcon fontSize="small" />
+                ) : (
+                  <VisibilityIcon fontSize="small" />
+                )}
               </IconButton>
             </Tooltip>
             <Tooltip title="Copy password">
@@ -329,7 +360,11 @@ const PasswordsPage = () => {
               </IconButton>
             </Tooltip>
             <Tooltip title="Delete">
-              <IconButton size="small" color="error" onClick={() => setDeleteTarget(params.row.password_name)}>
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => setDeleteTarget(params.row.password_name)}
+              >
                 <DeleteIcon fontSize="small" />
               </IconButton>
             </Tooltip>
@@ -337,9 +372,11 @@ const PasswordsPage = () => {
             <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 1 }} />
             <Tooltip title={params.row.backed_up ? "Password backed up" : "Password not backed up"}>
               <Box display="flex" alignItems="center">
-                {params.row.backed_up
-                  ? <CheckCircleOutlineIcon fontSize="small" sx={{ color: "success.main" }} />
-                  : <HighlightOffIcon fontSize="small" sx={{ color: "warning.main" }} />}
+                {params.row.backed_up ? (
+                  <CheckCircleOutlineIcon fontSize="small" sx={{ color: "success.main" }} />
+                ) : (
+                  <HighlightOffIcon fontSize="small" sx={{ color: "warning.main" }} />
+                )}
               </Box>
             </Tooltip>
           </Stack>
@@ -371,11 +408,7 @@ const PasswordsPage = () => {
           >
             Backup
           </Button>
-          <Button
-            variant="outlined"
-            startIcon={<UploadFileIcon />}
-            onClick={openImportDialog}
-          >
+          <Button variant="outlined" startIcon={<UploadFileIcon />} onClick={openImportDialog}>
             Import
           </Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={openAddDialog}>
@@ -412,9 +445,15 @@ const PasswordsPage = () => {
             The vault is empty
           </Typography>
           <Typography variant="body2" color="text.secondary" textAlign="center" maxWidth={320}>
-            Your prehistoric password guardian is standing by. Add your first password to get started.
+            Your prehistoric password guardian is standing by. Add your first password to get
+            started.
           </Typography>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={openAddDialog} sx={{ mt: 1 }}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={openAddDialog}
+            sx={{ mt: 1 }}
+          >
             Add First Password
           </Button>
         </Box>
@@ -427,8 +466,7 @@ const PasswordsPage = () => {
           columns={columns}
           getRowId={(row) => row.password_name}
           disableRowSelectionOnClick
-          autoHeight
-          rowHeight={52}
+          getRowHeight={() => 52}
           pageSizeOptions={[10, 25, 50]}
           initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
           sx={{
@@ -464,14 +502,18 @@ const PasswordsPage = () => {
               onChange={handleFormChange("password_value")}
               required
               fullWidth
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowFormValue((v) => !v)} edge="end">
-                      {showFormValue ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
+              autoComplete="new-password"
+              slotProps={{
+                htmlInput: { spellCheck: false, autoCorrect: "off", autoCapitalize: "none" },
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowFormValue((v) => !v)} edge="end">
+                        {showFormValue ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
               }}
             />
             <TextField
@@ -484,19 +526,25 @@ const PasswordsPage = () => {
               placeholder="e.g. Personal account, work email…"
             />
             {formError && (
-              <Typography variant="body2" color="error">{formError}</Typography>
+              <Typography variant="body2" color="error">
+                {formError}
+              </Typography>
             )}
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeDialog} disabled={submitting}>Cancel</Button>
+          <Button onClick={closeDialog} disabled={submitting}>
+            Cancel
+          </Button>
           <Button
             variant="contained"
             onClick={handleSubmit}
-            disabled={submitting || (!!editTarget && (
-              form.password_value === editTarget.password_value &&
-              form.description === (editTarget.description ?? "")
-            ))}
+            disabled={
+              submitting ||
+              (!!editTarget &&
+                form.password_value === editTarget.password_value &&
+                form.description === (editTarget.description ?? ""))
+            }
           >
             {submitting ? <CircularProgress size={20} /> : editTarget ? "Update" : "Create"}
           </Button>
@@ -509,34 +557,45 @@ const PasswordsPage = () => {
         <DialogContent>
           <Stack spacing={2} mt={1}>
             <Typography variant="body2" color="text.secondary">
-              Your passwords will be exported as an AES-256 encrypted ZIP file.
-              Open it with your master password.
+              Your passwords will be exported as an AES-256 encrypted ZIP file. Open it with your
+              master password.
             </Typography>
             <TextField
               label="Master Password"
               type={showBackupPassword ? "text" : "password"}
               value={backupPassword}
-              onChange={(e) => { setBackupPassword(e.target.value); setBackupPasswordError(""); }}
+              onChange={(e) => {
+                setBackupPassword(e.target.value);
+                setBackupPasswordError("");
+              }}
               error={!!backupPasswordError}
               helperText={backupPasswordError}
               required
               fullWidth
               autoFocus
-              onKeyDown={(e) => { if (e.key === "Enter") handleBackup(); }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowBackupPassword((v) => !v)} edge="end">
-                      {showBackupPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
+              autoComplete="current-password"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleBackup();
+              }}
+              slotProps={{
+                htmlInput: { spellCheck: false, autoCorrect: "off", autoCapitalize: "none" },
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowBackupPassword((v) => !v)} edge="end">
+                        {showBackupPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
               }}
             />
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeBackupDialog} disabled={backupLoading}>Cancel</Button>
+          <Button onClick={closeBackupDialog} disabled={backupLoading}>
+            Cancel
+          </Button>
           <Button variant="contained" onClick={handleBackup} disabled={backupLoading}>
             {backupLoading ? <CircularProgress size={20} /> : "Create Backup"}
           </Button>
@@ -557,17 +616,20 @@ const PasswordsPage = () => {
                 <>
                   {importResult.imported > 0 && (
                     <Typography variant="body2">
-                      <strong>{importResult.imported}</strong> password{importResult.imported !== 1 ? "s" : ""} added.
+                      <strong>{importResult.imported}</strong> password
+                      {importResult.imported !== 1 ? "s" : ""} added.
                     </Typography>
                   )}
                   {importResult.overwritten > 0 && (
                     <Typography variant="body2">
-                      <strong>{importResult.overwritten}</strong> password{importResult.overwritten !== 1 ? "s" : ""} overwritten.
+                      <strong>{importResult.overwritten}</strong> password
+                      {importResult.overwritten !== 1 ? "s" : ""} overwritten.
                     </Typography>
                   )}
                   {importResult.skipped > 0 && (
                     <Typography variant="body2" color="text.secondary">
-                      <strong>{importResult.skipped}</strong> password{importResult.skipped !== 1 ? "s" : ""} skipped (already exist).
+                      <strong>{importResult.skipped}</strong> password
+                      {importResult.skipped !== 1 ? "s" : ""} skipped (already exist).
                     </Typography>
                   )}
                 </>
@@ -600,21 +662,30 @@ const PasswordsPage = () => {
                 label="Master Password"
                 type={showImportPassword ? "text" : "password"}
                 value={importPassword}
-                onChange={(e) => { setImportPassword(e.target.value); setImportPasswordError(""); }}
+                onChange={(e) => {
+                  setImportPassword(e.target.value);
+                  setImportPasswordError("");
+                }}
                 error={!!importPasswordError}
                 helperText={importPasswordError}
                 required
                 fullWidth
                 autoFocus
-                onKeyDown={(e) => { if (e.key === "Enter") handleImport(); }}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={() => setShowImportPassword((v) => !v)} edge="end">
-                        {showImportPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
+                autoComplete="current-password"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleImport();
+                }}
+                slotProps={{
+                  htmlInput: { spellCheck: false, autoCorrect: "off", autoCapitalize: "none" },
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={() => setShowImportPassword((v) => !v)} edge="end">
+                          {showImportPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
                 }}
               />
               <FormControl>
@@ -623,8 +694,16 @@ const PasswordsPage = () => {
                   value={importOnConflict}
                   onChange={(e) => setImportOnConflict(e.target.value)}
                 >
-                  <FormControlLabel value="skip" control={<Radio size="small" />} label="Keep existing (skip)" />
-                  <FormControlLabel value="overwrite" control={<Radio size="small" />} label="Overwrite with imported value" />
+                  <FormControlLabel
+                    value="skip"
+                    control={<Radio size="small" />}
+                    label="Keep existing (skip)"
+                  />
+                  <FormControlLabel
+                    value="overwrite"
+                    control={<Radio size="small" />}
+                    label="Overwrite with imported value"
+                  />
                 </RadioGroup>
               </FormControl>
             </Stack>
@@ -632,10 +711,14 @@ const PasswordsPage = () => {
         </DialogContent>
         <DialogActions>
           {importResult ? (
-            <Button variant="contained" onClick={closeImportDialog}>Done</Button>
+            <Button variant="contained" onClick={closeImportDialog}>
+              Done
+            </Button>
           ) : (
             <>
-              <Button onClick={closeImportDialog} disabled={importLoading}>Cancel</Button>
+              <Button onClick={closeImportDialog} disabled={importLoading}>
+                Cancel
+              </Button>
               <Button variant="contained" onClick={handleImport} disabled={importLoading}>
                 {importLoading ? <CircularProgress size={20} /> : "Import"}
               </Button>
@@ -644,7 +727,6 @@ const PasswordsPage = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation */}
       <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth="xs" fullWidth>
         <DialogTitle>Delete Password</DialogTitle>
         <DialogContent>
@@ -654,7 +736,9 @@ const PasswordsPage = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteTarget(null)}>Cancel</Button>
-          <Button variant="contained" color="error" onClick={handleDelete}>Delete</Button>
+          <Button variant="contained" color="error" onClick={handleDelete}>
+            Delete
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

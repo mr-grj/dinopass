@@ -30,7 +30,7 @@ const getStrength = (password) => {
   return { label: "Strong", value: 100, color: "success" };
 };
 
-const PasswordField = ({ label, value, onChange, onKeyDown, autoFocus }) => {
+const PasswordField = ({ label, value, onChange, onKeyDown, autoFocus, autoComplete }) => {
   const [show, setShow] = useState(false);
   return (
     <TextField
@@ -42,16 +42,24 @@ const PasswordField = ({ label, value, onChange, onKeyDown, autoFocus }) => {
       onChange={onChange}
       onKeyDown={onKeyDown}
       autoFocus={autoFocus}
-      InputProps={{
-        endAdornment: (
-          <InputAdornment position="end">
-            <Tooltip title={show ? "Hide" : "Show"}>
-              <IconButton onClick={() => setShow((v) => !v)} edge="end" size="small">
-                {show ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-              </IconButton>
-            </Tooltip>
-          </InputAdornment>
-        ),
+      autoComplete={autoComplete}
+      slotProps={{
+        htmlInput: { spellCheck: false, autoCorrect: "off", autoCapitalize: "none" },
+        input: {
+          endAdornment: (
+            <InputAdornment position="end">
+              <Tooltip title={show ? "Hide" : "Show"}>
+                <IconButton onClick={() => setShow((v) => !v)} edge="end" size="small">
+                  {show ? (
+                    <VisibilityOffIcon fontSize="small" />
+                  ) : (
+                    <VisibilityIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </Tooltip>
+            </InputAdornment>
+          ),
+        },
       }}
     />
   );
@@ -83,14 +91,26 @@ const LoginPage = () => {
   const strength = initialized === false ? getStrength(value) : null;
 
   const handleLogin = () => {
-    if (!value.trim()) { enqueueSnackbar("Please enter your master password.", { variant: "error" }); return; }
+    if (!value.trim()) {
+      enqueueSnackbar("Please enter your master password.", { variant: "error" });
+      return;
+    }
     check({ master_password: value });
   };
 
   const handleCreate = () => {
-    if (!value) { setError("Please enter a master password."); return; }
-    if (value !== confirm) { setError("Passwords don't match."); return; }
-    if (strength && strength.value < 70) { setError("Password is too weak. Use at least 12 characters with mixed types."); return; }
+    if (!value) {
+      setError("Please enter a master password.");
+      return;
+    }
+    if (value !== confirm) {
+      setError("Passwords don't match.");
+      return;
+    }
+    if (strength && strength.value < 70) {
+      setError("Password is too weak. Use at least 12 characters with mixed types.");
+      return;
+    }
     create({ master_password: value });
   };
 
@@ -143,8 +163,11 @@ const LoginPage = () => {
           label="Master Password"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && initialized) handleLogin(); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && initialized) handleLogin();
+          }}
           autoFocus
+          autoComplete={initialized ? "current-password" : "new-password"}
         />
 
         {!initialized && value && strength && (
@@ -166,14 +189,18 @@ const LoginPage = () => {
             label="Confirm Master Password"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") handleCreate(); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleCreate();
+            }}
+            autoComplete="new-password"
           />
         )}
 
         {!initialized && (
           <Alert severity="warning" variant="outlined" sx={{ py: 0.5 }}>
             <Typography variant="caption">
-              There is no "Forgot password". Losing your master password means losing access to your vault permanently.
+              There is no "Forgot password". Losing your master password means losing access to your
+              vault permanently.
             </Typography>
           </Alert>
         )}

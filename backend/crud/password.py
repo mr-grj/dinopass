@@ -24,6 +24,8 @@ from schemas import (
     PasswordUpdate,
 )
 
+_MAX_JSON_BYTES = 50 * 1024 * 1024  # 50 MB
+
 
 class PasswordCRUD(BaseCRUD):
     @staticmethod
@@ -210,7 +212,12 @@ class PasswordCRUD(BaseCRUD):
         try:
             with pyzipper.AESZipFile(io.BytesIO(file_bytes), "r") as zf:
                 zf.setpassword(master_password.encode())
-                raw = zf.read("dinopass_backup.json")
+                with zf.open("dinopass_backup.json") as entry:
+                    raw = entry.read(_MAX_JSON_BYTES + 1)
+            if len(raw) > _MAX_JSON_BYTES:
+                raise TypesMismatchError("Backup content is too large.")
+        except TypesMismatchError:
+            raise
         except Exception as e:
             raise TypesMismatchError(
                 "Could not read backup file. Ensure it is a valid dinopass backup."

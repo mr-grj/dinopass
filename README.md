@@ -22,7 +22,7 @@ Built because resetting passwords every other week gets old fast.
 ## Features
 
 - Single master password to rule them all
-- All passwords encrypted at rest with Fernet (AES-128-CBC) via PBKDF2-derived keys
+- All passwords encrypted at rest with Fernet (AES-128-CBC) via Argon2id-derived keys
 - REST API backend (FastAPI + PostgreSQL)
 - Web UI (React + MUI): create, view, edit, delete passwords
 - Encrypted backup export: generates an AES-256 password-protected ZIP you can open with your master password
@@ -38,12 +38,13 @@ Built because resetting passwords every other week gets old fast.
 | Database | PostgreSQL 16 |
 | Frontend | React 18, MUI v6, easy-peasy |
 | Package manager | uv (backend), npm (frontend) |
+| Code style | ruff (backend), Prettier (frontend) |
 | Infrastructure | Docker, Docker Compose v2 |
 
 ## Security model
 
 - Master password is hashed with **bcrypt**: not stored in plain or reversibly
-- All passwords are encrypted with **Fernet** (symmetric AES) using a key derived via **PBKDF2-HMAC-SHA256** (600,000 iterations) from the master password and a unique random salt
+- All passwords are encrypted with **Fernet** (symmetric AES) using a key derived via **Argon2id** (64 MiB memory, 3 iterations, 4 lanes — OWASP 2024 interactive profile) from the master password and a unique random salt; existing vaults using the legacy PBKDF2 derivation are transparently migrated on first login
 - The derived key lives only in your browser session (`sessionStorage`) and is never persisted server-side: closing the tab clears it automatically
 - Updating the master password re-encrypts every stored password transparently
 
@@ -112,11 +113,11 @@ All `make` commands run **locally** (not inside Docker).
 | `make buildup` | Build images and start all containers in the background |
 | `make dev` | Start with hot-reload (`docker-compose.yml` + `docker-compose.dev.yml`) |
 | `make clean` | Stop containers, remove volumes/images, delete `__pycache__` |
-| `make lint` | `ruff check`: report linting issues |
-| `make format` | `ruff format`: auto-format source files in place |
-| `make check` | Lint + format check, no writes (suitable for CI) |
+| `make lint` | `ruff check`: report linting issues (backend) |
+| `make format` | Auto-format backend (ruff) and frontend (Prettier) in place |
+| `make check` | Lint + format check, no writes — suitable for CI |
 
-`make lint/format/check` require [uv](https://docs.astral.sh/uv/) with dev deps: `uv sync --group dev` inside `backend/`.
+`make lint/format/check` require [uv](https://docs.astral.sh/uv/) with dev deps (`uv sync --group dev` inside `backend/`) and Node.js with npm deps installed (`npm install` inside `frontend/`).
 
 ### Database migrations
 

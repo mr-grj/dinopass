@@ -38,11 +38,7 @@ const TopMenu = () => {
         {userIsAuth ? (
           <>
             <Tooltip title="Settings">
-              <IconButton
-                color="inherit"
-                onClick={() => setSettingsOpen(true)}
-                sx={{ mr: 0.5 }}
-              >
+              <IconButton color="inherit" onClick={() => setSettingsOpen(true)} sx={{ mr: 0.5 }}>
                 <SettingsIcon />
               </IconButton>
             </Tooltip>

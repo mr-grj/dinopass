@@ -20,28 +20,32 @@ const FIELDS = [
   {
     key: "inactivity_ms",
     label: "Inactivity timeout",
-    tooltip: "How long the app waits without any user activity before logging you out automatically.",
+    tooltip:
+      "How long the app waits without any user activity before logging you out automatically.",
     min: 30,
     max: 3600,
   },
   {
     key: "warn_before_ms",
     label: "Warning before logout",
-    tooltip: "How far in advance of the inactivity timeout a warning is shown. Must be less than the inactivity timeout.",
+    tooltip:
+      "How far in advance of the inactivity timeout a warning is shown. Must be less than the inactivity timeout.",
     min: 5,
     max: 600,
   },
   {
     key: "hidden_ms",
     label: "Hidden tab timeout",
-    tooltip: "How long the tab can stay in the background (minimised or switched away) before you are logged out.",
+    tooltip:
+      "How long the tab can stay in the background (minimised or switched away) before you are logged out.",
     min: 10,
     max: 3600,
   },
   {
     key: "debounce_ms",
     label: "Activity debounce",
-    tooltip: "Minimum interval between activity detections. Prevents the inactivity timer from being reset too aggressively.",
+    tooltip:
+      "Minimum interval between activity detections. Prevents the inactivity timer from being reset too aggressively.",
     min: 1,
     max: 10,
   },
@@ -117,26 +121,35 @@ const SettingsModal = ({ open, onClose }) => {
               value={form[key]}
               onChange={handleChange(key)}
               fullWidth
-              inputProps={{ min, max, step: 1 }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <Tooltip title={tooltip} arrow placement="top">
-                      <HelpOutlineIcon fontSize="small" sx={{ color: "text.disabled", cursor: "help" }} />
-                    </Tooltip>
-                  </InputAdornment>
-                ),
+              slotProps={{
+                htmlInput: { min, max, step: 1 },
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <Tooltip title={tooltip} arrow placement="top">
+                        <HelpOutlineIcon
+                          fontSize="small"
+                          sx={{ color: "text.disabled", cursor: "help" }}
+                        />
+                      </Tooltip>
+                    </InputAdornment>
+                  ),
+                },
               }}
               helperText="seconds"
             />
           ))}
           {formError && (
-            <Typography variant="body2" color="error">{formError}</Typography>
+            <Typography variant="body2" color="error">
+              {formError}
+            </Typography>
           )}
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={saving}>Cancel</Button>
+        <Button onClick={onClose} disabled={saving}>
+          Cancel
+        </Button>
         <Button variant="contained" onClick={handleSave} disabled={saving || !dirty}>
           {saving ? <CircularProgress size={20} /> : "Save"}
         </Button>

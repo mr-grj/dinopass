@@ -13,6 +13,7 @@ from starlette.responses import StreamingResponse
 
 from api.endpoints.deps import get_password_crud
 from api.exceptions import (
+    TypesMismatchError,
     handle_forbidden,
     handle_mismatch,
     handle_not_found,
@@ -34,6 +35,8 @@ from schemas import (
 )
 
 router = APIRouter(tags=["passwords"])
+
+_MAX_IMPORT_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
 
 
 @router.get(
@@ -170,6 +173,8 @@ async def import_passwords(
     crud: PasswordCRUD = Depends(get_password_crud),
 ) -> PasswordImportResult:
     file_bytes = await file.read()
+    if len(file_bytes) > _MAX_IMPORT_FILE_BYTES:
+        raise TypesMismatchError("File too large. Maximum allowed size is 10 MB.")
     return await crud.import_passwords(
         file_bytes=file_bytes,
         master_password=master_password,

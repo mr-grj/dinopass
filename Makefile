@@ -27,7 +27,9 @@ lint:
 .PHONY: format
 format:
 	cd backend && uv run ruff format .
+	cd frontend && npm run format
 
 .PHONY: check
 check:
 	cd backend && uv run ruff check . && uv run ruff format --check .
+	cd frontend && npm run format:check

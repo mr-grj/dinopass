@@ -24,6 +24,7 @@ class MasterPasswordModel(BaseModel):
 
     salt = Column(LargeBinary, nullable=False)
     hash_key = Column(String, nullable=False)
+    kdf_version = Column(Integer, nullable=False, server_default="1")
 
 
 class PasswordModel(BaseModel):

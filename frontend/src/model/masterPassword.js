@@ -10,11 +10,21 @@ const MasterPassword = {
   value: "",
   confirm: "",
 
-  setInitialized: action((state, val) => { state.initialized = val; }),
-  setValue: action((state, value) => { state.value = value; }),
-  setConfirm: action((state, value) => { state.confirm = value; }),
-  setError: action((state, error) => { state.error = error; }),
-  setLoading: action((state, loading) => { state.loading = loading; }),
+  setInitialized: action((state, val) => {
+    state.initialized = val;
+  }),
+  setValue: action((state, value) => {
+    state.value = value;
+  }),
+  setConfirm: action((state, value) => {
+    state.confirm = value;
+  }),
+  setError: action((state, error) => {
+    state.error = error;
+  }),
+  setLoading: action((state, loading) => {
+    state.loading = loading;
+  }),
 
   fetchStatus: thunk(async (actions) => {
     try {
@@ -40,7 +50,7 @@ const MasterPassword = {
       const msg =
         err.response?.status === 429
           ? "Too many attempts. Please try again in an hour."
-          : err.response?.data?.detail ?? "An error occurred.";
+          : (err.response?.data?.detail ?? "An error occurred.");
       actions.setError(msg);
     } finally {
       actions.setLoading(false);

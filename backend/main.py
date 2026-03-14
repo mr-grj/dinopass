@@ -12,6 +12,13 @@ from settings import get_api_settings
 _SECURITY_HEADERS = {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
+    "Content-Security-Policy": "frame-ancestors 'none'; object-src 'none'",
+    "Strict-Transport-Security": "max-age=63072000; includeSubDomains",
+    "X-XSS-Protection": "0",
+    "Permissions-Policy": (
+        "clipboard-write=(self), camera=(), microphone=(), geolocation=()"
+    ),
+    "Cache-Control": "no-store",
     "Referrer-Policy": "strict-origin-when-cross-origin",
 }
 

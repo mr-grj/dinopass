@@ -25,6 +25,7 @@ Built because resetting passwords every other week gets old fast.
 - All passwords encrypted at rest with Fernet (AES-128-CBC) via Argon2id-derived keys
 - REST API backend (FastAPI + PostgreSQL)
 - Web UI (React + MUI): create, view, edit, delete passwords
+- CLI (`dinopass`) for full vault access from the terminal
 - Encrypted backup export: generates an AES-256 password-protected ZIP you can open with your master password
 - Backup import: restore passwords from a dinopass backup ZIP, with skip or overwrite conflict strategy
 - Per-password backup status tracked in the database, visible in the UI
@@ -149,6 +150,81 @@ The frontend reads:
 | Variable | Default | Description |
 |---|---|---|
 | `REACT_APP_API_URL` | `http://localhost:8000/api` | Backend API base URL |
+
+The CLI reads:
+
+| Variable | Default | Description |
+|---|---|---|
+| `DINOPASS_API_URL` | `http://localhost:8000/api` | Backend API base URL |
+
+## CLI
+
+The `dinopass` CLI lets you manage your vault from the terminal without opening a browser.
+
+### Install
+
+```shell
+cd backend
+uv tool install .
+```
+
+Or run without installing:
+
+```shell
+cd backend
+uv run dinopass <command>
+```
+
+### Commands
+
+```
+dinopass password list                     List all passwords
+dinopass password get <name>               Reveal a password
+dinopass password create <name>            Add a new password (interactive)
+dinopass password update <name>            Update value or description (interactive)
+dinopass password delete <name>            Delete a password (asks for confirmation)
+dinopass backup [--out <dir>]              Export an encrypted backup ZIP
+dinopass import <file> [--on-conflict]     Import from a backup ZIP (skip|overwrite)
+```
+
+Every command that touches encrypted data will prompt for the master password. Use `--help` on any command for details.
+
+### Examples
+
+```shell
+# Add a new password
+$ dinopass password create github
+Master password:
+Password value:
+Repeat for confirmation:
+Description: Personal account
+✓  Created github
+
+# Reveal it
+$ dinopass password get github
+Master password:
+
+  github
+  Value        hunter2
+  Description  Personal account
+
+# List everything
+$ dinopass password list
+Master password:
+Name      Description       Backed up
+github    Personal account  –
+gmail     Work email        ✓
+
+# Create an encrypted backup in ~/backups/
+$ dinopass backup --out ~/backups
+Master password:
+✓  Backup saved to ~/backups/dinopass_backup_20260314_120000.zip
+
+# Import with overwrite
+$ dinopass import dinopass_backup_20260314_120000.zip --on-conflict overwrite
+Master password:
+✓  Import complete — 3 added, 1 overwritten, 0 skipped
+```
 
 ## License
 

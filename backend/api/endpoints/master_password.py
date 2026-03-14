@@ -11,7 +11,7 @@ from api.exceptions import (
     handle_mismatch,
     handle_not_found,
 )
-from api.rate_limit import limiter
+from api.rate_limit import limiter, rate
 from api.responses import inject_responses
 from crud.master_password import MasterPasswordCRUD
 from schemas import (
@@ -50,7 +50,7 @@ async def get_status(
         }
     ),
 )
-@limiter.limit("10/hour")
+@limiter.limit(rate("10/hour"))
 @handle_forbidden
 @handle_not_found
 @handle_mismatch
@@ -73,7 +73,7 @@ async def check_master_password(
         }
     ),
 )
-@limiter.limit("5/hour")
+@limiter.limit(rate("5/hour"))
 @handle_forbidden
 @handle_not_found
 @handle_mismatch

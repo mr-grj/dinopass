@@ -28,6 +28,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
 import EditIcon from "@mui/icons-material/Edit";
+import SearchIcon from "@mui/icons-material/Search";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -76,6 +77,8 @@ const PasswordsPage = () => {
   const [importOnConflict, setImportOnConflict] = useState("skip");
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState(null);
+
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     get();
@@ -387,6 +390,15 @@ const PasswordsPage = () => {
 
   const isEmpty = !loading && passwords.length === 0;
 
+  const query = search.trim().toLowerCase();
+  const filteredPasswords = query
+    ? passwords.filter(
+        (p) =>
+          p.password_name.toLowerCase().includes(query) ||
+          (p.description && p.description.toLowerCase().includes(query))
+      )
+    : passwords;
+
   return (
     <Box>
       {/* Page header */}
@@ -416,6 +428,26 @@ const PasswordsPage = () => {
           </Button>
         </Stack>
       </Stack>
+
+      {/* Search */}
+      {!isEmpty && (
+        <TextField
+          size="small"
+          placeholder="Search by name or description…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          sx={{ mb: 2, width: 320 }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" sx={{ color: "text.disabled" }} />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
+      )}
 
       {/* Loading */}
       {loading && (
@@ -462,7 +494,16 @@ const PasswordsPage = () => {
       {/* Table */}
       {!loading && !isEmpty && (
         <DataGrid
-          rows={passwords}
+          rows={filteredPasswords}
+          slots={{
+            noRowsOverlay: () => (
+              <Box display="flex" alignItems="center" justifyContent="center" height="100%">
+                <Typography variant="body2" color="text.secondary">
+                  No passwords match &ldquo;{search.trim()}&rdquo;.
+                </Typography>
+              </Box>
+            ),
+          }}
           columns={columns}
           getRowId={(row) => row.password_name}
           disableRowSelectionOnClick

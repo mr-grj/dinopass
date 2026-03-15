@@ -40,6 +40,7 @@ class PasswordModel(BaseModel):
     deleted: Mapped[datetime | None] = mapped_column(TIMESTAMP, default=None)
 
     password_name: Mapped[str] = mapped_column(String, unique=True)
+    username: Mapped[str | None] = mapped_column(String)
     password_value: Mapped[bytes] = mapped_column(LargeBinary)
     description: Mapped[str | None] = mapped_column(String)
     backed_up: Mapped[bool] = mapped_column(

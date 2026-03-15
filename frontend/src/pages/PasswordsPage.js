@@ -38,7 +38,7 @@ import { useSnackbar } from "notistack";
 
 import { formatDuration } from "../utils";
 
-const EMPTY_FORM = { password_name: "", password_value: "", description: "" };
+const EMPTY_FORM = { password_name: "", username: "", password_value: "", description: "" };
 
 const PasswordsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -139,6 +139,7 @@ const PasswordsPage = () => {
     setEditTarget(row);
     setForm({
       password_name: row.password_name,
+      username: row.username ?? "",
       password_value: row.password_value,
       description: row.description ?? "",
     });
@@ -170,6 +171,7 @@ const PasswordsPage = () => {
     try {
       const entry = {
         password_name: form.password_name.trim(),
+        username: form.username.trim() || null,
         password_value: form.password_value,
         description: form.description.trim() || null,
       };
@@ -177,6 +179,7 @@ const PasswordsPage = () => {
         await update({
           password: {
             password_name: editTarget.password_name,
+            username: editTarget.username ?? null,
             password_value: editTarget.password_value,
             description: editTarget.description ?? null,
           },
@@ -293,6 +296,21 @@ const PasswordsPage = () => {
       minWidth: 140,
     },
     {
+      field: "username",
+      headerName: "Username / email",
+      flex: 1,
+      minWidth: 140,
+      renderCell: (params) => (
+        <Typography
+          variant="body2"
+          color={params.value ? "text.primary" : "text.disabled"}
+          sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+        >
+          {params.value || "-"}
+        </Typography>
+      ),
+    },
+    {
       field: "password_value",
       headerName: "Password",
       flex: 1,
@@ -395,6 +413,7 @@ const PasswordsPage = () => {
     ? passwords.filter(
         (p) =>
           p.password_name.toLowerCase().includes(query) ||
+          (p.username && p.username.toLowerCase().includes(query)) ||
           (p.description && p.description.toLowerCase().includes(query))
       )
     : passwords;
@@ -433,7 +452,7 @@ const PasswordsPage = () => {
       {!isEmpty && (
         <TextField
           size="small"
-          placeholder="Search by name or description…"
+          placeholder="Search by name, username or description…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           sx={{ mb: 2, width: 320 }}
@@ -537,6 +556,16 @@ const PasswordsPage = () => {
               helperText={editTarget ? "Name cannot be changed" : "e.g. GitHub, Gmail, Netflix"}
             />
             <TextField
+              label="Username / email (optional)"
+              value={form.username}
+              onChange={handleFormChange("username")}
+              fullWidth
+              placeholder="e.g. john@example.com"
+              slotProps={{
+                htmlInput: { spellCheck: false, autoCorrect: "off", autoCapitalize: "none" },
+              }}
+            />
+            <TextField
               label="Password"
               type={showFormValue ? "text" : "password"}
               value={form.password_value}
@@ -583,6 +612,7 @@ const PasswordsPage = () => {
             disabled={
               submitting ||
               (!!editTarget &&
+                form.username === (editTarget.username ?? "") &&
                 form.password_value === editTarget.password_value &&
                 form.description === (editTarget.description ?? ""))
             }

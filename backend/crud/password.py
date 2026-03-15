@@ -63,6 +63,7 @@ class PasswordCRUD(BaseCRUD):
     ) -> PasswordResponse:
         return PasswordResponse(
             password_name=model.password_name,
+            username=model.username,
             password_value=self._decrypt_or_raise(key_derivation, model),
             description=model.description,
             backed_up=model.backed_up,
@@ -105,6 +106,7 @@ class PasswordCRUD(BaseCRUD):
         self.session.add(
             PasswordModel(
                 password_name=password.password_name,
+                username=password.username,
                 password_value=encrypt(
                     key_derivation, password.password_value.encode()
                 ),
@@ -138,6 +140,9 @@ class PasswordCRUD(BaseCRUD):
             model.password_value = encrypt(
                 key_derivation, new_password.password_value.encode()
             )
+
+        if model.username != new_password.username:
+            model.username = new_password.username
 
         if model.description != new_password.description:
             model.description = new_password.description
@@ -180,6 +185,7 @@ class PasswordCRUD(BaseCRUD):
         entries = [
             {
                 "name": p.password_name,
+                "username": p.username,
                 "value": self._decrypt_or_raise(key_derivation, p),
                 "description": p.description,
             }
@@ -242,6 +248,7 @@ class PasswordCRUD(BaseCRUD):
             if not name or not value:
                 continue
 
+            username = entry.get("username")
             description = entry.get("description")
 
             existing = (
@@ -255,6 +262,7 @@ class PasswordCRUD(BaseCRUD):
                     skipped += 1
                 else:
                     existing.password_value = encrypt(key_derivation, value.encode())
+                    existing.username = username
                     existing.description = description
                     existing.backed_up = False
                     self.session.add(existing)
@@ -263,6 +271,7 @@ class PasswordCRUD(BaseCRUD):
                 self.session.add(
                     PasswordModel(
                         password_name=name,
+                        username=username,
                         password_value=encrypt(key_derivation, value.encode()),
                         description=description,
                     )

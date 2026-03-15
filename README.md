@@ -24,7 +24,9 @@ Built because resetting passwords every other week gets old fast.
 - Single master password to rule them all
 - All passwords encrypted at rest with Fernet (AES-128-CBC) via Argon2id-derived keys
 - REST API backend (FastAPI + PostgreSQL)
-- Web UI (React + MUI): create, view, edit, delete passwords
+- Web UI (React + MUI): create, view, edit, delete passwords; search by name, username, or description
+- Password generator: configurable length (8–64), character sets, with cryptographically secure randomness (CSPRNG, rejection-sampled to eliminate modulo bias)
+- Per-password strength indicator in the vault and inline in the form
 - CLI (`dinopass`) for full vault access from the terminal
 - Encrypted backup export: generates an AES-256 password-protected ZIP you can open with your master password
 - Backup import: restore passwords from a dinopass backup ZIP, with skip or overwrite conflict strategy
@@ -62,12 +64,13 @@ Built because resetting passwords every other week gets old fast.
 cp backend/.db.env.template backend/.db.env
 ```
 
+Edit `backend/.db.env` and set a real username and password:
+
 ```dotenv
-# backend/.db.env
 POSTGRES_HOST=db
 POSTGRES_DB=dinopass
 POSTGRES_USER=youruser
-POSTGRES_PASSWORD=a-strong-password
+POSTGRES_PASSWORD=a-strong-password   # openssl rand -base64 32
 PGDATA=/var/lib/postgresql/data/pgdata
 ```
 
@@ -144,6 +147,9 @@ The backend reads these environment variables (all optional, with sensible defau
 | `CORS_ORIGINS` | `["http://localhost:3000"]` | Allowed frontend origins |
 | `DISABLE_DOCS` | `false` | Set `true` to hide `/docs` and `/redoc` |
 | `DEBUG` | `false` | FastAPI debug mode |
+| `DINOPASS_RATE_LIMIT` | `100/hour` | Rate limit per route (e.g. `50/hour`, `10/minute`) |
+
+> **Deploying beyond localhost?** Set `CORS_ORIGINS` to your actual frontend URL, set `DISABLE_DOCS=true` to hide the API explorer, put the backend behind a reverse proxy (nginx, Caddy) with HTTPS, and do not expose port `5432` to the host. Dinopass is not hardened for direct internet exposure.
 
 The frontend reads:
 

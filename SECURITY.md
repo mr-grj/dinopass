@@ -1,33 +1,29 @@
 # Security
 
-Dinopass is a self-hosted password manager, so getting security right matters. If you find a vulnerability, please report it responsibly rather than opening a public issue.
+This is a password manager. Security isn't a feature here - it's the whole point. If you find something wrong, please don't open a public issue about it. Tell me privately first.
 
-## Reporting a vulnerability
+## Found something? Tell me here
 
-Open a [GitHub Security Advisory](https://github.com/mrgrj/dinopass/security/advisories/new) (private by default) and describe:
+Open a [GitHub Security Advisory](https://github.com/mrgrj/dinopass/security/advisories/new) - it's private by default, only visible to you and me. Describe what you found, how to reproduce it, and what you think the impact is. That's all I need to get started.
 
-- What the vulnerability is
-- How to reproduce it
-- What impact you think it has
+I'll acknowledge it within a few days. If it's real, I'll fix it and credit you in the release notes - unless you'd rather stay anonymous, which is also fine.
 
-I'll acknowledge it within a few days and aim to ship a fix or mitigation quickly. I'll credit you in the release notes unless you'd prefer to stay anonymous.
+## What I actually care about
 
-## Scope
+Things I want to know about:
 
-Things that are in scope:
-
+- Anything that lets someone read passwords they shouldn't be able to
 - Authentication or session bypass
 - Encryption weaknesses or key leakage
-- Privilege escalation
-- Injection (SQL, command, etc.)
-- Anything that could expose stored passwords to an unauthorized party
+- SQL injection, command injection, that whole family
+- Anything that could expose the vault to an unauthorized party
 
 Things that are out of scope:
 
-- Vulnerabilities that require physical access to the machine running the instance
-- Issues in third-party dependencies that don't directly affect dinopass (please report those upstream)
-- Self-XSS or issues only exploitable by someone already logged in with their own master password
+- Attacks that require physical access to the machine running the instance - if someone has that, it's already over
+- Vulnerabilities in third-party dependencies that don't directly affect dinopass - please report those upstream
+- Self-XSS or anything only exploitable by someone already authenticated with their own master password
 
-## Security model
+## One thing worth knowing
 
-Dinopass is designed to be run on a trusted machine you control. It is **not** designed to be exposed directly to the internet without a reverse proxy, firewall rules, and HTTPS. See the README for deployment guidance.
+Dinopass is built to run on a machine you trust and control - your home server, a VPS behind a firewall, a Raspberry Pi in your closet. It is not built to sit directly on the open internet without a reverse proxy, HTTPS, and some thought about who can reach it. If you're deploying it that way, the README has guidance. If something goes wrong because it was exposed without those precautions, that's a configuration problem, not a vulnerability.

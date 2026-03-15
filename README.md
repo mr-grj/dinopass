@@ -15,25 +15,30 @@
 
 ## What is this?
 
-Dinopass is a personal, self-hosted password manager. One master password unlocks everything. All stored passwords are encrypted using a key derived from that master password: so even if someone gets the database, they get nothing useful without it.
+I built this for myself because I was tired of every password manager wanting my email address, a subscription, a browser extension with access to everything, and ideally my soul too. 1Password, Bitwarden, LastPass - they all eventually want you to trust some cloud you don't control, run code you can't audit, or pay monthly for the privilege of storing text.
 
-Built because resetting passwords every other week gets old fast.
+I just wanted something that runs on my own machine, has no telemetry, talks to no third party, and doesn't wake up one day to announce it's been acquired and my vault is migrating to some new platform. No Google. No OAuth. No "sign in with Apple". No analytics pinging home. Nothing.
 
-## Features
+So I built Dinopass. It's a password manager that lives on your hardware, speaks to nobody, and keeps your passwords encrypted with a key only you know. One master password unlocks everything. If someone gets the database, they get encrypted blobs and nothing else.
 
-- Single master password to rule them all
-- All passwords encrypted at rest with Fernet (AES-128-CBC) via Argon2id-derived keys
-- REST API backend (FastAPI + PostgreSQL)
-- Web UI (React + MUI): create, view, edit, delete passwords; search by name, username, or description
-- Password generator: configurable length (8–64), character sets, with cryptographically secure randomness (CSPRNG, rejection-sampled to eliminate modulo bias)
-- Per-password strength indicator in the vault and inline in the form
-- CLI (`dinopass`) for full vault access from the terminal
-- Encrypted backup export: generates an AES-256 password-protected ZIP you can open with your master password
-- Backup import: restore passwords from a dinopass backup ZIP, with skip or overwrite conflict strategy
-- Per-password backup status tracked in the database, visible in the UI
-- One-command setup with Docker
+It's probably overkill for most people. But it's mine, and that's kind of the point.
+
+## What it does
+
+The basics you'd expect:
+
+- One master password unlocks the vault - no account, no email, no recovery codes sent to a phone number you changed three years ago
+- All passwords encrypted at rest; the encryption key is derived from your master password and never touches the server
+- Web UI for day-to-day use: create, edit, delete, search passwords by name, username, or description
+- Password generator with configurable length and character sets - cryptographically secure, not the `Math.random()` kind
+- Strength indicator on every password so you can see at a glance which ones are embarrassing
+- CLI (`dinopass`) for when you'd rather not open a browser
+- Encrypted backup export and import so you're not one disk failure away from losing everything
+- Auto-locks after inactivity and clears the clipboard after copy - small things that matter
 
 ## Tech stack
+
+Nothing exotic. I used tools I know and trust.
 
 | Layer | Tech |
 |---|---|
@@ -45,18 +50,21 @@ Built because resetting passwords every other week gets old fast.
 | Type checking | ty (backend) |
 | Infrastructure | Docker, Docker Compose v2 |
 
-## Security model
+## How the security actually works
 
-- Master password is hashed with **bcrypt**: not stored in plain or reversibly
-- All passwords are encrypted with **Fernet** (symmetric AES) using a key derived via **Argon2id** (64 MiB memory, 3 iterations, 4 lanes - OWASP 2024 interactive profile) from the master password and a unique random salt
-- The derived key lives only in your browser session (`sessionStorage`) and is never persisted server-side: closing the tab clears it automatically
-- Updating the master password re-encrypts every stored password transparently
+I spent more time on this than I care to admit, so here's what's actually happening under the hood:
 
-## Running locally
+- Your master password is hashed with **bcrypt** - it's never stored in plain, and nothing is reversible
+- Every stored password is encrypted with **Fernet** (AES-128-CBC + HMAC-SHA256) using a key derived from your master password via **Argon2id** (64 MiB memory, 3 iterations, 4 lanes - the OWASP 2024 interactive profile). The key is unique per vault thanks to a random salt
+- That derived key lives only in your browser's `sessionStorage` for the duration of your session - it never touches the server, and it disappears the moment you close the tab
+- If you change your master password, every stored password is re-encrypted transparently
+- The password generator uses `crypto.getRandomValues` with rejection sampling to eliminate modulo bias - no `Math.random()`, no shortcuts
 
-### Prerequisites
+If someone steals the database, they have a pile of ciphertext and a bcrypt hash. Without the master password, that's useless.
 
-- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/)
+## Running it
+
+You need [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/). That's it.
 
 ### 1. Configure the database
 
@@ -76,71 +84,71 @@ PGDATA=/var/lib/postgresql/data/pgdata
 
 ### 2. Start
 
-Two compose files are provided:
+There are two compose files - one for running it, one for working on it:
 
 | File | Purpose | When to use |
 |---|---|---|
 | `docker-compose.yml` | Production: optimised multi-stage images, static frontend build | Deploying or testing a production-like build |
 | `docker-compose.dev.yml` | Development overlay: source mounts, hot-reload | Actively working on the code |
 
-**Production:**
+**Just run it:**
 ```shell
-make buildup          # build and start in background
-# or
-docker compose up --build
+make buildup
+# or: docker compose up --build
 ```
 
-**Development (hot-reload):**
+**Hack on it (hot-reload):**
 ```shell
 make dev
-# or
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# or: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
-In dev mode the backend restarts on any `.py` change and the React dev server picks up frontend changes instantly via HMR. No rebuild needed.
+In dev mode the backend restarts on any `.py` change and the React dev server picks up frontend changes instantly. No rebuild needed.
 
-Both modes start on the same addresses: `http://localhost:3000` (UI) and `http://localhost:8000` (API). API docs at `http://localhost:8000/docs`.
+Both modes run at `http://localhost:3000` (UI) and `http://localhost:8000` (API). The API explorer is at `http://localhost:8000/docs` if you want to poke around.
 
 ### Stopping
 
 ```shell
-docker compose down       # stop containers
-docker compose down -v    # stop and wipe the database volume
+docker compose down       # stop
+docker compose down -v    # stop and wipe the database too
 ```
 
 ## Development
 
-All `make` commands run **locally** (not inside Docker).
+All `make` commands run locally, not inside Docker.
 
-| Command | What it does                                                            |
-|---|-------------------------------------------------------------------------|
-| `make all` | Full clean + rebuild (`clean` then `buildup`)                           |
-| `make buildup` | Build images and start all containers in the background                 |
-| `make dev` | Start with hot-reload (`docker-compose.yml` + `docker-compose.dev.yml`) |
-| `make clean` | Stop containers, remove volumes/images, delete `__pycache__`            |
-| `make lint` | `ruff check`: report linting issues (backend)                           |
-| `make typecheck` | `ty check`: run static type analysis (backend)                          |
-| `make format` | Auto-format backend (ruff) and frontend (Prettier) in place             |
-| `make check` | Lint + type check + format check, no writes - suitable for CI           |
+| Command | What it does |
+|---|---|
+| `make all` | Full clean + rebuild |
+| `make buildup` | Build images and start all containers in the background |
+| `make dev` | Start with hot-reload |
+| `make clean` | Stop containers, remove volumes/images, delete `__pycache__` |
+| `make lint` | `ruff check`: report linting issues (backend) |
+| `make typecheck` | `ty check`: static type analysis (backend) |
+| `make format` | Auto-format backend (ruff) and frontend (Prettier) in place |
+| `make check` | Lint + type check + format check, no writes - what CI runs |
 
-`make lint/typecheck/format/check` require [uv](https://docs.astral.sh/uv/) with dev deps (`uv sync --group dev` inside `backend/`) and Node.js with npm deps installed (`npm install` inside `frontend/`).
+`make lint/typecheck/format/check` need [uv](https://docs.astral.sh/uv/) with dev deps (`uv sync --group dev` inside `backend/`) and Node.js with npm deps (`npm install` inside `frontend/`).
 
 ### Database migrations
 
-Schema is managed with **Alembic**. On every startup the backend runs `alembic upgrade head` automatically: no manual steps needed.
+Schema is managed with Alembic. The backend runs `alembic upgrade head` automatically on every startup, so you never need to run migrations by hand.
 
-To create a migration after changing a model (requires a running database):
+To create a migration after changing a model (needs a running database):
 
 ```shell
 cd backend
 uv run alembic revision --autogenerate -m "describe the change"
 ```
 
-Migration files land in `migrations/dinopass/versions/` and are auto-formatted with ruff.
+Migration files land in `migrations/dinopass/versions/`.
 
 ## Configuration
 
-The backend reads these environment variables (all optional, with sensible defaults):
+Everything is optional - the defaults work fine for local use.
+
+**Backend:**
 
 | Variable | Default | Description |
 |---|---|---|
@@ -149,23 +157,23 @@ The backend reads these environment variables (all optional, with sensible defau
 | `DEBUG` | `false` | FastAPI debug mode |
 | `DINOPASS_RATE_LIMIT` | `100/hour` | Rate limit per route (e.g. `50/hour`, `10/minute`) |
 
-> **Deploying beyond localhost?** Set `CORS_ORIGINS` to your actual frontend URL, set `DISABLE_DOCS=true` to hide the API explorer, put the backend behind a reverse proxy (nginx, Caddy) with HTTPS, and do not expose port `5432` to the host. Dinopass is not hardened for direct internet exposure.
-
-The frontend reads:
+**Frontend:**
 
 | Variable | Default | Description |
 |---|---|---|
 | `REACT_APP_API_URL` | `http://localhost:8000/api` | Backend API base URL |
 
-The CLI reads:
+**CLI:**
 
 | Variable | Default | Description |
 |---|---|---|
 | `DINOPASS_API_URL` | `http://localhost:8000/api` | Backend API base URL |
 
+> **Putting this on a real server?** Set `CORS_ORIGINS` to your actual domain, enable `DISABLE_DOCS=true`, put everything behind a reverse proxy (nginx, Caddy) with HTTPS, and don't expose port `5432` to the outside world. Dinopass is designed to run on a machine you trust - it's not hardened for sitting naked on the internet.
+
 ## CLI
 
-The `dinopass` CLI lets you manage your vault from the terminal without opening a browser.
+Sometimes you just want to grab a password from the terminal without switching windows. That's what the CLI is for.
 
 ### Install
 
@@ -174,7 +182,7 @@ cd backend
 uv tool install .
 ```
 
-Or run without installing:
+Or run it without installing:
 
 ```shell
 cd backend
@@ -193,7 +201,7 @@ dinopass backup [--out <dir>]              Export an encrypted backup ZIP
 dinopass import <file> [--on-conflict]     Import from a backup ZIP (skip|overwrite)
 ```
 
-Every command that touches encrypted data will prompt for the master password. Use `--help` on any command for details.
+Every command that touches encrypted data prompts for the master password. Use `--help` on any command for details.
 
 ### Examples
 
@@ -221,7 +229,7 @@ Name      Description       Backed up
 github    Personal account  –
 gmail     Work email        ✓
 
-# Create an encrypted backup in ~/backups/
+# Create an encrypted backup
 $ dinopass backup --out ~/backups
 Master password:
 ✓  Backup saved to ~/backups/dinopass_backup_20260314_120000.zip

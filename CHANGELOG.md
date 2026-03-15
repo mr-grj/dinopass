@@ -2,23 +2,25 @@
 
 ## [0.2.0] - 2026-03-15
 
-### Features
+First public release. I've been using this daily for a while and it hasn't eaten any passwords, so here we are.
 
-- **Vault UI** - create, edit, delete, and search passwords (by name, username, or description) from a single page
-- **Username / email field** - store the login identifier alongside the password
-- **Password generator** - configurable length (8–64) and character sets (A–Z, a–z, 0–9, symbols); cryptographically secure with rejection sampling to eliminate modulo bias
-- **Password strength indicator** - live strength bar in the form and a per-row icon in the vault table
-- **Encrypted backup** - export all passwords as an AES-256 ZIP protected by the master password
-- **Backup import** - restore from a dinopass ZIP with skip or overwrite conflict strategy
-- **CLI** (`dinopass`) - manage the vault from the terminal: `list`, `get`, `create`, `update`, `delete`, `backup`, `import`
-- **Inactivity lock** - session auto-clears after a configurable idle period
-- **Clipboard auto-clear** - copied passwords are wiped from the clipboard after a configurable timeout
-- **Settings page** - configure inactivity timeout, clipboard clear delay, and more from the UI
-- **Rate limiting** - all API routes are rate-limited, configurable via `DINOPASS_RATE_LIMIT`
+### What's in it
 
-### Security
+- **Vault UI** - create, edit, delete, and search passwords from a single page. Search works across name, username, and description so you don't have to remember exactly what you called something
+- **Username / email field** - because some sites want a username, some want an email, and some want both for reasons nobody has ever explained
+- **Password generator** - configurable length (8-64) and character sets; uses `crypto.getRandomValues` with rejection sampling so the randomness is actually random, not "looks random enough"
+- **Password strength indicator** - shows up in the form as you type and as an icon in the vault table, so you can feel appropriately judged by your old passwords
+- **Encrypted backup** - exports everything as an AES-256 ZIP protected by your master password. Keep it somewhere safe
+- **Backup import** - restore from a backup ZIP with skip or overwrite for conflicts
+- **CLI** (`dinopass`) - full vault access from the terminal for when you can't be bothered to open a browser
+- **Inactivity lock** - session clears itself after you've walked away; configurable how long it waits
+- **Clipboard auto-clear** - copied passwords are wiped from the clipboard after a timeout, because paste history is a thing that exists
+- **Settings page** - all the timeouts and delays are configurable from the UI, not hardcoded
+- **Rate limiting** - all API routes are rate-limited so someone can't just hammer the login endpoint forever
 
-- Master password hashed with **bcrypt**
+### Security foundations
+
+- Master password hashed with **bcrypt** - not stored, not reversible
 - Passwords encrypted with **Fernet** (AES-128-CBC + HMAC-SHA256) using keys derived via **Argon2id** (64 MiB, 3 iterations, 4 lanes)
-- Derived key lives only in `sessionStorage`, never sent to or stored by the server
-- Password generator uses `crypto.getRandomValues` with rejection sampling (no modulo bias)
+- Derived key lives only in `sessionStorage` for the duration of the session - the server never sees it
+- Password generator uses `crypto.getRandomValues` with rejection sampling to eliminate modulo bias - the kind of detail that doesn't matter until it does

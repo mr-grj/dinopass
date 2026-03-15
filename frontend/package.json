@@ -50,5 +50,9 @@
   },
   "devDependencies": {
     "prettier": "^3.8.1"
+  },
+  "overrides": {
+    "underscore": ">=1.13.7",
+    "@tootallnate/once": ">=3.0.1"
   }
 }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -14,8 +15,10 @@ import {
   FormLabel,
   IconButton,
   InputAdornment,
+  Paper,
   Radio,
   RadioGroup,
+  Slider,
   Stack,
   TextField,
   Tooltip,
@@ -23,6 +26,7 @@ import {
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
+import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import GppBadIcon from "@mui/icons-material/GppBad";
 import GppGoodIcon from "@mui/icons-material/GppGood";
 import GppMaybeIcon from "@mui/icons-material/GppMaybe";
@@ -34,6 +38,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import SearchIcon from "@mui/icons-material/Search";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useStoreActions, useStoreState } from "easy-peasy";
@@ -42,6 +47,91 @@ import { useSnackbar } from "notistack";
 import { formatDuration, getPasswordStrength } from "../utils";
 
 const EMPTY_FORM = { password_name: "", username: "", password_value: "", description: "" };
+const GEN_DEFAULTS = { length: 16, uppercase: true, lowercase: true, numbers: true, symbols: true };
+const GEN_CHAR_OPTS = [
+  { key: "uppercase", label: "A–Z" },
+  { key: "lowercase", label: "a–z" },
+  { key: "numbers", label: "0–9" },
+  { key: "symbols", label: "!@#" },
+];
+
+const secureRandBelow = (max) => {
+  const reject = 0x100000000 % max;
+  let v;
+  do {
+    v = crypto.getRandomValues(new Uint32Array(1))[0];
+  } while (v < reject);
+  return v % max;
+};
+
+const generatePassword = ({ length, uppercase, lowercase, numbers, symbols }) => {
+  const pools = [];
+  if (uppercase) pools.push("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+  if (lowercase) pools.push("abcdefghijklmnopqrstuvwxyz");
+  if (numbers) pools.push("0123456789");
+  if (symbols) pools.push("!@#$%^&*()-_=+[]{}|;:,.<>?");
+  if (!pools.length) pools.push("abcdefghijklmnopqrstuvwxyz");
+
+  const full = pools.join("");
+  const chars = pools.map((p) => p[secureRandBelow(p.length)]);
+  while (chars.length < length) chars.push(full[secureRandBelow(full.length)]);
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = secureRandBelow(i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join("");
+};
+
+const renderOptionalCell = (params) => (
+  <Typography
+    variant="body2"
+    color={params.value ? "text.primary" : "text.disabled"}
+    sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+  >
+    {params.value || "-"}
+  </Typography>
+);
+
+const revealSlotProps = (show, onToggle, prefixIcon = null) => ({
+  htmlInput: { spellCheck: false, autoCorrect: "off", autoCapitalize: "none" },
+  input: {
+    endAdornment: (
+      <InputAdornment position="end">
+        {prefixIcon}
+        <IconButton onClick={onToggle} edge="end">
+          {show ? <VisibilityOffIcon /> : <VisibilityIcon />}
+        </IconButton>
+      </InputAdornment>
+    ),
+  },
+});
+
+const StrengthBar = ({ password }) => {
+  if (!password) return null;
+  const s = getPasswordStrength(password);
+  return (
+    <Box>
+      <Stack direction="row" spacing={0.5} mb={0.75}>
+        {[0, 1, 2, 3, 4].map((i) => (
+          <Box
+            key={i}
+            sx={{
+              flex: 1,
+              height: 4,
+              borderRadius: 2,
+              bgcolor: i <= s.level ? s.color : "grey.200",
+              transition: "background-color 0.2s",
+            }}
+          />
+        ))}
+      </Stack>
+      <Typography variant="caption" sx={{ color: s.color, fontWeight: 600 }}>
+        {s.label}
+        {s.recommend && " - consider a longer or more complex password"}
+      </Typography>
+    </Box>
+  );
+};
 
 const PasswordsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -65,6 +155,9 @@ const PasswordsPage = () => {
   const [formError, setFormError] = useState("");
   const [showFormValue, setShowFormValue] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const [showGenerator, setShowGenerator] = useState(false);
+  const [genOpts, setGenOpts] = useState(GEN_DEFAULTS);
 
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const [backupPassword, setBackupPassword] = useState("");
@@ -135,6 +228,7 @@ const PasswordsPage = () => {
     setForm(EMPTY_FORM);
     setFormError("");
     setShowFormValue(false);
+    setShowGenerator(false);
     setDialogOpen(true);
   };
 
@@ -148,6 +242,7 @@ const PasswordsPage = () => {
     });
     setFormError("");
     setShowFormValue(false);
+    setShowGenerator(false);
     setDialogOpen(true);
   };
 
@@ -159,6 +254,34 @@ const PasswordsPage = () => {
   const handleFormChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
     setFormError("");
+  };
+
+  const applyGenerated = (opts) => {
+    setForm((prev) => ({ ...prev, password_value: generatePassword(opts) }));
+    setShowFormValue(true);
+  };
+
+  const handleToggleGenerator = () => {
+    if (!showGenerator) applyGenerated(genOpts);
+    setShowGenerator((v) => !v);
+  };
+
+  const handleGenLength = (_, value) => {
+    const next = { ...genOpts, length: value };
+    setGenOpts(next);
+    applyGenerated(next);
+  };
+
+  const handleGenToggle = (key) => {
+    setGenOpts((prev) => {
+      const wouldHaveNone = ["uppercase", "lowercase", "numbers", "symbols"].every((k) =>
+        k === key ? prev[k] : !prev[k]
+      );
+      if (wouldHaveNone) return prev;
+      const next = { ...prev, [key]: !prev[key] };
+      applyGenerated(next);
+      return next;
+    });
   };
 
   const handleSubmit = async () => {
@@ -292,26 +415,13 @@ const PasswordsPage = () => {
   })();
 
   const columns = [
-    {
-      field: "password_name",
-      headerName: "Name",
-      flex: 1,
-      minWidth: 140,
-    },
+    { field: "password_name", headerName: "Name", flex: 1, minWidth: 140 },
     {
       field: "username",
       headerName: "Username / email",
       flex: 1,
       minWidth: 140,
-      renderCell: (params) => (
-        <Typography
-          variant="body2"
-          color={params.value ? "text.primary" : "text.disabled"}
-          sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-        >
-          {params.value || "-"}
-        </Typography>
-      ),
+      renderCell: renderOptionalCell,
     },
     {
       field: "password_value",
@@ -340,15 +450,7 @@ const PasswordsPage = () => {
       headerName: "Description",
       flex: 1.2,
       minWidth: 140,
-      renderCell: (params) => (
-        <Typography
-          variant="body2"
-          color={params.value ? "text.primary" : "text.disabled"}
-          sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-        >
-          {params.value || "-"}
-        </Typography>
-      ),
+      renderCell: renderOptionalCell,
     },
     {
       field: "actions",
@@ -364,8 +466,8 @@ const PasswordsPage = () => {
           ? strength.level <= 1
             ? GppBadIcon
             : strength.level === 2
-            ? GppMaybeIcon
-            : GppGoodIcon
+              ? GppMaybeIcon
+              : GppGoodIcon
           : null;
         return (
           <Stack direction="row" alignItems="center" spacing={0} height="100%">
@@ -383,9 +485,7 @@ const PasswordsPage = () => {
                 <ContentCopyIcon fontSize="small" />
               </IconButton>
             </Tooltip>
-
             <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 1 }} />
-
             <Tooltip title="Edit">
               <IconButton size="small" onClick={() => openEditDialog(params.row)}>
                 <EditIcon fontSize="small" />
@@ -400,7 +500,6 @@ const PasswordsPage = () => {
                 <DeleteIcon fontSize="small" />
               </IconButton>
             </Tooltip>
-
             <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 1 }} />
             {strength && StrengthIcon && (
               <Tooltip
@@ -451,7 +550,6 @@ const PasswordsPage = () => {
 
   return (
     <Box>
-      {/* Page header */}
       <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={3}>
         <Box>
           <Typography variant="h5" fontWeight={700} lineHeight={1.2}>
@@ -479,7 +577,6 @@ const PasswordsPage = () => {
         </Stack>
       </Stack>
 
-      {/* Search */}
       {!isEmpty && (
         <TextField
           size="small"
@@ -499,14 +596,12 @@ const PasswordsPage = () => {
         />
       )}
 
-      {/* Loading */}
       {loading && (
         <Box display="flex" justifyContent="center" mt={8}>
           <CircularProgress />
         </Box>
       )}
 
-      {/* Empty state */}
       {isEmpty && (
         <Box
           display="flex"
@@ -541,7 +636,6 @@ const PasswordsPage = () => {
         </Box>
       )}
 
-      {/* Table */}
       {!loading && !isEmpty && (
         <DataGrid
           rows={filteredPasswords}
@@ -571,7 +665,6 @@ const PasswordsPage = () => {
         />
       )}
 
-      {/* Add / Edit Dialog */}
       <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="sm" fullWidth>
         <DialogTitle>{editTarget ? "Edit Password" : "Add Password"}</DialogTitle>
         <DialogContent>
@@ -600,48 +693,76 @@ const PasswordsPage = () => {
               label="Password"
               type={showFormValue ? "text" : "password"}
               value={form.password_value}
-              onChange={handleFormChange("password_value")}
+              onChange={(e) => {
+                handleFormChange("password_value")(e);
+                if (showGenerator) setShowGenerator(false);
+              }}
               required
               fullWidth
               autoComplete="new-password"
-              slotProps={{
-                htmlInput: { spellCheck: false, autoCorrect: "off", autoCapitalize: "none" },
-                input: {
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={() => setShowFormValue((v) => !v)} edge="end">
-                        {showFormValue ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
-              }}
+              slotProps={revealSlotProps(
+                showFormValue,
+                () => setShowFormValue((v) => !v),
+                <Tooltip title={showGenerator ? "Close generator" : "Generate password"}>
+                  <IconButton
+                    onClick={handleToggleGenerator}
+                    size="small"
+                    color={showGenerator ? "primary" : "default"}
+                  >
+                    <AutoFixHighIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
             />
-            {form.password_value && (() => {
-              const s = getPasswordStrength(form.password_value);
-              return (
-                <Box>
-                  <Stack direction="row" spacing={0.5} mb={0.75}>
-                    {[0, 1, 2, 3, 4].map((i) => (
-                      <Box
-                        key={i}
-                        sx={{
-                          flex: 1,
-                          height: 4,
-                          borderRadius: 2,
-                          bgcolor: i <= s.level ? s.color : "grey.200",
-                          transition: "background-color 0.2s",
-                        }}
+            {showGenerator && (
+              <Paper variant="outlined" sx={{ px: 2, py: 1.5, borderRadius: 1.5 }}>
+                <Stack spacing={1.5}>
+                  <Box>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      mb={0.5}
+                    >
+                      <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                        Length
+                      </Typography>
+                      <Typography variant="caption" fontWeight={700}>
+                        {genOpts.length}
+                      </Typography>
+                    </Stack>
+                    <Slider
+                      size="small"
+                      value={genOpts.length}
+                      min={8}
+                      max={64}
+                      step={1}
+                      onChange={handleGenLength}
+                    />
+                  </Box>
+                  <Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap">
+                    {GEN_CHAR_OPTS.map(({ key, label }) => (
+                      <Chip
+                        key={key}
+                        label={label}
+                        size="small"
+                        onClick={() => handleGenToggle(key)}
+                        color={genOpts[key] ? "primary" : "default"}
+                        variant={genOpts[key] ? "filled" : "outlined"}
+                        sx={{ fontFamily: "monospace", fontWeight: 600 }}
                       />
                     ))}
+                    <Box flex={1} />
+                    <Tooltip title="Regenerate">
+                      <IconButton size="small" onClick={() => applyGenerated(genOpts)}>
+                        <RefreshIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </Stack>
-                  <Typography variant="caption" sx={{ color: s.color, fontWeight: 600 }}>
-                    {s.label}
-                    {s.recommend && " - consider a longer or more complex password"}
-                  </Typography>
-                </Box>
-              );
-            })()}
+                </Stack>
+              </Paper>
+            )}
+            <StrengthBar password={form.password_value} />
             <TextField
               label="Description (optional)"
               value={form.description}
@@ -678,7 +799,6 @@ const PasswordsPage = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Backup Dialog */}
       <Dialog open={backupDialogOpen} onClose={closeBackupDialog} maxWidth="xs" fullWidth>
         <DialogTitle>Create Backup</DialogTitle>
         <DialogContent>
@@ -704,18 +824,9 @@ const PasswordsPage = () => {
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleBackup();
               }}
-              slotProps={{
-                htmlInput: { spellCheck: false, autoCorrect: "off", autoCapitalize: "none" },
-                input: {
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={() => setShowBackupPassword((v) => !v)} edge="end">
-                        {showBackupPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
-              }}
+              slotProps={revealSlotProps(showBackupPassword, () =>
+                setShowBackupPassword((v) => !v)
+              )}
             />
           </Stack>
         </DialogContent>
@@ -729,7 +840,6 @@ const PasswordsPage = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Import Dialog */}
       <Dialog open={importDialogOpen} onClose={closeImportDialog} maxWidth="xs" fullWidth>
         <DialogTitle>{importResult ? "Import Complete" : "Import Backup"}</DialogTitle>
         <DialogContent>
@@ -802,18 +912,9 @@ const PasswordsPage = () => {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleImport();
                 }}
-                slotProps={{
-                  htmlInput: { spellCheck: false, autoCorrect: "off", autoCapitalize: "none" },
-                  input: {
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton onClick={() => setShowImportPassword((v) => !v)} edge="end">
-                          {showImportPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  },
-                }}
+                slotProps={revealSlotProps(showImportPassword, () =>
+                  setShowImportPassword((v) => !v)
+                )}
               />
               <FormControl>
                 <FormLabel sx={{ fontSize: "0.875rem" }}>If a password already exists</FormLabel>

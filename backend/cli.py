@@ -88,7 +88,7 @@ def pw_list() -> None:
     for item in items:
         table.add_row(
             item["password_name"],
-            item.get("description") or "—",
+            item.get("description") or "-",
             "[green]✓[/green]" if item["backed_up"] else "[dim]–[/dim]",
         )
 
@@ -273,7 +273,7 @@ def cmd_import(
     r = resp.json()
 
     _ok(
-        f"Import complete — "
+        f"Import complete - "
         f"[cyan]{r['imported']}[/cyan] added, "
         f"[cyan]{r['overwritten']}[/cyan] overwritten, "
         f"[cyan]{r['skipped']}[/cyan] skipped"

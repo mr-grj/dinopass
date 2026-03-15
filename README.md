@@ -223,7 +223,7 @@ Master password:
 # Import with overwrite
 $ dinopass import dinopass_backup_20260314_120000.zip --on-conflict overwrite
 Master password:
-✓  Import complete — 3 added, 1 overwritten, 0 skipped
+✓  Import complete - 3 added, 1 overwritten, 0 skipped
 ```
 
 ## License

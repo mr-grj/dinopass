@@ -23,6 +23,9 @@ import {
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
+import GppBadIcon from "@mui/icons-material/GppBad";
+import GppGoodIcon from "@mui/icons-material/GppGood";
+import GppMaybeIcon from "@mui/icons-material/GppMaybe";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -36,7 +39,7 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useStoreActions, useStoreState } from "easy-peasy";
 import { useSnackbar } from "notistack";
 
-import { formatDuration } from "../utils";
+import { formatDuration, getPasswordStrength } from "../utils";
 
 const EMPTY_FORM = { password_name: "", username: "", password_value: "", description: "" };
 
@@ -350,12 +353,20 @@ const PasswordsPage = () => {
     {
       field: "actions",
       headerName: "Actions",
-      width: 220,
+      width: 250,
       sortable: false,
       align: "center",
       headerAlign: "center",
       renderCell: (params) => {
         const visible = visibleRows.has(params.row.password_name);
+        const strength = getPasswordStrength(params.row.password_value);
+        const StrengthIcon = strength
+          ? strength.level <= 1
+            ? GppBadIcon
+            : strength.level === 2
+            ? GppMaybeIcon
+            : GppGoodIcon
+          : null;
         return (
           <Stack direction="row" alignItems="center" spacing={0} height="100%">
             <Tooltip title={visible ? "Hide password" : "Reveal password"}>
@@ -391,6 +402,26 @@ const PasswordsPage = () => {
             </Tooltip>
 
             <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 1 }} />
+            {strength && StrengthIcon && (
+              <Tooltip
+                title={
+                  <Box>
+                    <Typography variant="caption" fontWeight={700} sx={{ color: strength.color }}>
+                      {strength.label}
+                    </Typography>
+                    <Typography variant="caption" display="block">
+                      {strength.recommend
+                        ? "We recommend updating this password."
+                        : "This password looks good."}
+                    </Typography>
+                  </Box>
+                }
+              >
+                <Box display="flex" alignItems="center">
+                  <StrengthIcon fontSize="small" sx={{ color: strength.color }} />
+                </Box>
+              </Tooltip>
+            )}
             <Tooltip title={params.row.backed_up ? "Password backed up" : "Password not backed up"}>
               <Box display="flex" alignItems="center">
                 {params.row.backed_up ? (
@@ -586,6 +617,31 @@ const PasswordsPage = () => {
                 },
               }}
             />
+            {form.password_value && (() => {
+              const s = getPasswordStrength(form.password_value);
+              return (
+                <Box>
+                  <Stack direction="row" spacing={0.5} mb={0.75}>
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <Box
+                        key={i}
+                        sx={{
+                          flex: 1,
+                          height: 4,
+                          borderRadius: 2,
+                          bgcolor: i <= s.level ? s.color : "grey.200",
+                          transition: "background-color 0.2s",
+                        }}
+                      />
+                    ))}
+                  </Stack>
+                  <Typography variant="caption" sx={{ color: s.color, fontWeight: 600 }}>
+                    {s.label}
+                    {s.recommend && " - consider a longer or more complex password"}
+                  </Typography>
+                </Box>
+              );
+            })()}
             <TextField
               label="Description (optional)"
               value={form.description}

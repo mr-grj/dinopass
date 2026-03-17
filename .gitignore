@@ -1,0 +1,75 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache
+.hypothesis/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+nosetests.xml
+
+# Build / packaging
+.Python
+build/
+dist/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+target/
+*.egg-info/
+.installed.cfg
+*.egg
+*.manifest
+*.spec
+
+# Installers / logs
+pip-log.txt
+pip-delete-this-directory.txt
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Tools
+.ruff_cache/
+.cache
+.ipynb_checkpoints
+celerybeat-schedule
+
+# pyenv
+.python-version
+
+# IDE
+.idea
+.vscode/
+
+# dotenv - never commit real credentials
+.env
+.env.local
+.env.*.local
+backend/.db.env
+
+# virtualenv
+.venv/
+venv/
+ENV/
+
+# Database
+*.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend
+node_modules/

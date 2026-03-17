@@ -1,0 +1,20 @@
+FROM python:3.13-slim-bookworm
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=never \
+    PYTHONUNBUFFERED=1 \
+    VIRTUAL_ENV=/app/.venv \
+    PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH=/app/src
+
+WORKDIR /app
+
+COPY backend/pyproject.toml backend/uv.lock ./
+
+# Install all deps including dev (ruff etc. available inside container)
+RUN uv sync --frozen --no-install-project
+
+WORKDIR /app/src

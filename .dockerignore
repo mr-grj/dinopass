@@ -1,0 +1,17 @@
+.git
+.idea
+.DS_Store
+
+# Python
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.venv
+**/.pytest_cache
+**/.mypy_cache
+
+# Node
+frontend/node_modules
+frontend/build
+
+backend/.db.env

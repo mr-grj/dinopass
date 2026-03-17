@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:16-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./backend/.db.env
+    restart: unless-stopped
+    networks:
+      - dinopass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    ports:
+      - "8000:80"
+    env_file:
+      - ./backend/.db.env
+    environment:
+      CORS_ORIGINS: '["http://localhost:3000"]'
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - dinopass
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+      args:
+        REACT_APP_API_URL: http://localhost:8000/api
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - dinopass
+
+volumes:
+  postgres_data:
+
+networks:
+  dinopass:
+    name: dinopass

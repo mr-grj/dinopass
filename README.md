@@ -21,7 +21,7 @@
 
 ## What is this?
 
-I built this for myself because I was tired of every password manager wanting my email address, a subscription, a browser extension with access to everything, and ideally my soul too. Most of the big ones - 1Password, Bitwarden, LastPass - lean on a hosted account, a sync layer, or a monthly bill by default. Some are open source or can be self-hosted, which is genuinely great, but the easy path still points at a cloud you don't run.
+I built this for myself because I was tired of every password manager wanting my email address, a subscription, a browser extension with access to everything, and ideally my soul too. Most of the big ones lean on a hosted account, a sync layer, or a monthly bill by default. Some are open source or can be self-hosted, which is genuinely great, but the easy path still points at a cloud you don't run.
 
 I just wanted something that lives on my own machine, has no telemetry, talks to no third party, and doesn't wake up one day to announce it's been acquired and my vault is migrating to some new platform. No Google. No OAuth. No "sign in with Apple". No analytics pinging home. Nothing.
 

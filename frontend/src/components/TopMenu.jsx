@@ -1,6 +1,15 @@
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
-import { AppBar, Box, Button, IconButton, Toolbar, Tooltip, Typography } from "@mui/material";
+import {
+  AppBar,
+  Box,
+  Button,
+  Container,
+  IconButton,
+  Toolbar,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
 
 import { isAuth, removeKeyDerivation } from "../utils";
@@ -23,40 +32,42 @@ const TopMenu = () => {
       position="absolute"
       sx={IS_DEV ? { borderBottom: `3px solid ${DEV_ACCENT}` } : undefined}
     >
-      <Toolbar sx={{ pr: "24px" }}>
-        <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 1 }}>
-          <Box
-            component="img"
-            src="/dino.svg"
-            alt="dino"
-            sx={{ height: 26, filter: "invert(1)", display: "block" }}
-          />
-          <Typography component="h1" variant="h6" noWrap sx={{ color: "inherit" }}>
-            Dinopass
-          </Typography>
-          <EnvBadge />
-        </Box>
+      <Container maxWidth="lg">
+        <Toolbar disableGutters>
+          <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 1 }}>
+            <Box
+              component="img"
+              src="/dino.svg"
+              alt="dino"
+              sx={{ height: 26, filter: "invert(1)", display: "block" }}
+            />
+            <Typography component="h1" variant="h6" noWrap sx={{ color: "inherit" }}>
+              Dinopass
+            </Typography>
+            <EnvBadge />
+          </Box>
 
-        {userIsAuth ? (
-          <>
-            <Tooltip title="Settings">
-              <IconButton color="inherit" onClick={() => setSettingsOpen(true)} sx={{ mr: 0.5 }}>
-                <SettingsIcon />
-              </IconButton>
-            </Tooltip>
-            <Button color="inherit" onClick={handleLogout}>
-              Log out
-            </Button>
-            <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-          </>
-        ) : (
-          pathname !== "/login" && (
-            <Button href="/login" color="inherit">
-              Log in
-            </Button>
-          )
-        )}
-      </Toolbar>
+          {userIsAuth ? (
+            <>
+              <Tooltip title="Settings">
+                <IconButton color="inherit" onClick={() => setSettingsOpen(true)} sx={{ mr: 0.5 }}>
+                  <SettingsIcon />
+                </IconButton>
+              </Tooltip>
+              <Button color="inherit" onClick={handleLogout}>
+                Log out
+              </Button>
+              <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+            </>
+          ) : (
+            pathname !== "/login" && (
+              <Button href="/login" color="inherit">
+                Log in
+              </Button>
+            )
+          )}
+        </Toolbar>
+      </Container>
     </AppBar>
   );
 };

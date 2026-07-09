@@ -12,6 +12,6 @@
 
 # Node
 frontend/node_modules
-frontend/build
+frontend/dist
 
 backend/.db.env

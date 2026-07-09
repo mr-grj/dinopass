@@ -1,4 +1,4 @@
-import LoadingButton from "@mui/lab/LoadingButton";
+import Button from "@mui/material/Button";
 
 const DinoLoadingButton = ({
   buttonText,
@@ -7,15 +7,9 @@ const DinoLoadingButton = ({
   variant = "contained",
   fullWidth = false,
 }) => (
-  <LoadingButton
-    fullWidth={fullWidth}
-    loading={loading}
-    onClick={onClick}
-    variant={variant}
-    size="large"
-  >
+  <Button fullWidth={fullWidth} loading={loading} onClick={onClick} variant={variant} size="large">
     {buttonText}
-  </LoadingButton>
+  </Button>
 );
 
 export default DinoLoadingButton;

@@ -12,7 +12,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutlined";
 import { useStoreActions, useStoreState } from "easy-peasy";
 import { useSnackbar } from "notistack";
 
@@ -112,7 +112,12 @@ const SettingsModal = ({ open, onClose }) => {
     <Dialog open={open} onClose={saving ? undefined : onClose} maxWidth="xs" fullWidth>
       <DialogTitle>Settings</DialogTitle>
       <DialogContent>
-        <Stack spacing={2} mt={1}>
+        <Stack
+          spacing={2}
+          sx={{
+            mt: 1,
+          }}
+        >
           {FIELDS.map(({ key, label, tooltip, min, max }) => (
             <TextField
               key={key}

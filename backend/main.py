@@ -28,7 +28,7 @@ def get_application() -> FastAPI:
     server = FastAPI(**settings.fastapi_kwargs)
 
     server.state.limiter = limiter
-    server.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
+    server.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # ty: ignore[invalid-argument-type]
 
     server.add_middleware(
         CORSMiddleware,  # type: ignore[arg-type]

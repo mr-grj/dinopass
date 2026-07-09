@@ -36,7 +36,7 @@ services:
       context: .
       dockerfile: docker/frontend/Dockerfile
       args:
-        REACT_APP_API_URL: http://localhost:8000/api
+        VITE_API_URL: http://localhost:8000/api
     ports:
       - "3000:3000"
     restart: unless-stopped

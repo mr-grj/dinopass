@@ -14,9 +14,11 @@ services:
       context: .
       dockerfile: docker/frontend/Dockerfile.dev
     environment:
-      REACT_APP_API_URL: http://localhost:8000/api
-      WATCHPACK_POLLING: "true"
+      VITE_API_URL: http://localhost:8000/api
+      VITE_USE_POLLING: "true"
     volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
+      # Mount the whole frontend for HMR (index.html and vite.config.js live at
+      # the root), but keep the container's node_modules (native binaries differ).
+      - ./frontend:/app
+      - /app/node_modules
     stdin_open: true

@@ -116,7 +116,14 @@ const LoginPage = () => {
 
   if (initialized === null) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "60vh",
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -124,11 +131,13 @@ const LoginPage = () => {
 
   return (
     <Box
-      display="flex"
-      flexDirection="column"
-      alignItems="center"
-      justifyContent="center"
-      minHeight="70vh"
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "70vh",
+      }}
     >
       <Box
         component="form"
@@ -146,12 +155,31 @@ const LoginPage = () => {
         }}
       >
         {/* Icon + heading */}
-        <Box display="flex" flexDirection="column" alignItems="center" gap={1} mb={0.5}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 1,
+            mb: 0.5,
+          }}
+        >
           <Box component="img" src="/dino.svg" alt="dino" sx={{ width: 64, height: 64 }} />
-          <Typography variant="h6" fontWeight={700}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 700,
+            }}
+          >
             {initialized ? "Welcome back" : "Set up your vault"}
           </Typography>
-          <Typography variant="body2" color="text.secondary" textAlign="center">
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              textAlign: "center",
+            }}
+          >
             {initialized
               ? "Enter your master password to unlock your vault."
               : "Create a master password to protect all your passwords."}
@@ -178,7 +206,14 @@ const LoginPage = () => {
               color={strength.color}
               sx={{ borderRadius: 1, height: 6 }}
             />
-            <Typography variant="caption" color={`${strength.color}.main`} mt={0.5} display="block">
+            <Typography
+              variant="caption"
+              color={`${strength.color}.main`}
+              sx={{
+                mt: 0.5,
+                display: "block",
+              }}
+            >
               {strength.label}
             </Typography>
           </Box>

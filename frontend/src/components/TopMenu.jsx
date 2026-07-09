@@ -22,9 +22,14 @@ const TopMenu = () => {
         <Typography
           component="h1"
           variant="h6"
-          color="inherit"
           noWrap
-          sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 1 }}
+          sx={{
+            color: "inherit",
+            flexGrow: 1,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}
         >
           <Box
             component="img"

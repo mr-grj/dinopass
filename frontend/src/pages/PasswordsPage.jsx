@@ -30,7 +30,7 @@ import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import GppBadIcon from "@mui/icons-material/GppBad";
 import GppGoodIcon from "@mui/icons-material/GppGood";
 import GppMaybeIcon from "@mui/icons-material/GppMaybe";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlined";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -111,7 +111,13 @@ const StrengthBar = ({ password }) => {
   const s = getPasswordStrength(password);
   return (
     <Box>
-      <Stack direction="row" spacing={0.5} mb={0.75}>
+      <Stack
+        direction="row"
+        spacing={0.5}
+        sx={{
+          mb: 0.75,
+        }}
+      >
         {[0, 1, 2, 3, 4].map((i) => (
           <Box
             key={i}
@@ -470,7 +476,14 @@ const PasswordsPage = () => {
               : GppGoodIcon
           : null;
         return (
-          <Stack direction="row" alignItems="center" spacing={0} height="100%">
+          <Stack
+            direction="row"
+            spacing={0}
+            sx={{
+              alignItems: "center",
+              height: "100%",
+            }}
+          >
             <Tooltip title={visible ? "Hide password" : "Reveal password"}>
               <IconButton size="small" onClick={() => toggleVisibility(params.row.password_name)}>
                 {visible ? (
@@ -505,10 +518,21 @@ const PasswordsPage = () => {
               <Tooltip
                 title={
                   <Box>
-                    <Typography variant="caption" fontWeight={700} sx={{ color: strength.color }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 700,
+                        color: strength.color,
+                      }}
+                    >
                       {strength.label}
                     </Typography>
-                    <Typography variant="caption" display="block">
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        display: "block",
+                      }}
+                    >
                       {strength.recommend
                         ? "We recommend updating this password."
                         : "This password looks good."}
@@ -516,13 +540,23 @@ const PasswordsPage = () => {
                   </Box>
                 }
               >
-                <Box display="flex" alignItems="center">
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
                   <StrengthIcon fontSize="small" sx={{ color: strength.color }} />
                 </Box>
               </Tooltip>
             )}
             <Tooltip title={params.row.backed_up ? "Password backed up" : "Password not backed up"}>
-              <Box display="flex" alignItems="center">
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
                 {params.row.backed_up ? (
                   <CheckCircleOutlineIcon fontSize="small" sx={{ color: "success.main" }} />
                 ) : (
@@ -550,12 +584,31 @@ const PasswordsPage = () => {
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={3}>
+      <Stack
+        direction="row"
+        sx={{
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          mb: 3,
+        }}
+      >
         <Box>
-          <Typography variant="h5" fontWeight={700} lineHeight={1.2}>
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 700,
+              lineHeight: 1.2,
+            }}
+          >
             Dino Vault
           </Typography>
-          <Typography variant="body2" color="text.secondary" mt={0.5}>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              mt: 0.5,
+            }}
+          >
             {subtitle}
           </Typography>
         </Box>
@@ -576,7 +629,6 @@ const PasswordsPage = () => {
           </Button>
         </Stack>
       </Stack>
-
       {!isEmpty && (
         <TextField
           size="small"
@@ -595,22 +647,26 @@ const PasswordsPage = () => {
           }}
         />
       )}
-
       {loading && (
-        <Box display="flex" justifyContent="center" mt={8}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            mt: 8,
+          }}
+        >
           <CircularProgress />
         </Box>
       )}
-
       {isEmpty && (
         <Box
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          justifyContent="center"
-          py={10}
-          gap={2}
           sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            py: 10,
+            gap: 2,
             bgcolor: "background.paper",
             borderRadius: 3,
             border: "1px dashed",
@@ -618,10 +674,22 @@ const PasswordsPage = () => {
           }}
         >
           <Box component="img" src="/dino.svg" alt="dino" sx={{ width: 96, height: 96, mb: 1 }} />
-          <Typography variant="h6" fontWeight={600}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 600,
+            }}
+          >
             The vault is empty
           </Typography>
-          <Typography variant="body2" color="text.secondary" textAlign="center" maxWidth={320}>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              textAlign: "center",
+              maxWidth: 320,
+            }}
+          >
             Your prehistoric password guardian is standing by. Add your first password to get
             started.
           </Typography>
@@ -635,14 +703,25 @@ const PasswordsPage = () => {
           </Button>
         </Box>
       )}
-
       {!loading && !isEmpty && (
         <DataGrid
           rows={filteredPasswords}
           slots={{
             noRowsOverlay: () => (
-              <Box display="flex" alignItems="center" justifyContent="center" height="100%">
-                <Typography variant="body2" color="text.secondary">
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "100%",
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "text.secondary",
+                  }}
+                >
                   No passwords match &ldquo;{search.trim()}&rdquo;.
                 </Typography>
               </Box>
@@ -664,11 +743,15 @@ const PasswordsPage = () => {
           }}
         />
       )}
-
       <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="sm" fullWidth>
         <DialogTitle>{editTarget ? "Edit Password" : "Add Password"}</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} mt={1}>
+          <Stack
+            spacing={2}
+            sx={{
+              mt: 1,
+            }}
+          >
             <TextField
               label="Name"
               value={form.password_name}
@@ -720,14 +803,27 @@ const PasswordsPage = () => {
                   <Box>
                     <Stack
                       direction="row"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      mb={0.5}
+                      sx={{
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        mb: 0.5,
+                      }}
                     >
-                      <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "text.secondary",
+                          fontWeight: 500,
+                        }}
+                      >
                         Length
                       </Typography>
-                      <Typography variant="caption" fontWeight={700}>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontWeight: 700,
+                        }}
+                      >
                         {genOpts.length}
                       </Typography>
                     </Stack>
@@ -740,7 +836,14 @@ const PasswordsPage = () => {
                       onChange={handleGenLength}
                     />
                   </Box>
-                  <Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap">
+                  <Stack
+                    direction="row"
+                    spacing={0.75}
+                    sx={{
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                    }}
+                  >
                     {GEN_CHAR_OPTS.map(({ key, label }) => (
                       <Chip
                         key={key}
@@ -752,7 +855,11 @@ const PasswordsPage = () => {
                         sx={{ fontFamily: "monospace", fontWeight: 600 }}
                       />
                     ))}
-                    <Box flex={1} />
+                    <Box
+                      sx={{
+                        flex: 1,
+                      }}
+                    />
                     <Tooltip title="Regenerate">
                       <IconButton size="small" onClick={() => applyGenerated(genOpts)}>
                         <RefreshIcon fontSize="small" />
@@ -798,12 +905,21 @@ const PasswordsPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
       <Dialog open={backupDialogOpen} onClose={closeBackupDialog} maxWidth="xs" fullWidth>
         <DialogTitle>Create Backup</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} mt={1}>
-            <Typography variant="body2" color="text.secondary">
+          <Stack
+            spacing={2}
+            sx={{
+              mt: 1,
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+              }}
+            >
               Your passwords will be exported as an AES-256 encrypted ZIP file. Open it with your
               master password.
             </Typography>
@@ -839,14 +955,23 @@ const PasswordsPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
       <Dialog open={importDialogOpen} onClose={closeImportDialog} maxWidth="xs" fullWidth>
         <DialogTitle>{importResult ? "Import Complete" : "Import Backup"}</DialogTitle>
         <DialogContent>
           {importResult ? (
-            <Stack spacing={1} mt={1}>
+            <Stack
+              spacing={1}
+              sx={{
+                mt: 1,
+              }}
+            >
               {importResult.total === 0 ? (
-                <Typography variant="body2" color="text.secondary">
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "text.secondary",
+                  }}
+                >
                   No passwords found in the backup file.
                 </Typography>
               ) : (
@@ -864,7 +989,12 @@ const PasswordsPage = () => {
                     </Typography>
                   )}
                   {importResult.skipped > 0 && (
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "text.secondary",
+                      }}
+                    >
                       <strong>{importResult.skipped}</strong> password
                       {importResult.skipped !== 1 ? "s" : ""} skipped (already exist).
                     </Typography>
@@ -873,8 +1003,18 @@ const PasswordsPage = () => {
               )}
             </Stack>
           ) : (
-            <Stack spacing={2} mt={1}>
-              <Typography variant="body2" color="text.secondary">
+            <Stack
+              spacing={2}
+              sx={{
+                mt: 1,
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                }}
+              >
                 Upload a dinopass backup ZIP and enter your master password to restore passwords.
               </Typography>
               <Button
@@ -954,7 +1094,6 @@ const PasswordsPage = () => {
           )}
         </DialogActions>
       </Dialog>
-
       <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth="xs" fullWidth>
         <DialogTitle>Delete Password</DialogTitle>
         <DialogContent>

@@ -44,7 +44,7 @@ Nothing exotic. I used tools I know and trust.
 |---|---|
 | Backend | Python 3.13, FastAPI, SQLAlchemy 2.0, asyncpg |
 | Database | PostgreSQL 16 |
-| Frontend | React 18, MUI v6, easy-peasy |
+| Frontend | React 19, Vite, MUI v9, easy-peasy |
 | Package manager | uv (backend), npm (frontend) |
 | Code style | ruff (backend), Prettier (frontend) |
 | Type checking | ty (backend) |
@@ -161,7 +161,7 @@ Everything is optional - the defaults work fine for local use.
 
 | Variable | Default | Description |
 |---|---|---|
-| `REACT_APP_API_URL` | `http://localhost:8000/api` | Backend API base URL |
+| `VITE_API_URL` | `http://localhost:8000/api` | Backend API base URL |
 
 **CLI:**
 

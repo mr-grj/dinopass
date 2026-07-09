@@ -1,6 +1,6 @@
 [project]
 name = "backend"
-version = "0.2.0"
+version = "0.3.0"
 description = "Dinopass Password Manager API"
 requires-python = ">=3.13"
 dependencies = [

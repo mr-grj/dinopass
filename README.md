@@ -168,6 +168,20 @@ PGDATA=/var/lib/postgresql/data/pgdata
 ```
 </details>
 
+## Run from prebuilt images (no cloning)
+
+Don't want to clone and build? Released images are published to GHCR, so you only need two files: [`docker-compose.prod.yml`](docker-compose.prod.yml) and [`.env.prod.example`](.env.prod.example).
+
+```shell
+curl -O https://raw.githubusercontent.com/mr-grj/dinopass/master/docker-compose.prod.yml
+curl -O https://raw.githubusercontent.com/mr-grj/dinopass/master/.env.prod.example
+
+cp .env.prod.example .env          # then edit it: set POSTGRES_PASSWORD
+docker compose -f docker-compose.prod.yml up -d
+```
+
+On `localhost` the defaults work as-is. On a server, set `DINOPASS_API_URL` and `DINOPASS_FRONTEND_ORIGIN` in `.env` to your host or domain (behind HTTPS ideally) so the browser can reach the API and CORS lets it through. Pin `DINOPASS_VERSION` to a release tag for reproducible deploys. The no-recovery and backup notes above apply here too.
+
 ## Personal use vs development
 
 Dinopass runs as **two completely separate stacks** so you can trust one with real passwords and treat the other as a throwaway sandbox. They have different Docker Compose project names, which means separate databases, networks, and ports - you can run both at the same time and the dev sandbox can never see or clobber your real vault.

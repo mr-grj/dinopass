@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-10
+
 ### Added
 
 - **Website, two-factor, tags and favorites per entry.** Each password can now carry a website, a TOTP secret, tags, and a favorite flag. All of them (except the favorite flag) are encrypted at rest with the same vault key, so the database still only ever holds ciphertext.
@@ -12,6 +14,7 @@
 - **`make setup`** generates `backend/.db.env` with a strong random database password so first-time setup is one command.
 - **Separate personal and development stacks.** `make buildup` (your real vault) and `make dev` now run as distinct Docker Compose projects, each with its own database volume, network, and ports (dev on `3100`/`8100`), so you can run both at once and a dev sandbox can never see or clobber your real vault. `make clean` only ever wipes the dev database; tearing down the real vault is a separate, confirmation-guarded `make clean-prod`. New `make down`/`make dev-down` stop a stack without wiping its data.
 - **Environment badge in the app bar.** The dev stack shows a loud amber **DEV** chip (plus an amber accent line); your real vault shows a calm **LIVE** chip. It's derived from the build itself (Vite dev server vs `vite build`), so there's nothing to configure - and it makes it hard to ever mistake the sandbox for the real thing.
+- **Prebuilt images + a pull-and-run compose.** Release images are published to GHCR (`ghcr.io/mr-grj/dinopass-backend` and `-frontend`, multi-arch amd64/arm64) whenever a `v*.*.*` tag is pushed. A new `docker-compose.prod.yml` + `.env.prod.example` let you run Dinopass without cloning or building - grab the two files, set a database password, `docker compose -f docker-compose.prod.yml up -d`. The frontend image takes its API URL at container start, so one image works for any host.
 
 ### Security
 

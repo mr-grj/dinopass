@@ -22,11 +22,13 @@ WORKDIR /app
 
 RUN npm install -g serve
 
-COPY --from=builder /app/dist ./dist
+COPY --from=builder --chown=dinopass:dinopass /app/dist ./dist
 COPY --from=builder /app/serve.json ./serve.json
+COPY docker/frontend/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 USER dinopass
 
 EXPOSE 3000
 
-CMD ["serve", "-s", "dist", "-l", "3000", "-c", "/app/serve.json"]
+CMD ["/app/entrypoint.sh"]

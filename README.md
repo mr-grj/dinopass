@@ -1,5 +1,11 @@
 # 🦖 Dinopass
 
+[![CI](https://github.com/mr-grj/dinopass/actions/workflows/ci.yml/badge.svg)](https://github.com/mr-grj/dinopass/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-MIT-000000.svg)](./LICENSE)
+[![Python](https://img.shields.io/badge/python-3.13-000000.svg)](https://www.python.org/)
+[![PostgreSQL](https://img.shields.io/badge/postgres-16-000000.svg)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/docker-compose-000000.svg)](https://docs.docker.com/compose/)
+
 > A self-hosted password manager for people who are tired of forgetting passwords (and resetting them, again).
 
 ```

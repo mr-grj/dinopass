@@ -20,8 +20,8 @@ develop-eggs/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+# NB: no bare "lib/" / "lib64/" here - they would also match frontend/src/lib,
+# which is real source. Python build output is covered by build/ and dist/.
 parts/
 sdist/
 var/

@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: true, // listen on 0.0.0.0 so the dev server is reachable from Docker
-    port: 3000,
+    port: Number(process.env.VITE_PORT) || 3000,
     strictPort: true,
     // File-system polling is needed for hot-reload inside Docker bind mounts.
     watch: process.env.VITE_USE_POLLING ? { usePolling: true } : undefined,

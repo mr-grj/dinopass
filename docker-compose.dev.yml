@@ -1,3 +1,6 @@
+# Development overlay
+name: dinopass-dev
+
 services:
   backend:
     build:
@@ -6,6 +9,10 @@ services:
     command: >
       sh -c "alembic upgrade head &&
              uvicorn main:app --host 0.0.0.0 --port 80 --reload"
+    ports: !override
+      - "8100:80"
+    environment:
+      CORS_ORIGINS: '["http://localhost:3100"]'
     volumes:
       - ./backend:/app/src
 
@@ -13,12 +20,13 @@ services:
     build:
       context: .
       dockerfile: docker/frontend/Dockerfile.dev
+    ports: !override
+      - "3100:3100"
     environment:
-      VITE_API_URL: http://localhost:8000/api
+      VITE_API_URL: http://localhost:8100/api
+      VITE_PORT: "3100"
       VITE_USE_POLLING: "true"
     volumes:
-      # Mount the whole frontend for HMR (index.html and vite.config.js live at
-      # the root), but keep the container's node_modules (native binaries differ).
       - ./frontend:/app
       - /app/node_modules
     stdin_open: true

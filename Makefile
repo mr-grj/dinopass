@@ -1,7 +1,9 @@
 override SHELL := /bin/bash
 
+COMPOSE_DEV := docker compose -f docker-compose.yml -f docker-compose.dev.yml
+
 .PHONY: all
-all: clean buildup
+all: clean dev
 
 .PHONY: setup
 setup:
@@ -14,22 +16,48 @@ setup:
 		echo 'Done. Run "make buildup" to start Dinopass.'; \
 	fi
 
-.PHONY: clean
-clean:
-	@echo 'Removing containers...'
-	-docker compose down --volumes --remove-orphans --rmi local
-	@echo 'Removing cache files...'
-	-find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
+# Production (real, daily-use instance)
 
 .PHONY: buildup
 buildup:
-	@echo 'Building and starting containers...'
+	@echo 'Building and starting the production stack (UI :3000, API :8000)...'
 	docker compose up -d --build
+
+.PHONY: down
+down:
+	@echo 'Stopping the production stack (database volume is kept)...'
+	docker compose down
+
+.PHONY: clean-prod
+clean-prod:
+	@echo 'WARNING: this DESTROYS the production database volume -> your real vault.'
+	@echo 'There is no password recovery. This cannot be undone.'
+	@read -r -p 'Type "destroy" to confirm: ' ans; \
+	if [ "$$ans" = "destroy" ]; then \
+		docker compose down --volumes --remove-orphans --rmi local; \
+		echo 'Production stack and volume removed.'; \
+	else \
+		echo 'Aborted. Nothing was removed.'; \
+	fi
+
+# Development (throwaway sandbox, separate database)
 
 .PHONY: dev
 dev:
-	@echo 'Starting in development mode (hot-reload)...'
-	docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
+	@echo 'Starting the dev stack with hot-reload (UI :3100, API :8100)...'
+	$(COMPOSE_DEV) up --build -d
+
+.PHONY: dev-down
+dev-down:
+	@echo 'Stopping the dev stack (dev database volume is kept)...'
+	$(COMPOSE_DEV) down
+
+.PHONY: clean
+clean:
+	@echo 'Removing the dev stack and its database volume...'
+	-$(COMPOSE_DEV) down --volumes --remove-orphans --rmi local
+	@echo 'Removing cache files...'
+	-find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
 
 .PHONY: lint
 lint:

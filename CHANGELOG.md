@@ -10,6 +10,8 @@
 - **Vault health check.** A local, offline report that flags weak, reused, and stale passwords. It never sends anything anywhere.
 - **CSV import from other managers.** Import a plain CSV exported from Chrome, Bitwarden, KeePass, Proton Pass and similar, from the web UI or `dinopass import-csv`. Columns are matched automatically.
 - **`make setup`** generates `backend/.db.env` with a strong random database password so first-time setup is one command.
+- **Separate personal and development stacks.** `make buildup` (your real vault) and `make dev` now run as distinct Docker Compose projects, each with its own database volume, network, and ports (dev on `3100`/`8100`), so you can run both at once and a dev sandbox can never see or clobber your real vault. `make clean` only ever wipes the dev database; tearing down the real vault is a separate, confirmation-guarded `make clean-prod`. New `make down`/`make dev-down` stop a stack without wiping its data.
+- **Environment badge in the app bar.** The dev stack shows a loud amber **DEV** chip (plus an amber accent line); your real vault shows a calm **LIVE** chip. It's derived from the build itself (Vite dev server vs `vite build`), so there's nothing to configure - and it makes it hard to ever mistake the sandbox for the real thing.
 
 ### Security
 
@@ -18,6 +20,10 @@
 - **Full master password is now authenticated.** bcrypt truncates at 72 bytes, so a very long master password used to only be checked by its first 72 bytes. It's now pre-hashed with SHA-256 before bcrypt so the whole thing counts. This changes the stored hash format and is not backward compatible, so a vault created before this change needs to be set up again.
 - **Rate-limited the master password change endpoint.** It verifies the current master password, so leaving it unlimited was a brute-force gap that bypassed the cap on the login check. It's now capped at 10/hour like the check endpoint.
 - **Import rejects oversized uploads before reading them** into memory, and the reverse-proxy rate-limiting caveat is now documented in the README.
+
+### Docs
+
+- **README rework, with screenshots.** Added screenshots of the vault, the add/generate flow, the health report, and first-run setup; a "who it's for (and who it isn't)"; a "security status" note that says plainly it hasn't been independently audited; a threat model; and a clearer split between running Dinopass for real vs. developing on it. The full CLI reference moved into [`docs/CLI.md`](docs/CLI.md).
 
 ### Internal
 

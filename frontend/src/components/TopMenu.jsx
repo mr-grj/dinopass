@@ -4,6 +4,8 @@ import { AppBar, Box, Button, IconButton, Toolbar, Tooltip, Typography } from "@
 import SettingsIcon from "@mui/icons-material/Settings";
 
 import { isAuth, removeKeyDerivation } from "../utils";
+import { DEV_ACCENT, IS_DEV } from "../lib/appEnv";
+import EnvBadge from "./EnvBadge";
 import SettingsModal from "./SettingsModal";
 
 const TopMenu = () => {
@@ -17,28 +19,23 @@ const TopMenu = () => {
   };
 
   return (
-    <AppBar position="absolute">
+    <AppBar
+      position="absolute"
+      sx={IS_DEV ? { borderBottom: `3px solid ${DEV_ACCENT}` } : undefined}
+    >
       <Toolbar sx={{ pr: "24px" }}>
-        <Typography
-          component="h1"
-          variant="h6"
-          noWrap
-          sx={{
-            color: "inherit",
-            flexGrow: 1,
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-          }}
-        >
+        <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 1 }}>
           <Box
             component="img"
             src="/dino.svg"
             alt="dino"
             sx={{ height: 26, filter: "invert(1)", display: "block" }}
           />
-          Dinopass
-        </Typography>
+          <Typography component="h1" variant="h6" noWrap sx={{ color: "inherit" }}>
+            Dinopass
+          </Typography>
+          <EnvBadge />
+        </Box>
 
         {userIsAuth ? (
           <>

@@ -4,7 +4,7 @@ This is a password manager. Security isn't a feature here - it's the whole point
 
 ## Found something? Tell me here
 
-Open a [GitHub Security Advisory](https://github.com/mrgrj/dinopass/security/advisories/new) - it's private by default, only visible to you and me. Describe what you found, how to reproduce it, and what you think the impact is. That's all I need to get started.
+Open a [GitHub Security Advisory](https://github.com/mr-grj/dinopass/security/advisories/new) - it's private by default, only visible to you and me. Describe what you found, how to reproduce it, and what you think the impact is. That's all I need to get started.
 
 I'll acknowledge it within a few days. If it's real, I'll fix it and credit you in the release notes - unless you'd rather stay anonymous, which is also fine.
 

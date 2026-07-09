@@ -21,13 +21,24 @@
 
 ## What is this?
 
-I built this for myself because I was tired of every password manager wanting my email address, a subscription, a browser extension with access to everything, and ideally my soul too. 1Password, Bitwarden, LastPass - they all eventually want you to trust some cloud you don't control, run code you can't audit, or pay monthly for the privilege of storing text.
+I built this for myself because I was tired of every password manager wanting my email address, a subscription, a browser extension with access to everything, and ideally my soul too. Most of the big ones - 1Password, Bitwarden, LastPass - lean on a hosted account, a sync layer, or a monthly bill by default. Some are open source or can be self-hosted, which is genuinely great, but the easy path still points at a cloud you don't run.
 
-I just wanted something that runs on my own machine, has no telemetry, talks to no third party, and doesn't wake up one day to announce it's been acquired and my vault is migrating to some new platform. No Google. No OAuth. No "sign in with Apple". No analytics pinging home. Nothing.
+I just wanted something that lives on my own machine, has no telemetry, talks to no third party, and doesn't wake up one day to announce it's been acquired and my vault is migrating to some new platform. No Google. No OAuth. No "sign in with Apple". No analytics pinging home. Nothing.
 
-So I built Dinopass. It's a password manager that lives on your hardware, speaks to nobody, and keeps your passwords encrypted with a key only you know. One master password unlocks everything. If someone gets the database, they get encrypted blobs and nothing else.
+So I built Dinopass. It's a password manager that lives on your hardware, speaks to nobody, and keeps your passwords encrypted with a key only you know. One master password unlocks everything. If someone gets the database, they get encrypted blobs - not your passwords.
 
 It's probably overkill for most people. But it's mine, and that's kind of the point.
+
+## Screenshots
+
+|  |  |
+|---|---|
+| **Your vault** | **Add a password, generate a strong one** |
+| ![Vault overview](docs/screenshots/01-vault.png) | ![Add password with generator](docs/screenshots/02-add-generator.png) |
+| **Vault health, computed on your device** | **First run: set up your master password** |
+| ![Vault health report](docs/screenshots/03-health.png) | ![Set up your vault](docs/screenshots/00-login.png) |
+
+Minimal black-and-white UI, a friendly dino, and a live 2FA column that rolls in your browser. That's the whole vibe.
 
 ## What it does
 
@@ -47,6 +58,62 @@ The basics you'd expect:
 - Encrypted backup export and import so you're not one disk failure away from losing everything
 - Auto-locks after inactivity and clears the clipboard after copy - small things that matter
 
+## Who it's for (and who it isn't)
+
+Dinopass is probably a good fit if you:
+
+- want a self-hosted password manager with no accounts, no telemetry, and no third parties
+- are comfortable running Docker on a machine you control
+- like small, auditable software and are happy owning your own backups
+
+It's probably not for you (yet) if you need:
+
+- browser autofill or a mobile app
+- family or team sharing
+- managed cloud sync across all your devices
+- a way to recover your vault if you forget your master password
+
+No hard feelings - those are real needs, just not what this is trying to be.
+
+## Security status
+
+Straight up, because this is a password manager and you deserve it: **Dinopass has not been independently audited.** It's a personal project I use myself and built carefully, with the crypto kept small and readable on purpose - but it has not been through a formal third-party security review. It's designed for self-hosted personal use on hardware you trust, not as a public, multi-tenant service holding other people's secrets. If you're storing high-value secrets, weigh that accordingly.
+
+How to report something is in [SECURITY.md](./SECURITY.md).
+
+## How the security actually works
+
+I spent more time on this than I care to admit, so here's what's actually happening under the hood:
+
+- Your master password is hashed with **bcrypt** - it's never stored in plain, and nothing is reversible. New vaults require a reasonably strong master password (at least 12 characters, mixed types), enforced on the server, not just in the browser
+- Every stored password is encrypted with **Fernet** (AES-128-CBC + HMAC-SHA256) using a key derived from your master password via **Argon2id** (64 MiB memory, 3 iterations, 4 lanes - the OWASP 2024 interactive profile). The key is unique per vault thanks to a random salt
+- The website, two-factor secret, tags, and password history are encrypted the same way. The database never learns which sites you have accounts on or how you organise them
+- That derived key lives only in your browser's `sessionStorage` for the duration of your session - it never touches the server, and it disappears the moment you close the tab
+- If you change your master password, every encrypted field is re-encrypted transparently
+- The password generator uses `crypto.getRandomValues` with rejection sampling to eliminate modulo bias - no `Math.random()`, no shortcuts
+
+If someone steals the database, they get a pile of ciphertext and a bcrypt hash. Without your master password - and assuming you chose a strong one - there's nothing in there they can read.
+
+## Threat model
+
+No security tool defends against everything, and a password manager that pretends otherwise is lying to you. Here's the honest shape of it.
+
+**Dinopass is built to protect against:**
+
+- Someone who steals the database or the disk - they get ciphertext and a bcrypt hash, not your passwords
+- Accidental server-side exposure - the server never persists your master password or the derived key
+- Casual inspection of stored data - even the metadata (websites, tags, 2FA secrets, history) is encrypted, not just the password value
+
+**Dinopass does not protect against:**
+
+- Malware, a keylogger, or a compromised browser on the device you use to unlock the vault
+- A malicious script running in your session (a cross-site scripting bug, a poisoned dependency) reading the key while the tab is open - this is the usual trade-off for any web vault, and it's why the dependency list is kept small
+- A weak master password - if it's guessable, everything above unwinds
+- Exposing the instance directly on the public internet without HTTPS and a reverse proxy
+- Forgetting your master password - there is no recovery, full stop (see below)
+
+The takeaway: run it on a machine and network you trust, use a strong master password, and keep a backup.
+
 ## Tech stack
 
 Nothing exotic. I used tools I know and trust.
@@ -61,40 +128,36 @@ Nothing exotic. I used tools I know and trust.
 | Type checking | ty (backend) |
 | Infrastructure | Docker, Docker Compose v2 |
 
-## How the security actually works
+## Quick start (personal use)
 
-I spent more time on this than I care to admit, so here's what's actually happening under the hood:
+This is the path if you want to run Dinopass for your **real, everyday passwords**. You need [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/). That's it.
 
-- Your master password is hashed with **bcrypt** - it's never stored in plain, and nothing is reversible. New vaults require a reasonably strong master password (at least 12 characters, mixed types), enforced on the server, not just in the browser
-- Every stored password is encrypted with **Fernet** (AES-128-CBC + HMAC-SHA256) using a key derived from your master password via **Argon2id** (64 MiB memory, 3 iterations, 4 lanes - the OWASP 2024 interactive profile). The key is unique per vault thanks to a random salt
-- The website, two-factor secret, tags, and password history are encrypted the same way. The database never learns which sites you have accounts on or how you organise them
-- That derived key lives only in your browser's `sessionStorage` for the duration of your session - it never touches the server, and it disappears the moment you close the tab
-- If you change your master password, every encrypted field is re-encrypted transparently
-- The password generator uses `crypto.getRandomValues` with rejection sampling to eliminate modulo bias - no `Math.random()`, no shortcuts
-
-If someone steals the database, they have a pile of ciphertext and a bcrypt hash. Without the master password, that's useless.
-
-What Dinopass does not defend against is someone running code inside your own browser session. The derived key lives in `sessionStorage` while the tab is open, so a malicious script on the page (a compromised dependency, a cross-site scripting bug) could read it. That is the usual trade-off for a web vault, and it is why Dinopass is meant to run on a machine and network you trust, and why I keep the dependency list small. Keep your instance updated.
-
-## Running it
-
-You need [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/). That's it.
-
-### 1. Configure the database
-
-The quick way, which creates `backend/.db.env` and generates a strong database password for you:
+**1. Generate the database config** (creates `backend/.db.env` with a strong random password):
 
 ```shell
 make setup
 ```
 
-Or do it by hand:
+**2. Build and start your vault:**
+
+```shell
+make buildup
+```
+
+**3. Open [http://localhost:3000](http://localhost:3000)**, create a master password, and you're in.
+
+Your data lives in a persistent Docker volume, so it survives restarts and updates. When you're done, `make down` stops it without touching your data.
+
+> ⚠️ **There is no password recovery.** Losing your master password means losing your vault - permanently. No reset link, no support email, no backdoor. That's the trade for nobody-but-you holding the key. Write your master password down somewhere safe, and take a backup (from the UI or the CLI) once you've added a few entries.
+
+<details>
+<summary>Prefer to configure the database by hand?</summary>
+
+Instead of `make setup`, copy the template and edit it:
 
 ```shell
 cp backend/.db.env.template backend/.db.env
 ```
-
-Then edit `backend/.db.env` and set a real username and password:
 
 ```dotenv
 POSTGRES_HOST=db
@@ -103,53 +166,52 @@ POSTGRES_USER=youruser
 POSTGRES_PASSWORD=a-strong-password   # openssl rand -base64 32
 PGDATA=/var/lib/postgresql/data/pgdata
 ```
+</details>
 
-### 2. Start
+## Personal use vs development
 
-There are two compose files - one for running it, one for working on it:
+Dinopass runs as **two completely separate stacks** so you can trust one with real passwords and treat the other as a throwaway sandbox. They have different Docker Compose project names, which means separate databases, networks, and ports - you can run both at the same time and the dev sandbox can never see or clobber your real vault.
 
-| File | Purpose | When to use |
+| | Personal (real vault) | Development |
 |---|---|---|
-| `docker-compose.yml` | Production: optimised multi-stage images, static frontend build | Deploying or testing a production-like build |
-| `docker-compose.dev.yml` | Development overlay: source mounts, hot-reload | Actively working on the code |
+| Start it with | `make buildup` | `make dev` |
+| Compose project | `dinopass` | `dinopass-dev` |
+| Database volume | `dinopass_postgres_data` (persistent) | `dinopass-dev_postgres_data` (disposable) |
+| UI / API | `:3000` / `:8000` | `:3100` / `:8100` |
+| Hot-reload | no | yes |
+| `make clean` | never touches it | wipes it freely |
 
-**Just run it:**
-```shell
-make buildup
-# or: docker compose up --build
-```
+> ⚠️ **Never store real passwords in the development stack.** It exists for testing with throwaway data. `make clean` erases the dev database without asking - which is exactly why your real vault lives in a different project that `make clean` never touches. To tear down the real vault you have to run `make clean-prod`, which makes you confirm first.
 
-**Hack on it (hot-reload):**
-```shell
-make dev
-# or: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
-```
+So you can always tell the two apart at a glance, the app bar carries an environment badge: a loud amber **DEV** chip (with an amber underline) on the development stack, and a calm **LIVE** chip on your real vault. If you ever see amber, you're in the sandbox - don't type anything real.
 
-In dev mode the backend restarts on any `.py` change and the React dev server picks up frontend changes instantly. No rebuild needed.
-
-Both modes run at `http://localhost:3000` (UI) and `http://localhost:8000` (API). The API explorer is at `http://localhost:8000/docs` if you want to poke around.
-
-### Stopping
-
-```shell
-docker compose down       # stop
-docker compose down -v    # stop and wipe the database too
-```
+So the recommended setup for daily use while hacking on the code is simply: `make buildup` once for your real vault, and `make dev` whenever you want to work on Dinopass.
 
 ## Development
+
+Want to work on Dinopass itself? Start the dev stack (source-mounted, hot-reload):
+
+```shell
+make dev
+```
+
+The backend restarts on any `.py` change and the React dev server picks up frontend changes instantly. Dev runs at [http://localhost:3100](http://localhost:3100) (UI) and `http://localhost:8100` (API); the API explorer is at `/docs` on the API port.
 
 All `make` commands run locally, not inside Docker.
 
 | Command | What it does |
 |---|---|
 | `make setup` | Create `backend/.db.env` with a generated database password |
-| `make all` | Full clean + rebuild |
-| `make buildup` | Build images and start all containers in the background |
-| `make dev` | Start with hot-reload |
-| `make clean` | Stop containers, remove volumes/images, delete `__pycache__` |
-| `make lint` | `ruff check`: report linting issues (backend) |
-| `make typecheck` | `ty check`: static type analysis (backend) |
-| `make format` | Auto-format backend (ruff) and frontend (Prettier) in place |
+| `make buildup` | Build and start the **production** stack (your real vault) |
+| `make down` | Stop production, keeping its database volume |
+| `make clean-prod` | Destroy the production database volume (guarded - asks to confirm) |
+| `make dev` | Start the **dev** stack with hot-reload |
+| `make dev-down` | Stop the dev stack, keeping its database volume |
+| `make clean` | Remove the dev stack + its volume, delete `__pycache__` (never touches prod) |
+| `make all` | `clean` then `dev` - a fresh dev sandbox |
+| `make lint` | `ruff check` (backend) + ESLint (frontend) |
+| `make typecheck` | `ty check` (backend) |
+| `make format` | Auto-format backend (ruff) and frontend (Prettier) |
 | `make check` | Lint + type check + format check, no writes - what CI runs |
 
 `make lint/typecheck/format/check` need [uv](https://docs.astral.sh/uv/) with dev deps (`uv sync --group dev` inside `backend/`) and Node.js with npm deps (`npm install` inside `frontend/`).
@@ -192,79 +254,27 @@ Everything is optional - the defaults work fine for local use.
 |---|---|---|
 | `DINOPASS_API_URL` | `http://localhost:8000/api` | Backend API base URL |
 
-> **Putting this on a real server?** Set `CORS_ORIGINS` to your actual domain, enable `DISABLE_DOCS=true`, put everything behind a reverse proxy (nginx, Caddy) with HTTPS, and don't expose port `5432` to the outside world. Dinopass is designed to run on a machine you trust - it's not hardened for sitting naked on the internet.
->
-> One thing to know about rate limiting behind a proxy: the limits are keyed on the client IP, which the app reads from the network connection. Behind a reverse proxy every request looks like it comes from the proxy, so the limits become global instead of per client. If you want per client rate limiting, configure your proxy to preserve the real client address (and only trust `X-Forwarded-For` from the proxy itself).
+## Putting it on a real server
+
+Dinopass is built to run on a machine you trust - your home server, a VPS behind a firewall, a Raspberry Pi in your closet - not to sit naked on the open internet. If you're deploying it somewhere reachable:
+
+- Set `CORS_ORIGINS` to your actual domain and enable `DISABLE_DOCS=true`
+- Put everything behind a reverse proxy (nginx, Caddy) with HTTPS
+- Don't expose Postgres (port `5432`) to the outside world
+
+One thing to know about rate limiting behind a proxy: the limits are keyed on the client IP, which the app reads from the network connection. Behind a reverse proxy every request looks like it comes from the proxy, so the limits become global instead of per client. If you want per-client rate limiting, configure your proxy to preserve the real client address (and only trust `X-Forwarded-For` from the proxy itself).
 
 ## CLI
 
-Sometimes you just want to grab a password from the terminal without switching windows. That's what the CLI is for.
-
-### Install
+There's a `dinopass` CLI for grabbing a password from the terminal without opening a browser. It's a thin client against the same API, so everything stays encrypted the same way.
 
 ```shell
 cd backend
 uv tool install .
+dinopass password list
 ```
 
-Or run it without installing:
-
-```shell
-cd backend
-uv run dinopass <command>
-```
-
-### Commands
-
-```
-dinopass password list                     List all passwords
-dinopass password get <name>               Reveal a password (and its live 2FA code)
-dinopass password create <name>            Add a new password (interactive)
-dinopass password update <name>            Update value, website, 2FA or description (interactive)
-dinopass password delete <name>            Delete a password (asks for confirmation)
-dinopass backup [--out <dir>]              Export an encrypted backup ZIP
-dinopass import <file> [--on-conflict]     Import from a Dinopass backup ZIP (skip|overwrite)
-dinopass import-csv <file> [--on-conflict] Import a CSV from another manager (skip|overwrite)
-```
-
-Every command that touches encrypted data prompts for the master password. Use `--help` on any command for details.
-
-### Examples
-
-```shell
-# Add a new password
-$ dinopass password create github
-Master password:
-Password value:
-Repeat for confirmation:
-Description: Personal account
-✓  Created github
-
-# Reveal it
-$ dinopass password get github
-Master password:
-
-  github
-  Value        hunter2
-  Description  Personal account
-
-# List everything
-$ dinopass password list
-Master password:
-Name      Description       Backed up
-github    Personal account  –
-gmail     Work email        ✓
-
-# Create an encrypted backup
-$ dinopass backup --out ~/backups
-Master password:
-✓  Backup saved to ~/backups/dinopass_backup_20260314_120000.zip
-
-# Import with overwrite
-$ dinopass import dinopass_backup_20260314_120000.zip --on-conflict overwrite
-Master password:
-✓  Import complete - 3 added, 1 overwritten, 0 skipped
-```
+Full command reference, install options, and examples: **[docs/CLI.md](docs/CLI.md)**.
 
 ## License
 

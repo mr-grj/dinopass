@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   Button,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -155,8 +154,8 @@ const SettingsModal = ({ open, onClose }) => {
         <Button onClick={onClose} disabled={saving}>
           Cancel
         </Button>
-        <Button variant="contained" onClick={handleSave} disabled={saving || !dirty}>
-          {saving ? <CircularProgress size={20} /> : "Save"}
+        <Button variant="contained" onClick={handleSave} loading={saving} disabled={!dirty}>
+          Save
         </Button>
       </DialogActions>
     </Dialog>

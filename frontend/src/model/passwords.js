@@ -91,7 +91,9 @@ const Passwords = {
         try {
           const text = await err.response.data.text();
           detail = JSON.parse(text).detail ?? detail;
-        } catch {}
+        } catch {
+          // Blob wasn't JSON; fall back to the generic message.
+        }
       } else {
         detail = err.response?.data?.detail ?? detail;
       }

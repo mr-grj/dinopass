@@ -1,69 +1,10 @@
-import { useEffect, useState } from "react";
-import {
-  Alert,
-  Box,
-  CircularProgress,
-  IconButton,
-  InputAdornment,
-  LinearProgress,
-  TextField,
-  Tooltip,
-  Typography,
-} from "@mui/material";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import { useEffect } from "react";
+import { Alert, Box, Button, CircularProgress, LinearProgress, Typography } from "@mui/material";
 import { useStoreActions, useStoreState } from "easy-peasy";
 import { useSnackbar } from "notistack";
 
-import DinoLoadingButton from "../components/DinoLoadingButton";
-
-const getStrength = (password) => {
-  if (!password) return null;
-  const hasUpper = /[A-Z]/.test(password);
-  const hasLower = /[a-z]/.test(password);
-  const hasNumber = /\d/.test(password);
-  const hasSpecial = /[^A-Za-z0-9]/.test(password);
-  const variety = [hasUpper, hasLower, hasNumber, hasSpecial].filter(Boolean).length;
-  if (password.length < 8) return { label: "Too short", value: 20, color: "error" };
-  if (password.length < 12 || variety < 2) return { label: "Weak", value: 40, color: "error" };
-  if (password.length < 16 || variety < 3) return { label: "Fair", value: 70, color: "warning" };
-  return { label: "Strong", value: 100, color: "success" };
-};
-
-const PasswordField = ({ label, value, onChange, onKeyDown, autoFocus, autoComplete }) => {
-  const [show, setShow] = useState(false);
-  return (
-    <TextField
-      fullWidth
-      required
-      label={label}
-      type={show ? "text" : "password"}
-      value={value}
-      onChange={onChange}
-      onKeyDown={onKeyDown}
-      autoFocus={autoFocus}
-      autoComplete={autoComplete}
-      slotProps={{
-        htmlInput: { spellCheck: false, autoCorrect: "off", autoCapitalize: "none" },
-        input: {
-          endAdornment: (
-            <InputAdornment position="end">
-              <Tooltip title={show ? "Hide" : "Show"}>
-                <IconButton onClick={() => setShow((v) => !v)} edge="end" size="small">
-                  {show ? (
-                    <VisibilityOffIcon fontSize="small" />
-                  ) : (
-                    <VisibilityIcon fontSize="small" />
-                  )}
-                </IconButton>
-              </Tooltip>
-            </InputAdornment>
-          ),
-        },
-      }}
-    />
-  );
-};
+import PasswordField from "../components/PasswordField";
+import { getMasterPasswordStrength } from "../lib/passwordStrength";
 
 const LoginPage = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -88,7 +29,7 @@ const LoginPage = () => {
     if (error) enqueueSnackbar(error, { variant: "error" });
   }, [error, enqueueSnackbar]);
 
-  const strength = initialized === false ? getStrength(value) : null;
+  const strength = initialized === false ? getMasterPasswordStrength(value) : null;
 
   const handleLogin = () => {
     if (!value.trim()) {
@@ -154,7 +95,6 @@ const LoginPage = () => {
           boxShadow: 3,
         }}
       >
-        {/* Icon + heading */}
         <Box
           sx={{
             display: "flex",
@@ -165,30 +105,19 @@ const LoginPage = () => {
           }}
         >
           <Box component="img" src="/dino.svg" alt="dino" sx={{ width: 64, height: 64 }} />
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 700,
-            }}
-          >
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
             {initialized ? "Welcome back" : "Set up your vault"}
           </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              color: "text.secondary",
-              textAlign: "center",
-            }}
-          >
+          <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center" }}>
             {initialized
               ? "Enter your master password to unlock your vault."
               : "Create a master password to protect all your passwords."}
           </Typography>
         </Box>
 
-        {/* Password field */}
         <PasswordField
           label="Master Password"
+          required
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
@@ -209,10 +138,7 @@ const LoginPage = () => {
             <Typography
               variant="caption"
               color={`${strength.color}.main`}
-              sx={{
-                mt: 0.5,
-                display: "block",
-              }}
+              sx={{ mt: 0.5, display: "block" }}
             >
               {strength.label}
             </Typography>
@@ -222,6 +148,7 @@ const LoginPage = () => {
         {!initialized && (
           <PasswordField
             label="Confirm Master Password"
+            required
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             onKeyDown={(e) => {
@@ -234,19 +161,21 @@ const LoginPage = () => {
         {!initialized && (
           <Alert severity="warning" variant="outlined" sx={{ py: 0.5 }}>
             <Typography variant="caption">
-              There is no "Forgot password". Losing your master password means losing access to your
-              vault permanently.
+              There is no &ldquo;Forgot password&rdquo;. Losing your master password means losing
+              access to your vault permanently.
             </Typography>
           </Alert>
         )}
 
-        {/* Submit */}
-        <DinoLoadingButton
+        <Button
           fullWidth
-          buttonText={initialized ? "Unlock Vault" : "Create Vault"}
+          size="large"
+          variant="contained"
           loading={loading}
           onClick={initialized ? handleLogin : handleCreate}
-        />
+        >
+          {initialized ? "Unlock Vault" : "Create Vault"}
+        </Button>
       </Box>
     </Box>
   );

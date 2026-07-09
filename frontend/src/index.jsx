@@ -1,4 +1,3 @@
-import React from "react";
 import ReactDOM from "react-dom/client";
 import { StoreProvider } from "easy-peasy";
 import { SnackbarProvider } from "notistack";

@@ -31,6 +31,7 @@ const Settings = {
       const { data } = await apiClient.get("/settings");
       actions.setSettings(data);
     } catch {
+      // the UI keeps the local defaults if settings can't be fetched.
     } finally {
       actions.setLoading(false);
     }

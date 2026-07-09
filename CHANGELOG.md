@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Internal
+
+- **Frontend refactor** - broke the 1,100-line `PasswordsPage` into a thin container plus focused pieces under `components/vault/` (form, generator, backup, import, empty state, column defs), extracted the secure generator and strength scoring into `src/lib/`, and added a shared `PasswordField` and `useClipboard` hook. No behavior or UI changes - just cleaner, DRYer, easier to follow.
+- **Unified password-strength logic** - the vault (5-level) and login (4-level) scales now share one module (`src/lib/passwordStrength.js`) instead of two divergent copies.
+- **ESLint 9** - added a flat-config ESLint setup (react-hooks + react-refresh) wired into `make lint`/`make check` and CI. `npm run lint` is clean; the frontend still installs with 0 vulnerabilities.
+
 ## [0.2.0] - 2026-03-15
 
 First public release. I've been using this daily for a while and it hasn't eaten any passwords, so here we are.

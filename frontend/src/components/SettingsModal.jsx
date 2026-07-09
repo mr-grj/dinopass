@@ -111,17 +111,13 @@ const SettingsModal = ({ open, onClose }) => {
     <Dialog open={open} onClose={saving ? undefined : onClose} maxWidth="xs" fullWidth>
       <DialogTitle>Settings</DialogTitle>
       <DialogContent>
-        <Stack
-          spacing={2}
-          sx={{
-            mt: 1,
-          }}
-        >
+        <Stack spacing={1.5} sx={{ mt: 1 }}>
           {FIELDS.map(({ key, label, tooltip, min, max }) => (
             <TextField
               key={key}
               label={label}
               type="number"
+              size="small"
               value={form[key]}
               onChange={handleChange(key)}
               fullWidth
@@ -130,6 +126,9 @@ const SettingsModal = ({ open, onClose }) => {
                 input: {
                   endAdornment: (
                     <InputAdornment position="end">
+                      <Typography variant="caption" sx={{ color: "text.disabled", mr: 0.5 }}>
+                        sec
+                      </Typography>
                       <Tooltip title={tooltip} arrow placement="top">
                         <HelpOutlineIcon
                           fontSize="small"
@@ -140,7 +139,6 @@ const SettingsModal = ({ open, onClose }) => {
                   ),
                 },
               }}
-              helperText="seconds"
             />
           ))}
           {formError && (

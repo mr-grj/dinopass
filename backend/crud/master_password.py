@@ -25,6 +25,29 @@ async def fetch_master_password(session: AsyncSession) -> MasterPasswordModel | 
 
 
 class MasterPasswordCRUD(BaseCRUD):
+    @staticmethod
+    def _reencrypt(
+        old_key: bytes | str, new_key: bytes | str, token: bytes, pwd: PasswordModel
+    ) -> bytes:
+        plaintext = decrypt(old_key, token)
+        if plaintext is None:
+            raise TypesMismatchError(
+                f"Could not decrypt password '{pwd.password_name}'."
+            )
+        return encrypt(new_key, plaintext.encode())
+
+    @classmethod
+    def _reencrypt_optional(
+        cls,
+        old_key: bytes | str,
+        new_key: bytes | str,
+        token: bytes | None,
+        pwd: PasswordModel,
+    ) -> bytes | None:
+        if token is None:
+            return None
+        return cls._reencrypt(old_key, new_key, token, pwd)
+
     async def is_initialized(self) -> bool:
         return await fetch_master_password(self.session) is not None
 
@@ -78,13 +101,21 @@ class MasterPasswordCRUD(BaseCRUD):
         ).scalars()
 
         for pwd in passwords:
-            decrypted = decrypt(key_derivation, pwd.password_value)
-            if decrypted is None:
-                raise TypesMismatchError(
-                    f"Could not decrypt password '{pwd.password_name}'."
-                )
-            pwd.password_value = encrypt(new_key_derivation, decrypted.encode())
-            self.session.add(pwd)
+            pwd.password_value = self._reencrypt(
+                key_derivation, new_key_derivation, pwd.password_value, pwd
+            )
+            pwd.url = self._reencrypt_optional(
+                key_derivation, new_key_derivation, pwd.url, pwd
+            )
+            pwd.totp_secret = self._reencrypt_optional(
+                key_derivation, new_key_derivation, pwd.totp_secret, pwd
+            )
+            pwd.tags = self._reencrypt_optional(
+                key_derivation, new_key_derivation, pwd.tags, pwd
+            )
+            pwd.password_history = self._reencrypt_optional(
+                key_derivation, new_key_derivation, pwd.password_history, pwd
+            )
 
         model.salt = new_salt
         model.hash_key = hash_master_password(new_master_password)

@@ -11,6 +11,8 @@ import {
   Radio,
   RadioGroup,
   Stack,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
@@ -23,7 +25,7 @@ const ImportResult = ({ result }) => {
   if (result.total === 0) {
     return (
       <Typography variant="body2" sx={{ color: "text.secondary" }}>
-        No passwords found in the backup file.
+        No passwords found in the file.
       </Typography>
     );
   }
@@ -49,7 +51,8 @@ const ImportResult = ({ result }) => {
   );
 };
 
-const ImportDialog = ({ open, onClose, onImport }) => {
+const ImportDialog = ({ open, onClose, onImport, onImportCsv }) => {
+  const [mode, setMode] = useState("dinopass");
   const [file, setFile] = useState(null);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -59,6 +62,7 @@ const ImportDialog = ({ open, onClose, onImport }) => {
 
   useEffect(() => {
     if (open) {
+      setMode("dinopass");
       setFile(null);
       setPassword("");
       setError("");
@@ -67,18 +71,30 @@ const ImportDialog = ({ open, onClose, onImport }) => {
     }
   }, [open]);
 
+  const isCsv = mode === "csv";
+
+  const changeMode = (_, next) => {
+    if (!next) return;
+    setMode(next);
+    setFile(null);
+    setError("");
+  };
+
   const handleImport = async () => {
     if (!file) {
-      setError("Please select a backup file.");
+      setError(`Please select a ${isCsv ? "CSV" : "backup"} file.`);
       return;
     }
-    if (!password.trim()) {
+    if (!isCsv && !password.trim()) {
       setError("Master password is required.");
       return;
     }
     setLoading(true);
     try {
-      setResult(await onImport({ file, masterPassword: password, onConflict }));
+      const data = isCsv
+        ? await onImportCsv({ file, onConflict })
+        : await onImport({ file, masterPassword: password, onConflict });
+      setResult(data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -88,7 +104,7 @@ const ImportDialog = ({ open, onClose, onImport }) => {
 
   return (
     <Dialog open={open} onClose={loading ? undefined : onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>{result ? "Import Complete" : "Import Backup"}</DialogTitle>
+      <DialogTitle>{result ? "Import Complete" : "Import Passwords"}</DialogTitle>
       <DialogContent>
         {result ? (
           <Stack spacing={1} sx={{ mt: 1 }}>
@@ -96,9 +112,21 @@ const ImportDialog = ({ open, onClose, onImport }) => {
           </Stack>
         ) : (
           <Stack spacing={2} sx={{ mt: 1 }}>
+            <ToggleButtonGroup value={mode} exclusive onChange={changeMode} size="small" fullWidth>
+              <ToggleButton value="dinopass" sx={{ textTransform: "none" }}>
+                Dinopass backup
+              </ToggleButton>
+              <ToggleButton value="csv" sx={{ textTransform: "none" }}>
+                CSV from another app
+              </ToggleButton>
+            </ToggleButtonGroup>
+
             <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              Upload a dinopass backup ZIP and enter your master password to restore passwords.
+              {isCsv
+                ? "Upload a CSV exported from Chrome, Bitwarden, KeePass, Proton Pass and similar. Columns are matched automatically."
+                : "Upload a dinopass backup ZIP and enter your master password to restore passwords."}
             </Typography>
+
             <Button
               component="label"
               variant="outlined"
@@ -106,33 +134,43 @@ const ImportDialog = ({ open, onClose, onImport }) => {
               fullWidth
               sx={{ justifyContent: "flex-start", textTransform: "none" }}
             >
-              {file ? file.name : "Choose backup file (.zip)"}
+              {file ? file.name : isCsv ? "Choose CSV file (.csv)" : "Choose backup file (.zip)"}
               <input
                 type="file"
                 hidden
-                accept=".zip"
+                accept={isCsv ? ".csv" : ".zip"}
                 onChange={(e) => {
                   setFile(e.target.files[0] ?? null);
                   setError("");
                 }}
               />
             </Button>
-            <PasswordField
-              label="Master Password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setError("");
-              }}
-              error={!!error}
-              helperText={error}
-              required
-              autoFocus
-              autoComplete="current-password"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleImport();
-              }}
-            />
+
+            {!isCsv && (
+              <PasswordField
+                label="Master Password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError("");
+                }}
+                error={!!error}
+                helperText={error}
+                required
+                autoFocus
+                autoComplete="current-password"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleImport();
+                }}
+              />
+            )}
+
+            {isCsv && error && (
+              <Typography variant="body2" color="error">
+                {error}
+              </Typography>
+            )}
+
             <FormControl>
               <FormLabel sx={{ fontSize: "0.875rem" }}>If a password already exists</FormLabel>
               <RadioGroup value={onConflict} onChange={(e) => setOnConflict(e.target.value)}>

@@ -2,7 +2,18 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Website, two-factor, tags and favorites per entry.** Each password can now carry a website, a TOTP secret, tags, and a favorite flag. All of them (except the favorite flag) are encrypted at rest with the same vault key, so the database still only ever holds ciphertext.
+- **Built-in two-factor codes.** Paste a base32 secret or an `otpauth://` link and Dinopass shows the live rolling code, computed in your browser (and in the CLI via `password get`).
+- **Password history.** When you change a password, the previous value is kept (encrypted, last 10) and can be revealed or copied from the edit dialog.
+- **Vault health check.** A local, offline report that flags weak, reused, and stale passwords. It never sends anything anywhere.
+- **CSV import from other managers.** Import a plain CSV exported from Chrome, Bitwarden, KeePass, Proton Pass and similar, from the web UI or `dinopass import-csv`. Columns are matched automatically.
+- **`make setup`** generates `backend/.db.env` with a strong random database password so first-time setup is one command.
+
 ### Security
+
+- **Master password strength is now enforced on the server** (at least 12 characters and two character classes) when creating a vault or changing the master password, not just in the browser.
 
 - **Full master password is now authenticated.** bcrypt truncates at 72 bytes, so a very long master password used to only be checked by its first 72 bytes. It's now pre-hashed with SHA-256 before bcrypt so the whole thing counts. This changes the stored hash format and is not backward compatible, so a vault created before this change needs to be set up again.
 - **Rate-limited the master password change endpoint.** It verifies the current master password, so leaving it unlimited was a brute-force gap that bypassed the cap on the login check. It's now capped at 10/hour like the check endpoint.

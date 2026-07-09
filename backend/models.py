@@ -51,6 +51,13 @@ class PasswordModel(BaseModel):
     username: Mapped[str | None] = mapped_column(String)
     password_value: Mapped[bytes] = mapped_column(LargeBinary)
     description: Mapped[str | None] = mapped_column(String)
+    url: Mapped[bytes | None] = mapped_column(LargeBinary)
+    totp_secret: Mapped[bytes | None] = mapped_column(LargeBinary)
+    tags: Mapped[bytes | None] = mapped_column(LargeBinary)
+    password_history: Mapped[bytes | None] = mapped_column(LargeBinary)
+    favorite: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false"
+    )
     backed_up: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="false"
     )

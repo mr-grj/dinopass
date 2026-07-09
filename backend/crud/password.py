@@ -1,5 +1,8 @@
+import csv
 import io
 import json
+from collections.abc import Sequence
+from datetime import UTC, datetime
 
 import pyzipper
 from sqlalchemy import select
@@ -11,7 +14,9 @@ from crud.master_password import fetch_master_password
 from helpers import (
     create_encrypted_zip,
     decrypt,
+    decrypt_optional,
     encrypt,
+    encrypt_optional,
     verify_master_password,
 )
 from models import PasswordModel
@@ -24,8 +29,29 @@ from schemas import (
     PasswordResponse,
     PasswordUpdate,
 )
+from validators import normalize_totp_secret
 
 _MAX_JSON_BYTES = 50 * 1024 * 1024  # 50 MB
+_HISTORY_LIMIT = 10
+
+# Header aliases used when importing a plain CSV exported from another manager
+# (Chrome, Bitwarden, KeePass, Proton Pass, ...). First matching column wins.
+_CSV_FIELD_ALIASES: dict[str, tuple[str, ...]] = {
+    "name": ("name", "title", "account", "login_name", "item name"),
+    "username": ("username", "login_username", "user", "email", "login", "e-mail"),
+    "value": ("password", "login_password", "pass"),
+    "url": ("url", "uri", "login_uri", "website", "web site", "site", "link"),
+    "description": ("notes", "note", "description", "comment", "comments", "extra"),
+    "totp_secret": (
+        "totp",
+        "login_totp",
+        "otpauth",
+        "otp",
+        "2fa",
+        "otp_auth",
+        "totpauth",
+    ),
+}
 
 
 class PasswordCRUD(BaseCRUD):
@@ -47,6 +73,37 @@ class PasswordCRUD(BaseCRUD):
             raise TypesMismatchError(f"Invalid key for '{model.password_name}'.")
         return decrypted
 
+    def _encode_tags(self, key_derivation: str, tags: list[str]) -> bytes | None:
+        if not tags:
+            return None
+        return encrypt(key_derivation, json.dumps(tags).encode())
+
+    def _decode_tags(self, key_derivation: str, model: PasswordModel) -> list[str]:
+        raw = decrypt_optional(key_derivation, model.tags)
+        if not raw:
+            return []
+
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            return []
+
+        return data if isinstance(data, list) else []
+
+    def _decode_history(
+        self, key_derivation: str, model: PasswordModel
+    ) -> list[dict[str, str]]:
+        raw = decrypt_optional(key_derivation, model.password_history)
+        if not raw:
+            return []
+
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            return []
+
+        return data if isinstance(data, list) else []
+
     def _to_response(
         self, model: PasswordModel, key_derivation: str
     ) -> PasswordResponse:
@@ -54,8 +111,14 @@ class PasswordCRUD(BaseCRUD):
             password_name=model.password_name,
             username=model.username,
             password_value=self._decrypt_or_raise(key_derivation, model),
+            url=decrypt_optional(key_derivation, model.url),
+            totp_secret=decrypt_optional(key_derivation, model.totp_secret),
             description=model.description,
+            tags=self._decode_tags(key_derivation, model),
+            favorite=model.favorite,
             backed_up=model.backed_up,
+            updated=model.updated,
+            password_history=self._decode_history(key_derivation, model),
         )
 
     async def _verify_master_password(self, master_password: str) -> None:
@@ -90,7 +153,11 @@ class PasswordCRUD(BaseCRUD):
                 password_value=encrypt(
                     key_derivation, password.password_value.encode()
                 ),
+                url=encrypt_optional(key_derivation, password.url),
+                totp_secret=encrypt_optional(key_derivation, password.totp_secret),
                 description=password.description,
+                tags=self._encode_tags(key_derivation, password.tags),
+                favorite=password.favorite,
             )
         )
 
@@ -117,21 +184,38 @@ class PasswordCRUD(BaseCRUD):
                 raise TypesMismatchError("A password with that name already exists.")
             model.password_name = new_password.password_name
 
-        decrypted = self._decrypt_or_raise(key_derivation, model)
-        if decrypted != new_password.password_value:
+        old_value = self._decrypt_or_raise(key_derivation, model)
+        if old_value != new_password.password_value:
+            history = self._decode_history(key_derivation, model)
+            history.insert(
+                0,
+                {"value": old_value, "changed_at": datetime.now(UTC).isoformat()},
+            )
+            del history[_HISTORY_LIMIT:]
+            model.password_history = encrypt(
+                key_derivation, json.dumps(history).encode()
+            )
             model.password_value = encrypt(
                 key_derivation, new_password.password_value.encode()
             )
 
-        if model.username != new_password.username:
-            model.username = new_password.username
-
-        if model.description != new_password.description:
-            model.description = new_password.description
+        model.username = new_password.username
+        model.url = encrypt_optional(key_derivation, new_password.url)
+        model.totp_secret = encrypt_optional(key_derivation, new_password.totp_secret)
+        model.description = new_password.description
+        model.tags = self._encode_tags(key_derivation, new_password.tags)
+        model.favorite = new_password.favorite
 
         model.backed_up = False
         await self.session.flush()
         return PasswordUpdate(updated=True, detail="Password updated successfully.")
+
+    async def set_favorite(self, password_name: str, favorite: bool) -> PasswordUpdate:
+        model = await self._get_password_model(password_name)
+        model.favorite = favorite
+        await self.session.flush()
+        detail = "Added to favorites." if favorite else "Removed from favorites."
+        return PasswordUpdate(updated=True, detail=detail)
 
     async def delete_password(self, password_name: str) -> PasswordDelete:
         model = await self._get_password_model(password_name)
@@ -152,12 +236,16 @@ class PasswordCRUD(BaseCRUD):
             .all()
         )
 
-        entries = [
+        entries: list[dict[str, object]] = [
             {
                 "name": p.password_name,
                 "username": p.username,
                 "value": self._decrypt_or_raise(key_derivation, p),
+                "url": decrypt_optional(key_derivation, p.url),
+                "totp_secret": decrypt_optional(key_derivation, p.totp_secret),
                 "description": p.description,
+                "tags": self._decode_tags(key_derivation, p),
+                "favorite": p.favorite,
             }
             for p in passwords
         ]
@@ -168,6 +256,58 @@ class PasswordCRUD(BaseCRUD):
         await self.session.flush()
 
         return create_encrypted_zip(entries, master_password)
+
+    def _upsert_entry(
+        self,
+        *,
+        existing: dict[str, PasswordModel],
+        key_derivation: str,
+        on_conflict: OnConflict,
+        name: str,
+        value: str,
+        username: str | None,
+        url: str | None,
+        totp_secret: str | None,
+        description: str | None,
+        tags: list[str],
+        favorite: bool,
+    ) -> str:
+        current = existing.get(name)
+        if current:
+            if on_conflict == OnConflict.skip:
+                return "skipped"
+
+            current.password_value = encrypt(key_derivation, value.encode())
+            current.username = username
+            current.url = encrypt_optional(key_derivation, url)
+            current.totp_secret = encrypt_optional(key_derivation, totp_secret)
+            current.description = description
+            current.tags = self._encode_tags(key_derivation, tags)
+            current.favorite = favorite
+            current.backed_up = False
+
+            return "overwritten"
+
+        model = PasswordModel(
+            password_name=name,
+            username=username,
+            password_value=encrypt(key_derivation, value.encode()),
+            url=encrypt_optional(key_derivation, url),
+            totp_secret=encrypt_optional(key_derivation, totp_secret),
+            description=description,
+            tags=self._encode_tags(key_derivation, tags),
+            favorite=favorite,
+        )
+        self.session.add(model)
+        existing[name] = model
+
+        return "imported"
+
+    async def _load_existing(self) -> dict[str, PasswordModel]:
+        return {
+            model.password_name: model
+            for model in (await self.session.execute(select(PasswordModel))).scalars()
+        }
 
     async def import_passwords(
         self,
@@ -199,12 +339,8 @@ class PasswordCRUD(BaseCRUD):
         except (json.JSONDecodeError, KeyError, ValueError) as e:
             raise TypesMismatchError("Invalid backup file format.") from e
 
-        existing = {
-            model.password_name: model
-            for model in (await self.session.execute(select(PasswordModel))).scalars()
-        }
-
-        imported = skipped = overwritten = 0
+        existing = await self._load_existing()
+        counts = {"imported": 0, "skipped": 0, "overwritten": 0}
 
         for entry in entries:
             try:
@@ -212,38 +348,110 @@ class PasswordCRUD(BaseCRUD):
                 value = entry["value"]
             except (KeyError, TypeError):
                 continue
-
             if not name or not value:
                 continue
 
-            username = entry.get("username")
-            description = entry.get("description")
-            current = existing.get(name)
-
-            if current:
-                if on_conflict == OnConflict.skip:
-                    skipped += 1
-                else:
-                    current.password_value = encrypt(key_derivation, value.encode())
-                    current.username = username
-                    current.description = description
-                    current.backed_up = False
-                    overwritten += 1
-            else:
-                model = PasswordModel(
-                    password_name=name,
-                    username=username,
-                    password_value=encrypt(key_derivation, value.encode()),
-                    description=description,
-                )
-                self.session.add(model)
-                existing[name] = model
-                imported += 1
+            raw_tags = entry.get("tags")
+            outcome = self._upsert_entry(
+                existing=existing,
+                key_derivation=key_derivation,
+                on_conflict=on_conflict,
+                name=name,
+                value=value,
+                username=entry.get("username"),
+                url=entry.get("url"),
+                totp_secret=entry.get("totp_secret"),
+                description=entry.get("description"),
+                tags=raw_tags if isinstance(raw_tags, list) else [],
+                favorite=bool(entry.get("favorite", False)),
+            )
+            counts[outcome] += 1
 
         await self.session.flush()
+        return self._result(counts)
+
+    async def import_passwords_csv(
+        self,
+        file_bytes: bytes,
+        key_derivation: str,
+        on_conflict: OnConflict,
+    ) -> PasswordImportResult:
+        try:
+            text = file_bytes.decode("utf-8-sig")
+        except UnicodeDecodeError as e:
+            raise TypesMismatchError("CSV file must be UTF-8 encoded.") from e
+
+        reader = csv.DictReader(io.StringIO(text))
+        if not reader.fieldnames:
+            raise TypesMismatchError("CSV file has no header row.")
+
+        column_for = self._map_csv_columns(reader.fieldnames)
+        if "name" not in column_for or "value" not in column_for:
+            raise TypesMismatchError(
+                "CSV must have a name/title column and a password column."
+            )
+
+        existing = await self._load_existing()
+        counts = {"imported": 0, "skipped": 0, "overwritten": 0}
+
+        for row in reader:
+            name = (row.get(column_for["name"]) or "").strip()
+            value = row.get(column_for["value"]) or ""
+            if not name or not value:
+                continue
+
+            outcome = self._upsert_entry(
+                existing=existing,
+                key_derivation=key_derivation,
+                on_conflict=on_conflict,
+                name=name,
+                value=value,
+                username=self._csv_cell(row, column_for, "username"),
+                url=self._csv_cell(row, column_for, "url"),
+                totp_secret=self._csv_totp(row, column_for),
+                description=self._csv_cell(row, column_for, "description"),
+                tags=[],
+                favorite=False,
+            )
+            counts[outcome] += 1
+
+        await self.session.flush()
+        return self._result(counts)
+
+    @staticmethod
+    def _map_csv_columns(fieldnames: Sequence[str]) -> dict[str, str]:
+        normalized = {(name or "").strip().lower(): name for name in fieldnames}
+        column_for: dict[str, str] = {}
+        for field, aliases in _CSV_FIELD_ALIASES.items():
+            for alias in aliases:
+                if alias in normalized:
+                    column_for[field] = normalized[alias]
+                    break
+        return column_for
+
+    @staticmethod
+    def _csv_cell(
+        row: dict[str, str], column_for: dict[str, str], field: str
+    ) -> str | None:
+        column = column_for.get(field)
+        if not column:
+            return None
+        value = (row.get(column) or "").strip()
+        return value or None
+
+    @staticmethod
+    def _csv_totp(row: dict[str, str], column_for: dict[str, str]) -> str | None:
+        raw = PasswordCRUD._csv_cell(row, column_for, "totp_secret")
+        try:
+            return normalize_totp_secret(raw)
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _result(counts: dict[str, int]) -> PasswordImportResult:
         return PasswordImportResult(
-            imported=imported,
-            skipped=skipped,
-            overwritten=overwritten,
-            total=imported + skipped + overwritten,
+            imported=counts["imported"],
+            skipped=counts["skipped"],
+            overwritten=counts["overwritten"],
+            total=counts["imported"] + counts["skipped"] + counts["overwritten"],
         )

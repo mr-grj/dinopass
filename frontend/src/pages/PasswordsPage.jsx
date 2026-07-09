@@ -11,6 +11,7 @@ import {
 import { DataGrid } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import DownloadIcon from "@mui/icons-material/Download";
+import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
 import SearchIcon from "@mui/icons-material/Search";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { useStoreActions, useStoreState } from "easy-peasy";
@@ -19,6 +20,7 @@ import { useSnackbar } from "notistack";
 import BackupDialog from "../components/vault/BackupDialog";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyVault from "../components/vault/EmptyVault";
+import HealthDialog from "../components/vault/HealthDialog";
 import ImportDialog from "../components/vault/ImportDialog";
 import PasswordFormDialog from "../components/vault/PasswordFormDialog";
 import { createColumns } from "../components/vault/columns";
@@ -38,9 +40,8 @@ const PasswordsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const copy = useClipboard();
 
-  const { get, create, update, remove, backup, importPasswords } = useStoreActions(
-    (actions) => actions.dinopassModels.passwords
-  );
+  const { get, create, update, remove, backup, importPasswords, importCsv, toggleFavorite } =
+    useStoreActions((actions) => actions.dinopassModels.passwords);
   const { error, loading, passwords } = useStoreState((state) => state.dinopassModels.passwords);
 
   const [visibleRows, setVisibleRows] = useState(new Set());
@@ -49,6 +50,7 @@ const PasswordsPage = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [backupOpen, setBackupOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [healthOpen, setHealthOpen] = useState(false);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -77,6 +79,17 @@ const PasswordsPage = () => {
     setEditTarget(row);
     setDialogOpen(true);
   }, []);
+
+  const handleToggleFavorite = useCallback(
+    async (row) => {
+      try {
+        await toggleFavorite({ passwordName: row.password_name, favorite: !row.favorite });
+      } catch (err) {
+        enqueueSnackbar(err.message, { variant: "error" });
+      }
+    },
+    [toggleFavorite, enqueueSnackbar]
+  );
 
   const handleSubmit = async (entry) => {
     if (editTarget) {
@@ -118,21 +131,30 @@ const PasswordsPage = () => {
       createColumns({
         visibleRows,
         onToggleVisibility: toggleVisibility,
+        onToggleFavorite: handleToggleFavorite,
         onCopy: copy,
         onEdit: openEdit,
         onDelete: setDeleteTarget,
       }),
-    [visibleRows, toggleVisibility, copy, openEdit]
+    [visibleRows, toggleVisibility, handleToggleFavorite, copy, openEdit]
   );
 
   const filteredPasswords = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return passwords;
-    return passwords.filter(
-      (p) =>
-        p.password_name.toLowerCase().includes(query) ||
-        p.username?.toLowerCase().includes(query) ||
-        p.description?.toLowerCase().includes(query)
+    const matches = !query
+      ? passwords
+      : passwords.filter(
+          (p) =>
+            p.password_name.toLowerCase().includes(query) ||
+            p.username?.toLowerCase().includes(query) ||
+            p.description?.toLowerCase().includes(query) ||
+            p.url?.toLowerCase().includes(query) ||
+            p.tags?.some((tag) => tag.toLowerCase().includes(query))
+        );
+
+    return [...matches].sort(
+      (a, b) =>
+        Number(b.favorite) - Number(a.favorite) || a.password_name.localeCompare(b.password_name)
     );
   }, [passwords, search]);
 
@@ -143,7 +165,7 @@ const PasswordsPage = () => {
     <Box>
       <Stack
         direction="row"
-        sx={{ justifyContent: "space-between", alignItems: "flex-start", mb: 3 }}
+        sx={{ justifyContent: "space-between", alignItems: "flex-start", mb: 2.5 }}
       >
         <Box>
           <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
@@ -154,6 +176,14 @@ const PasswordsPage = () => {
           </Typography>
         </Box>
         <Stack direction="row" spacing={1}>
+          <Button
+            variant="outlined"
+            startIcon={<HealthAndSafetyIcon />}
+            onClick={() => setHealthOpen(true)}
+            disabled={passwords.length === 0}
+          >
+            Health
+          </Button>
           <Button
             variant="outlined"
             startIcon={<DownloadIcon />}
@@ -178,7 +208,7 @@ const PasswordsPage = () => {
       {!isEmpty && (
         <TextField
           size="small"
-          placeholder="Search by name, username or description…"
+          placeholder="Search name, username, website or tag…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           sx={{ mb: 2, width: 320 }}
@@ -208,9 +238,13 @@ const PasswordsPage = () => {
           columns={columns}
           getRowId={(row) => row.password_name}
           disableRowSelectionOnClick
-          getRowHeight={() => 52}
+          density="compact"
+          rowHeight={44}
+          columnHeaderHeight={42}
           pageSizeOptions={[10, 25, 50]}
-          initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
+          initialState={{
+            pagination: { paginationModel: { pageSize: 10 } },
+          }}
           slots={{
             noRowsOverlay: () => (
               <Box
@@ -234,6 +268,16 @@ const PasswordsPage = () => {
             "& .MuiDataGrid-columnHeader": { bgcolor: "grey.50" },
             "& .MuiDataGrid-cell:focus": { outline: "none" },
             "& .MuiDataGrid-cell:focus-within": { outline: "none" },
+            "& .rowHoverActions": {
+              opacity: 0,
+              pointerEvents: "none",
+              transition: "opacity 120ms ease",
+            },
+            "& .MuiDataGrid-row:hover .rowHoverActions, & .MuiDataGrid-row:has(:focus-visible) .rowHoverActions":
+              {
+                opacity: 1,
+                pointerEvents: "auto",
+              },
           }}
         />
       )}
@@ -243,6 +287,7 @@ const PasswordsPage = () => {
         editTarget={editTarget}
         onClose={() => setDialogOpen(false)}
         onSubmit={handleSubmit}
+        onCopy={copy}
       />
       <BackupDialog
         open={backupOpen}
@@ -253,6 +298,16 @@ const PasswordsPage = () => {
         open={importOpen}
         onClose={() => setImportOpen(false)}
         onImport={importPasswords}
+        onImportCsv={importCsv}
+      />
+      <HealthDialog
+        open={healthOpen}
+        passwords={passwords}
+        onClose={() => setHealthOpen(false)}
+        onSelect={(row) => {
+          setHealthOpen(false);
+          openEdit(row);
+        }}
       />
       <ConfirmDialog
         open={!!deleteTarget}

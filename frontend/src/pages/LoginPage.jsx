@@ -1,5 +1,14 @@
-import { useEffect } from "react";
-import { Alert, Box, Button, CircularProgress, LinearProgress, Typography } from "@mui/material";
+import { useEffect, useState } from "react";
+import {
+  Alert,
+  Box,
+  Button,
+  Checkbox,
+  CircularProgress,
+  FormControlLabel,
+  LinearProgress,
+  Typography,
+} from "@mui/material";
 import { useStoreActions, useStoreState } from "easy-peasy";
 import { useSnackbar } from "notistack";
 
@@ -29,6 +38,8 @@ const LoginPage = () => {
     if (error) enqueueSnackbar(error, { variant: "error" });
   }, [error, enqueueSnackbar]);
 
+  const [acknowledged, setAcknowledged] = useState(false);
+
   const strength = initialized === false ? getMasterPasswordStrength(value) : null;
 
   const handleLogin = () => {
@@ -50,6 +61,10 @@ const LoginPage = () => {
     }
     if (strength && strength.value < 70) {
       setError("Password is too weak. Use at least 12 characters with mixed types.");
+      return;
+    }
+    if (!acknowledged) {
+      setError("Please confirm you understand there is no password recovery.");
       return;
     }
     create({ master_password: value });
@@ -159,12 +174,31 @@ const LoginPage = () => {
         )}
 
         {!initialized && (
-          <Alert severity="warning" variant="outlined" sx={{ py: 0.5 }}>
-            <Typography variant="caption">
-              There is no &ldquo;Forgot password&rdquo;. Losing your master password means losing
-              access to your vault permanently.
-            </Typography>
-          </Alert>
+          <>
+            <Alert severity="warning" variant="outlined" sx={{ py: 0.5 }}>
+              <Typography variant="caption">
+                There is no &ldquo;Forgot password&rdquo;. Losing your master password means losing
+                access to your vault permanently.
+              </Typography>
+            </Alert>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={acknowledged}
+                  onChange={(e) => {
+                    setAcknowledged(e.target.checked);
+                    setError(null);
+                  }}
+                />
+              }
+              label={
+                <Typography variant="caption">
+                  I understand my master password cannot be recovered.
+                </Typography>
+              }
+            />
+          </>
         )}
 
         <Button
@@ -172,10 +206,17 @@ const LoginPage = () => {
           size="large"
           variant="contained"
           loading={loading}
+          disabled={!initialized && !acknowledged}
           onClick={initialized ? handleLogin : handleCreate}
         >
           {initialized ? "Unlock Vault" : "Create Vault"}
         </Button>
+
+        {!initialized && (
+          <Typography variant="caption" sx={{ color: "text.secondary", textAlign: "center" }}>
+            Closing this tab locks your vault. That is by design.
+          </Typography>
+        )}
       </Box>
     </Box>
   );

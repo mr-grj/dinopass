@@ -8,6 +8,8 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from helpers import generate_totp
+
 app = typer.Typer(
     name="dinopass",
     help="Manage your self-hosted dinopass vault from the terminal.",
@@ -111,6 +113,15 @@ def pw_get(name: Annotated[str, typer.Argument(help="Password name.")]) -> None:
     if item.get("username"):
         _out.print(f"  [dim]Username[/dim]     {item['username']}")
 
+    if item.get("url"):
+        _out.print(f"  [dim]URL[/dim]          {item['url']}")
+
+    if item.get("totp_secret"):
+        _out.print(f"  [dim]2FA code[/dim]     {generate_totp(item['totp_secret'])}")
+
+    if item.get("tags"):
+        _out.print(f"  [dim]Tags[/dim]         {', '.join(item['tags'])}")
+
     if item.get("description"):
         _out.print(f"  [dim]Description[/dim]  {item['description']}")
 
@@ -132,6 +143,10 @@ def pw_create(name: Annotated[str, typer.Argument(help="Password name.")]) -> No
         username = (
             typer.prompt("Username / email", default="", show_default=False) or None
         )
+        url = typer.prompt("URL", default="", show_default=False) or None
+        totp_secret = (
+            typer.prompt("TOTP secret", default="", show_default=False) or None
+        )
         description = (
             typer.prompt("Description", default="", show_default=False) or None
         )
@@ -141,6 +156,8 @@ def pw_create(name: Annotated[str, typer.Argument(help="Password name.")]) -> No
                 "password_name": name,
                 "username": username,
                 "password_value": value,
+                "url": url,
+                "totp_secret": totp_secret,
                 "description": description,
             },
             headers=headers,
@@ -178,6 +195,22 @@ def pw_update(name: Annotated[str, typer.Argument(help="Password name.")]) -> No
             )
             or None
         )
+        new_url = (
+            typer.prompt(
+                "New URL",
+                default=current.get("url") or "",
+                show_default=bool(current.get("url")),
+            )
+            or None
+        )
+        new_totp = (
+            typer.prompt(
+                "New TOTP secret",
+                default=current.get("totp_secret") or "",
+                show_default=bool(current.get("totp_secret")),
+            )
+            or None
+        )
         new_description = (
             typer.prompt(
                 "New description",
@@ -194,13 +227,21 @@ def pw_update(name: Annotated[str, typer.Argument(help="Password name.")]) -> No
                     "password_name": name,
                     "username": current.get("username"),
                     "password_value": current["password_value"],
+                    "url": current.get("url"),
+                    "totp_secret": current.get("totp_secret"),
                     "description": current.get("description"),
+                    "tags": current.get("tags", []),
+                    "favorite": current.get("favorite", False),
                 },
                 "new_password": {
                     "password_name": name,
                     "username": new_username,
                     "password_value": new_value,
+                    "url": new_url,
+                    "totp_secret": new_totp,
                     "description": new_description,
+                    "tags": current.get("tags", []),
+                    "favorite": current.get("favorite", False),
                 },
             },
             headers=headers,
@@ -284,6 +325,47 @@ def cmd_import(
             "/passwords/import",
             data={"master_password": master, "on_conflict": on_conflict},
             files={"file": (file.name, file_bytes, "application/zip")},
+            headers=_hdr(key),
+        )
+
+    _check(resp)
+
+    r = resp.json()
+
+    _ok(
+        f"Import complete - "
+        f"[cyan]{r['imported']}[/cyan] added, "
+        f"[cyan]{r['overwritten']}[/cyan] overwritten, "
+        f"[cyan]{r['skipped']}[/cyan] skipped"
+    )
+
+
+@app.command("import-csv")
+def cmd_import_csv(
+    file: Annotated[
+        Path, typer.Argument(help="Path to a CSV exported from another manager.")
+    ],
+    on_conflict: Annotated[
+        str,
+        typer.Option(
+            help="How to handle existing entries: skip or overwrite.",
+        ),
+    ] = "skip",
+) -> None:
+    if not file.exists():
+        _die(f"File not found: {file}")
+
+    if on_conflict not in ("skip", "overwrite"):
+        _die("--on-conflict must be 'skip' or 'overwrite'.")
+
+    file_bytes = file.read_bytes()
+
+    with httpx.Client(base_url=_api_url(), timeout=60) as client:
+        _, key = _unlock(client)
+        resp = client.post(
+            "/passwords/import/csv",
+            data={"on_conflict": on_conflict},
+            files={"file": (file.name, file_bytes, "text/csv")},
             headers=_hdr(key),
         )
 

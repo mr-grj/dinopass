@@ -16,6 +16,15 @@ const theme = createTheme({
       contrastText: "#ffffff",
     },
   },
+  components: {
+    MuiTooltip: {
+      defaultProps: {
+        disableInteractive: true,
+        enterDelay: 400,
+        enterNextDelay: 400,
+      },
+    },
+  },
 });
 
 const AppContent = () => {
@@ -57,8 +66,18 @@ const AppContent = () => {
 const snackbarStyles = (
   <GlobalStyles
     styles={{
-      ".notistack-MuiContent-success, .notistack-MuiContent-warning, .notistack-MuiContent-info": {
+      // Info and warning keep the minimal black look; success and error get
+      // clear colour cues so the outcome is obvious at a glance.
+      ".notistack-MuiContent-info, .notistack-MuiContent-warning": {
         backgroundColor: "#000000 !important",
+        color: "#ffffff !important",
+      },
+      ".notistack-MuiContent-success": {
+        backgroundColor: "#2e7d32 !important",
+        color: "#ffffff !important",
+      },
+      ".notistack-MuiContent-error": {
+        backgroundColor: "#d32f2f !important",
         color: "#ffffff !important",
       },
     }}

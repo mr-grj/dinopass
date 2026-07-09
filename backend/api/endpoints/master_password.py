@@ -11,6 +11,7 @@ from schemas import (
     MasterPassword,
     MasterPasswordCheck,
     MasterPasswordCreate,
+    MasterPasswordCreatePayload,
     MasterPasswordStatus,
     MasterPasswordUpdate,
     MasterPasswordUpdatePayload,
@@ -66,7 +67,7 @@ async def check_master_password(
 @limiter.limit(rate("5/hour"))
 async def create_master_password(
     request: Request,
-    body: MasterPassword,
+    body: MasterPasswordCreatePayload,
     crud: MasterPasswordCRUDDep,
 ) -> MasterPasswordCreate:
     return await crud.create_master_password(master_password=body.master_password)

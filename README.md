@@ -35,10 +35,15 @@ The basics you'd expect:
 
 - One master password unlocks the vault - no account, no email, no recovery codes sent to a phone number you changed three years ago
 - All passwords encrypted at rest; the encryption key is derived from your master password and never touches the server
-- Web UI for day-to-day use: create, edit, delete, search passwords by name, username, or description
+- Web UI for day-to-day use: create, edit, delete, search by name, username, website, or tag
+- Store the website, a username, tags, and a two-factor (TOTP) secret alongside each password
+- Built-in two-factor codes: paste a 2FA secret and Dinopass shows the live rolling code, computed in your browser
+- Favorites and tags to keep a growing vault tidy, plus password history so a changed password is never truly gone
+- Vault health check that flags weak, reused, and old passwords - runs entirely on your device, nothing is sent anywhere
 - Password generator with configurable length and character sets - cryptographically secure, not the `Math.random()` kind
 - Strength indicator on every password so you can see at a glance which ones are embarrassing
 - CLI (`dinopass`) for when you'd rather not open a browser
+- Import from Chrome, Bitwarden, KeePass, Proton Pass and friends with a plain CSV, or restore an encrypted Dinopass backup
 - Encrypted backup export and import so you're not one disk failure away from losing everything
 - Auto-locks after inactivity and clears the clipboard after copy - small things that matter
 
@@ -60,13 +65,16 @@ Nothing exotic. I used tools I know and trust.
 
 I spent more time on this than I care to admit, so here's what's actually happening under the hood:
 
-- Your master password is hashed with **bcrypt** - it's never stored in plain, and nothing is reversible
+- Your master password is hashed with **bcrypt** - it's never stored in plain, and nothing is reversible. New vaults require a reasonably strong master password (at least 12 characters, mixed types), enforced on the server, not just in the browser
 - Every stored password is encrypted with **Fernet** (AES-128-CBC + HMAC-SHA256) using a key derived from your master password via **Argon2id** (64 MiB memory, 3 iterations, 4 lanes - the OWASP 2024 interactive profile). The key is unique per vault thanks to a random salt
+- The website, two-factor secret, tags, and password history are encrypted the same way. The database never learns which sites you have accounts on or how you organise them
 - That derived key lives only in your browser's `sessionStorage` for the duration of your session - it never touches the server, and it disappears the moment you close the tab
-- If you change your master password, every stored password is re-encrypted transparently
+- If you change your master password, every encrypted field is re-encrypted transparently
 - The password generator uses `crypto.getRandomValues` with rejection sampling to eliminate modulo bias - no `Math.random()`, no shortcuts
 
 If someone steals the database, they have a pile of ciphertext and a bcrypt hash. Without the master password, that's useless.
+
+What Dinopass does not defend against is someone running code inside your own browser session. The derived key lives in `sessionStorage` while the tab is open, so a malicious script on the page (a compromised dependency, a cross-site scripting bug) could read it. That is the usual trade-off for a web vault, and it is why Dinopass is meant to run on a machine and network you trust, and why I keep the dependency list small. Keep your instance updated.
 
 ## Running it
 
@@ -74,11 +82,19 @@ You need [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](http
 
 ### 1. Configure the database
 
+The quick way, which creates `backend/.db.env` and generates a strong database password for you:
+
+```shell
+make setup
+```
+
+Or do it by hand:
+
 ```shell
 cp backend/.db.env.template backend/.db.env
 ```
 
-Edit `backend/.db.env` and set a real username and password:
+Then edit `backend/.db.env` and set a real username and password:
 
 ```dotenv
 POSTGRES_HOST=db
@@ -126,6 +142,7 @@ All `make` commands run locally, not inside Docker.
 
 | Command | What it does |
 |---|---|
+| `make setup` | Create `backend/.db.env` with a generated database password |
 | `make all` | Full clean + rebuild |
 | `make buildup` | Build images and start all containers in the background |
 | `make dev` | Start with hot-reload |
@@ -201,12 +218,13 @@ uv run dinopass <command>
 
 ```
 dinopass password list                     List all passwords
-dinopass password get <name>               Reveal a password
+dinopass password get <name>               Reveal a password (and its live 2FA code)
 dinopass password create <name>            Add a new password (interactive)
-dinopass password update <name>            Update value or description (interactive)
+dinopass password update <name>            Update value, website, 2FA or description (interactive)
 dinopass password delete <name>            Delete a password (asks for confirmation)
 dinopass backup [--out <dir>]              Export an encrypted backup ZIP
-dinopass import <file> [--on-conflict]     Import from a backup ZIP (skip|overwrite)
+dinopass import <file> [--on-conflict]     Import from a Dinopass backup ZIP (skip|overwrite)
+dinopass import-csv <file> [--on-conflict] Import a CSV from another manager (skip|overwrite)
 ```
 
 Every command that touches encrypted data prompts for the master password. Use `--help` on any command for details.

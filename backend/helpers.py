@@ -1,7 +1,10 @@
 import base64
 import hashlib
+import hmac
 import io
 import json
+import struct
+import time
 from datetime import UTC, datetime
 
 import bcrypt
@@ -50,7 +53,35 @@ def decrypt(key: bytes | str, encrypted_value: bytes) -> str | None:
         return None
 
 
-def create_encrypted_zip(entries: list[dict[str, str | None]], password: str) -> bytes:
+def encrypt_optional(key: bytes | str, value: str | None) -> bytes | None:
+    if value is None:
+        return None
+    return encrypt(key, value.encode())
+
+
+def decrypt_optional(key: bytes | str, encrypted_value: bytes | None) -> str | None:
+    if encrypted_value is None:
+        return None
+    return decrypt(key, encrypted_value)
+
+
+def generate_totp(secret: str, *, digits: int = 6, period: int = 30) -> str:
+    """
+    Return the current TOTP code for a base32 secret (RFC 6238, HMAC-SHA1).
+
+    Used by the CLI so `password get` can show the live code. The web UI has its
+    own Web Crypto implementation; both stay small and dependency-free so the
+    two-factor path is easy to audit.
+    """
+    key = base64.b32decode(secret + "=" * (-len(secret) % 8), casefold=True)
+    counter = int(time.time()) // period
+    digest = hmac.new(key, struct.pack(">Q", counter), hashlib.sha1).digest()
+    offset = digest[-1] & 0x0F
+    code = struct.unpack(">I", digest[offset : offset + 4])[0] & 0x7FFFFFFF
+    return str(code % (10**digits)).zfill(digits)
+
+
+def create_encrypted_zip(entries: list[dict[str, object]], password: str) -> bytes:
     payload = json.dumps(
         {"exported_at": datetime.now(UTC).isoformat(), "passwords": entries},
         indent=2,

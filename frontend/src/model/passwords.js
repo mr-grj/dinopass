@@ -57,6 +57,17 @@ const Passwords = {
     }
   }),
 
+  toggleFavorite: thunk(async (actions, { passwordName, favorite }) => {
+    try {
+      await apiClient.patch(`/passwords/${encodeURIComponent(passwordName)}/favorite`, {
+        favorite,
+      });
+      await actions.get();
+    } catch (err) {
+      throw new Error(err.response?.data?.detail ?? "Failed to update favorite.");
+    }
+  }),
+
   importPasswords: thunk(async (actions, { file, masterPassword, onConflict }) => {
     try {
       const formData = new FormData();
@@ -64,6 +75,19 @@ const Passwords = {
       formData.append("master_password", masterPassword);
       formData.append("on_conflict", onConflict);
       const { data } = await apiClient.post("/passwords/import", formData);
+      await actions.get();
+      return data;
+    } catch (err) {
+      throw new Error(err.response?.data?.detail ?? "Import failed.");
+    }
+  }),
+
+  importCsv: thunk(async (actions, { file, onConflict }) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("on_conflict", onConflict);
+      const { data } = await apiClient.post("/passwords/import/csv", formData);
       await actions.get();
       return data;
     } catch (err) {

@@ -1,10 +1,17 @@
+from datetime import datetime
 from enum import StrEnum
 
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    field_validator,
 )
+
+from validators import normalize_totp_secret, validate_master_password_strength
+
+_MAX_TAGS = 20
+_MAX_TAG_LENGTH = 40
 
 
 class SimpleDetailSchema(BaseModel):
@@ -15,6 +22,17 @@ class MasterPassword(BaseModel):
     master_password: str = Field(min_length=1, max_length=1024)
 
     model_config = ConfigDict(str_strip_whitespace=True)
+
+
+class MasterPasswordCreatePayload(BaseModel):
+    master_password: str = Field(min_length=1, max_length=1024)
+
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    @field_validator("master_password")
+    @classmethod
+    def _strong(cls, value: str) -> str:
+        return validate_master_password_strength(value)
 
 
 class MasterPasswordCheck(BaseModel):
@@ -39,6 +57,11 @@ class MasterPasswordUpdatePayload(BaseModel):
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
+    @field_validator("new_master_password")
+    @classmethod
+    def _strong(cls, value: str) -> str:
+        return validate_master_password_strength(value)
+
 
 class MasterPasswordStatus(BaseModel):
     initialized: bool
@@ -48,13 +71,43 @@ class Password(BaseModel):
     password_name: str = Field(min_length=1, max_length=255)
     username: str | None = Field(default=None, max_length=255)
     password_value: str = Field(min_length=1)
+    url: str | None = Field(default=None, max_length=2048)
+    totp_secret: str | None = Field(default=None, max_length=512)
     description: str | None = Field(default=None, max_length=1024)
+    tags: list[str] = Field(default_factory=list, max_length=_MAX_TAGS)
+    favorite: bool = False
 
     model_config = ConfigDict(str_strip_whitespace=True)
+
+    @field_validator("totp_secret")
+    @classmethod
+    def _normalize_totp(cls, value: str | None) -> str | None:
+        return normalize_totp_secret(value)
+
+    @field_validator("tags")
+    @classmethod
+    def _clean_tags(cls, value: list[str]) -> list[str]:
+        cleaned: list[str] = []
+        for tag in value:
+            tag = tag.strip()[:_MAX_TAG_LENGTH].strip()
+            if tag and tag not in cleaned:
+                cleaned.append(tag)
+        return cleaned
+
+
+class PasswordHistoryEntry(BaseModel):
+    value: str
+    changed_at: datetime
 
 
 class PasswordResponse(Password):
     backed_up: bool
+    updated: datetime
+    password_history: list[PasswordHistoryEntry] = Field(default_factory=list)
+
+
+class FavoriteUpdatePayload(BaseModel):
+    favorite: bool
 
 
 class PasswordCreate(BaseModel):

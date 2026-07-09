@@ -21,6 +21,7 @@ from api.exceptions import TypesMismatchError
 from api.rate_limit import limiter, rate
 from api.responses import inject_responses
 from schemas import (
+    FavoriteUpdatePayload,
     MasterPassword,
     OnConflict,
     Password,
@@ -117,6 +118,26 @@ async def update_password(
     )
 
 
+@router.patch(
+    "/{password_name}/favorite",
+    name="passwords:favorite",
+    response_model=PasswordUpdate,
+    dependencies=[Depends(require_master_password)],
+    responses=inject_responses(
+        {
+            status.HTTP_404_NOT_FOUND: SimpleDetailSchema,
+            status.HTTP_403_FORBIDDEN: SimpleDetailSchema,
+        }
+    ),
+)
+async def set_favorite(
+    password_name: str,
+    body: FavoriteUpdatePayload,
+    crud: PasswordCRUDDep,
+) -> PasswordUpdate:
+    return await crud.set_favorite(password_name, body.favorite)
+
+
 @router.delete(
     "/{password_name}",
     name="passwords:delete",
@@ -166,6 +187,41 @@ async def import_passwords(
     return await crud.import_passwords(
         file_bytes=file_bytes,
         master_password=master_password,
+        key_derivation=key_derivation,
+        on_conflict=on_conflict,
+    )
+
+
+@router.post(
+    "/import/csv",
+    name="passwords:import_csv",
+    response_model=PasswordImportResult,
+    dependencies=[Depends(require_master_password)],
+    responses=inject_responses(
+        {
+            status.HTTP_403_FORBIDDEN: SimpleDetailSchema,
+            status.HTTP_400_BAD_REQUEST: SimpleDetailSchema,
+            status.HTTP_429_TOO_MANY_REQUESTS: SimpleDetailSchema,
+        }
+    ),
+)
+@limiter.limit(rate("5/hour"))
+async def import_passwords_csv(
+    request: Request,
+    file: UploadFile,
+    crud: PasswordCRUDDep,
+    key_derivation: KeyDerivationDep,
+    on_conflict: OnConflict = Form(OnConflict.skip),
+) -> PasswordImportResult:
+    if file.size is not None and file.size > _MAX_IMPORT_FILE_BYTES:
+        raise TypesMismatchError("File too large. Maximum allowed size is 10 MB.")
+
+    file_bytes = await file.read()
+    if len(file_bytes) > _MAX_IMPORT_FILE_BYTES:
+        raise TypesMismatchError("File too large. Maximum allowed size is 10 MB.")
+
+    return await crud.import_passwords_csv(
+        file_bytes=file_bytes,
         key_derivation=key_derivation,
         on_conflict=on_conflict,
     )

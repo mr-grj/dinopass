@@ -3,6 +3,17 @@ override SHELL := /bin/bash
 .PHONY: all
 all: clean buildup
 
+.PHONY: setup
+setup:
+	@if [ -f backend/.db.env ]; then \
+		echo 'backend/.db.env already exists, leaving it untouched.'; \
+	else \
+		echo 'Creating backend/.db.env with a generated database password...'; \
+		sed "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$$(openssl rand -base64 32)|" \
+			backend/.db.env.template > backend/.db.env; \
+		echo 'Done. Run "make buildup" to start Dinopass.'; \
+	fi
+
 .PHONY: clean
 clean:
 	@echo 'Removing containers...'

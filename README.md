@@ -176,6 +176,8 @@ Everything is optional - the defaults work fine for local use.
 | `DINOPASS_API_URL` | `http://localhost:8000/api` | Backend API base URL |
 
 > **Putting this on a real server?** Set `CORS_ORIGINS` to your actual domain, enable `DISABLE_DOCS=true`, put everything behind a reverse proxy (nginx, Caddy) with HTTPS, and don't expose port `5432` to the outside world. Dinopass is designed to run on a machine you trust - it's not hardened for sitting naked on the internet.
+>
+> One thing to know about rate limiting behind a proxy: the limits are keyed on the client IP, which the app reads from the network connection. Behind a reverse proxy every request looks like it comes from the proxy, so the limits become global instead of per client. If you want per client rate limiting, configure your proxy to preserve the real client address (and only trust `X-Forwarded-For` from the proxy itself).
 
 ## CLI
 

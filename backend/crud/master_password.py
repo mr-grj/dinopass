@@ -1,7 +1,7 @@
 import os
 
 from sqlalchemy import select
-from starlette.datastructures import Headers
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.exceptions import Forbidden, NotFound, TypesMismatchError
 from crud.base import BaseCRUD
@@ -20,14 +20,16 @@ from schemas import (
 )
 
 
+async def fetch_master_password(session: AsyncSession) -> MasterPasswordModel | None:
+    return (await session.execute(select(MasterPasswordModel).limit(1))).scalar()
+
+
 class MasterPasswordCRUD(BaseCRUD):
     async def is_initialized(self) -> bool:
-        result = await self.session.execute(select(MasterPasswordModel).limit(1))
-        return result.scalar() is not None
+        return await fetch_master_password(self.session) is not None
 
     async def _get_model(self) -> MasterPasswordModel:
-        result = await self.session.execute(select(MasterPasswordModel).limit(1))
-        model = result.scalar()
+        model = await fetch_master_password(self.session)
         if not model:
             raise NotFound("No master password found.")
         return model
@@ -60,15 +62,11 @@ class MasterPasswordCRUD(BaseCRUD):
         )
 
     async def update_master_password(
-        self, master_password: str, new_master_password: str, headers: Headers
+        self, master_password: str, new_master_password: str, key_derivation: str
     ) -> MasterPasswordUpdate:
         model = await self._get_model()
         if not verify_master_password(master_password, model.hash_key):
             raise Forbidden("Current master password is incorrect.")
-
-        key_derivation = headers.get("x-dino-key-derivation")
-        if not key_derivation:
-            raise Forbidden("Key derivation is missing.")
 
         new_salt = os.urandom(16)
         new_key_derivation = generate_key_derivation(new_salt, new_master_password)

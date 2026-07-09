@@ -108,6 +108,9 @@ def pw_get(name: Annotated[str, typer.Argument(help="Password name.")]) -> None:
     _out.print(f"\n  [bold cyan]{item['password_name']}[/bold cyan]")
     _out.print(f"  [dim]Value[/dim]        {item['password_value']}")
 
+    if item.get("username"):
+        _out.print(f"  [dim]Username[/dim]     {item['username']}")
+
     if item.get("description"):
         _out.print(f"  [dim]Description[/dim]  {item['description']}")
 
@@ -126,6 +129,9 @@ def pw_create(name: Annotated[str, typer.Argument(help="Password name.")]) -> No
         value = typer.prompt(
             "Password value", hide_input=True, confirmation_prompt=True
         )
+        username = (
+            typer.prompt("Username / email", default="", show_default=False) or None
+        )
         description = (
             typer.prompt("Description", default="", show_default=False) or None
         )
@@ -133,6 +139,7 @@ def pw_create(name: Annotated[str, typer.Argument(help="Password name.")]) -> No
             "/passwords/create",
             json={
                 "password_name": name,
+                "username": username,
                 "password_value": value,
                 "description": description,
             },
@@ -155,11 +162,21 @@ def pw_update(name: Annotated[str, typer.Argument(help="Password name.")]) -> No
         _check(current_resp)
 
         current = current_resp.json()
+        if current.get("username"):
+            _out.print(f"  [dim]Current username:[/dim] {current['username']}")
         if current.get("description"):
             _out.print(f"  [dim]Current description:[/dim] {current['description']}")
 
         new_value = typer.prompt(
             "New password value", hide_input=True, confirmation_prompt=True
+        )
+        new_username = (
+            typer.prompt(
+                "New username / email",
+                default=current.get("username") or "",
+                show_default=bool(current.get("username")),
+            )
+            or None
         )
         new_description = (
             typer.prompt(
@@ -175,11 +192,13 @@ def pw_update(name: Annotated[str, typer.Argument(help="Password name.")]) -> No
             json={
                 "password": {
                     "password_name": name,
+                    "username": current.get("username"),
                     "password_value": current["password_value"],
                     "description": current.get("description"),
                 },
                 "new_password": {
                     "password_name": name,
+                    "username": new_username,
                     "password_value": new_value,
                     "description": new_description,
                 },

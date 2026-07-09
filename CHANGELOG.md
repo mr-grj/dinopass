@@ -2,8 +2,16 @@
 
 ## [Unreleased]
 
+### Security
+
+- **Full master password is now authenticated.** bcrypt truncates at 72 bytes, so a very long master password used to only be checked by its first 72 bytes. It's now pre-hashed with SHA-256 before bcrypt so the whole thing counts. This changes the stored hash format and is not backward compatible, so a vault created before this change needs to be set up again.
+- **Rate-limited the master password change endpoint.** It verifies the current master password, so leaving it unlimited was a brute-force gap that bypassed the cap on the login check. It's now capped at 10/hour like the check endpoint.
+- **Import rejects oversized uploads before reading them** into memory, and the reverse-proxy rate-limiting caveat is now documented in the README.
+
 ### Internal
 
+- **Backend refactor** - moved exception translation to app-level handlers (endpoints no longer carry `@handle_*` decorator stacks), extracted the per-request key derivation into a FastAPI dependency so the CRUD layer only sees a plain string, simplified the dependency wiring with `Annotated` providers, and fixed the import path's N+1 lookups. No change to the API contract.
+- **Fixed long-standing inconsistencies** - the CLI now sends the `username` field on create/update, the API version reads from package metadata instead of a hardcoded string, and the settings defaults live in one place.
 - **Frontend refactor** - broke the 1,100-line `PasswordsPage` into a thin container plus focused pieces under `components/vault/` (form, generator, backup, import, empty state, column defs), extracted the secure generator and strength scoring into `src/lib/`, and added a shared `PasswordField` and `useClipboard` hook. No behavior or UI changes - just cleaner, DRYer, easier to follow.
 - **Unified password-strength logic** - the vault (5-level) and login (4-level) scales now share one module (`src/lib/passwordStrength.js`) instead of two divergent copies.
 - **ESLint 9** - added a flat-config ESLint setup (react-hooks + react-refresh) wired into `make lint`/`make check` and CI. `npm run lint` is clean; the frontend still installs with 0 vulnerabilities.

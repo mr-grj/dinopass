@@ -33,7 +33,7 @@ def get_application() -> FastAPI:
     server.add_middleware(
         CORSMiddleware,  # type: ignore[arg-type]
         allow_origins=settings.cors_origins,
-        allow_credentials=True,
+        allow_credentials=False,
         allow_methods=["*"],
         allow_headers=["Content-Type", "x-dino-key-derivation"],
     )

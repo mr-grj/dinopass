@@ -1,23 +1,15 @@
 from sqlalchemy import select
 
 from crud.base import BaseCRUD
-from models import SettingsModel
+from models import SETTINGS_DEFAULTS, SettingsModel
 from schemas import SettingsResponse, SettingsUpdate
-
-_DEFAULTS = dict(
-    inactivity_ms=120_000,
-    warn_before_ms=60_000,
-    hidden_ms=60_000,
-    debounce_ms=1_000,
-    clipboard_clear_ms=30_000,
-)
 
 
 class SettingsCRUD(BaseCRUD):
     async def _get_or_create(self) -> SettingsModel:
         model = (await self.session.execute(select(SettingsModel).limit(1))).scalar()
         if model is None:
-            model = SettingsModel(**_DEFAULTS)
+            model = SettingsModel(**SETTINGS_DEFAULTS)
             self.session.add(model)
             await self.session.flush()
         return model

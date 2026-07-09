@@ -1,19 +1,12 @@
 from fastapi import (
     APIRouter,
-    Depends,
     Request,
     status,
 )
 
-from api.endpoints.deps import get_master_password_crud
-from api.exceptions import (
-    handle_forbidden,
-    handle_mismatch,
-    handle_not_found,
-)
+from api.endpoints.deps import KeyDerivationDep, MasterPasswordCRUDDep
 from api.rate_limit import limiter, rate
 from api.responses import inject_responses
-from crud.master_password import MasterPasswordCRUD
 from schemas import (
     MasterPassword,
     MasterPasswordCheck,
@@ -33,7 +26,7 @@ router = APIRouter(tags=["master-password"])
     response_model=MasterPasswordStatus,
 )
 async def get_status(
-    crud: MasterPasswordCRUD = Depends(get_master_password_crud),
+    crud: MasterPasswordCRUDDep,
 ) -> MasterPasswordStatus:
     return MasterPasswordStatus(initialized=await crud.is_initialized())
 
@@ -51,13 +44,10 @@ async def get_status(
     ),
 )
 @limiter.limit(rate("10/hour"))
-@handle_forbidden
-@handle_not_found
-@handle_mismatch
 async def check_master_password(
     request: Request,
     body: MasterPassword,
-    crud: MasterPasswordCRUD = Depends(get_master_password_crud),
+    crud: MasterPasswordCRUDDep,
 ) -> MasterPasswordCheck:
     return await crud.check_master_password(master_password=body.master_password)
 
@@ -74,13 +64,10 @@ async def check_master_password(
     ),
 )
 @limiter.limit(rate("5/hour"))
-@handle_forbidden
-@handle_not_found
-@handle_mismatch
 async def create_master_password(
     request: Request,
     body: MasterPassword,
-    crud: MasterPasswordCRUD = Depends(get_master_password_crud),
+    crud: MasterPasswordCRUDDep,
 ) -> MasterPasswordCreate:
     return await crud.create_master_password(master_password=body.master_password)
 
@@ -94,19 +81,19 @@ async def create_master_password(
             status.HTTP_404_NOT_FOUND: SimpleDetailSchema,
             status.HTTP_403_FORBIDDEN: SimpleDetailSchema,
             status.HTTP_400_BAD_REQUEST: SimpleDetailSchema,
+            status.HTTP_429_TOO_MANY_REQUESTS: SimpleDetailSchema,
         }
     ),
 )
-@handle_forbidden
-@handle_not_found
-@handle_mismatch
+@limiter.limit(rate("10/hour"))
 async def update_master_password(
-    body: MasterPasswordUpdatePayload,
     request: Request,
-    crud: MasterPasswordCRUD = Depends(get_master_password_crud),
+    body: MasterPasswordUpdatePayload,
+    crud: MasterPasswordCRUDDep,
+    key_derivation: KeyDerivationDep,
 ) -> MasterPasswordUpdate:
     return await crud.update_master_password(
         master_password=body.master_password,
         new_master_password=body.new_master_password,
-        headers=request.headers,
+        key_derivation=key_derivation,
     )

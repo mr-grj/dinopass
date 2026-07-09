@@ -10,6 +10,14 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+SETTINGS_DEFAULTS = {
+    "inactivity_ms": 120_000,
+    "warn_before_ms": 60_000,
+    "hidden_ms": 60_000,
+    "debounce_ms": 1_000,
+    "clipboard_clear_ms": 30_000,
+}
+
 
 class BaseModel(DeclarativeBase):
     pass
@@ -57,8 +65,18 @@ class SettingsModel(BaseModel):
         TIMESTAMP, server_default=func.now(), onupdate=func.now()
     )
 
-    inactivity_ms: Mapped[int] = mapped_column(Integer, server_default="120000")
-    warn_before_ms: Mapped[int] = mapped_column(Integer, server_default="60000")
-    hidden_ms: Mapped[int] = mapped_column(Integer, server_default="60000")
-    debounce_ms: Mapped[int] = mapped_column(Integer, server_default="1000")
-    clipboard_clear_ms: Mapped[int] = mapped_column(Integer, server_default="30000")
+    inactivity_ms: Mapped[int] = mapped_column(
+        Integer, server_default=str(SETTINGS_DEFAULTS["inactivity_ms"])
+    )
+    warn_before_ms: Mapped[int] = mapped_column(
+        Integer, server_default=str(SETTINGS_DEFAULTS["warn_before_ms"])
+    )
+    hidden_ms: Mapped[int] = mapped_column(
+        Integer, server_default=str(SETTINGS_DEFAULTS["hidden_ms"])
+    )
+    debounce_ms: Mapped[int] = mapped_column(
+        Integer, server_default=str(SETTINGS_DEFAULTS["debounce_ms"])
+    )
+    clipboard_clear_ms: Mapped[int] = mapped_column(
+        Integer, server_default=str(SETTINGS_DEFAULTS["clipboard_clear_ms"])
+    )

@@ -3,17 +3,18 @@ import json
 
 import pyzipper
 from sqlalchemy import select
-from starlette.datastructures import Headers
+from sqlalchemy.exc import IntegrityError
 
 from api.exceptions import Forbidden, NotFound, TypesMismatchError
 from crud.base import BaseCRUD
+from crud.master_password import fetch_master_password
 from helpers import (
     create_encrypted_zip,
     decrypt,
     encrypt,
     verify_master_password,
 )
-from models import MasterPasswordModel, PasswordModel
+from models import PasswordModel
 from schemas import (
     OnConflict,
     Password,
@@ -28,18 +29,6 @@ _MAX_JSON_BYTES = 50 * 1024 * 1024  # 50 MB
 
 
 class PasswordCRUD(BaseCRUD):
-    @staticmethod
-    def _get_key_derivation(headers: Headers) -> str:
-        key_derivation = headers.get("x-dino-key-derivation")
-        if not key_derivation:
-            raise Forbidden("Key derivation is missing.")
-        return key_derivation
-
-    async def _check_master_password_exists(self) -> None:
-        result = await self.session.execute(select(MasterPasswordModel).limit(1))
-        if result.scalar() is None:
-            raise Forbidden("No master password set.")
-
     async def _get_password_model(self, password_name: str) -> PasswordModel:
         result = (
             await self.session.execute(
@@ -69,9 +58,15 @@ class PasswordCRUD(BaseCRUD):
             backed_up=model.backed_up,
         )
 
-    async def get_passwords(self, headers: Headers) -> list[PasswordResponse]:
-        await self._check_master_password_exists()
-        key_derivation = self._get_key_derivation(headers)
+    async def _verify_master_password(self, master_password: str) -> None:
+        mp_model = await fetch_master_password(self.session)
+        if not mp_model:
+            raise NotFound("No master password found.")
+
+        if not verify_master_password(master_password, mp_model.hash_key):
+            raise Forbidden("Incorrect master password.")
+
+    async def get_passwords(self, key_derivation: str) -> list[PasswordResponse]:
         models = (
             await self.session.execute(
                 select(PasswordModel).order_by(PasswordModel.password_name)
@@ -80,29 +75,14 @@ class PasswordCRUD(BaseCRUD):
         return [self._to_response(m, key_derivation) for m in models]
 
     async def get_password(
-        self, password_name: str, headers: Headers
+        self, password_name: str, key_derivation: str
     ) -> PasswordResponse:
-        await self._check_master_password_exists()
-        key_derivation = self._get_key_derivation(headers)
         model = await self._get_password_model(password_name)
         return self._to_response(model, key_derivation)
 
     async def create_password(
-        self, password: Password, headers: Headers
+        self, password: Password, key_derivation: str
     ) -> PasswordCreate:
-        await self._check_master_password_exists()
-        key_derivation = self._get_key_derivation(headers)
-
-        existing = (
-            await self.session.execute(
-                select(PasswordModel).where(
-                    PasswordModel.password_name == password.password_name
-                )
-            )
-        ).scalar()
-        if existing:
-            raise TypesMismatchError("A password with that name already exists.")
-
         self.session.add(
             PasswordModel(
                 password_name=password.password_name,
@@ -113,14 +93,16 @@ class PasswordCRUD(BaseCRUD):
                 description=password.description,
             )
         )
-        await self.session.flush()
+
+        try:
+            await self.session.flush()
+        except IntegrityError as e:
+            raise TypesMismatchError("A password with that name already exists.") from e
         return PasswordCreate(created=True, detail="Password created successfully.")
 
     async def update_password(
-        self, password: Password, new_password: Password, headers: Headers
+        self, password: Password, new_password: Password, key_derivation: str
     ) -> PasswordUpdate:
-        await self._check_master_password_exists()
-        key_derivation = self._get_key_derivation(headers)
         model = await self._get_password_model(password.password_name)
 
         if model.password_name != new_password.password_name:
@@ -148,29 +130,17 @@ class PasswordCRUD(BaseCRUD):
             model.description = new_password.description
 
         model.backed_up = False
-        self.session.add(model)
         await self.session.flush()
         return PasswordUpdate(updated=True, detail="Password updated successfully.")
 
-    async def delete_password(
-        self, password_name: str, headers: Headers
-    ) -> PasswordDelete:
-        await self._check_master_password_exists()
-        self._get_key_derivation(headers)
+    async def delete_password(self, password_name: str) -> PasswordDelete:
         model = await self._get_password_model(password_name)
         await self.session.delete(model)
         await self.session.flush()
         return PasswordDelete(deleted=True, detail="Password deleted successfully.")
 
-    async def create_backup(self, master_password: str, headers: Headers) -> bytes:
-        key_derivation = self._get_key_derivation(headers)
-
-        mp_result = await self.session.execute(select(MasterPasswordModel).limit(1))
-        mp_model = mp_result.scalar()
-        if not mp_model:
-            raise NotFound("No master password found.")
-        if not verify_master_password(master_password, mp_model.hash_key):
-            raise Forbidden("Incorrect master password.")
+    async def create_backup(self, master_password: str, key_derivation: str) -> bytes:
+        await self._verify_master_password(master_password)
 
         passwords = (
             (
@@ -194,7 +164,7 @@ class PasswordCRUD(BaseCRUD):
 
         for p in passwords:
             p.backed_up = True
-            self.session.add(p)
+
         await self.session.flush()
 
         return create_encrypted_zip(entries, master_password)
@@ -203,17 +173,10 @@ class PasswordCRUD(BaseCRUD):
         self,
         file_bytes: bytes,
         master_password: str,
-        headers: Headers,
+        key_derivation: str,
         on_conflict: OnConflict,
     ) -> PasswordImportResult:
-        key_derivation = self._get_key_derivation(headers)
-
-        mp_result = await self.session.execute(select(MasterPasswordModel).limit(1))
-        mp_model = mp_result.scalar()
-        if not mp_model:
-            raise NotFound("No master password found.")
-        if not verify_master_password(master_password, mp_model.hash_key):
-            raise Forbidden("Incorrect master password.")
+        await self._verify_master_password(master_password)
 
         try:
             with pyzipper.AESZipFile(io.BytesIO(file_bytes), "r") as zf:
@@ -236,6 +199,11 @@ class PasswordCRUD(BaseCRUD):
         except (json.JSONDecodeError, KeyError, ValueError) as e:
             raise TypesMismatchError("Invalid backup file format.") from e
 
+        existing = {
+            model.password_name: model
+            for model in (await self.session.execute(select(PasswordModel))).scalars()
+        }
+
         imported = skipped = overwritten = 0
 
         for entry in entries:
@@ -250,32 +218,26 @@ class PasswordCRUD(BaseCRUD):
 
             username = entry.get("username")
             description = entry.get("description")
+            current = existing.get(name)
 
-            existing = (
-                await self.session.execute(
-                    select(PasswordModel).where(PasswordModel.password_name == name)
-                )
-            ).scalar()
-
-            if existing:
+            if current:
                 if on_conflict == OnConflict.skip:
                     skipped += 1
                 else:
-                    existing.password_value = encrypt(key_derivation, value.encode())
-                    existing.username = username
-                    existing.description = description
-                    existing.backed_up = False
-                    self.session.add(existing)
+                    current.password_value = encrypt(key_derivation, value.encode())
+                    current.username = username
+                    current.description = description
+                    current.backed_up = False
                     overwritten += 1
             else:
-                self.session.add(
-                    PasswordModel(
-                        password_name=name,
-                        username=username,
-                        password_value=encrypt(key_derivation, value.encode()),
-                        description=description,
-                    )
+                model = PasswordModel(
+                    password_name=name,
+                    username=username,
+                    password_value=encrypt(key_derivation, value.encode()),
+                    description=description,
                 )
+                self.session.add(model)
+                existing[name] = model
                 imported += 1
 
         await self.session.flush()

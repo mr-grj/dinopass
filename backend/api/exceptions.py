@@ -1,10 +1,6 @@
 import logging
-from collections.abc import Callable
-from functools import wraps
-from typing import Any
 
 from fastapi import (
-    HTTPException,
     Request,
     status,
 )
@@ -25,43 +21,16 @@ class TypesMismatchError(Exception):
     pass
 
 
-def handle_forbidden(func: Callable) -> Callable:
-    @wraps(func)
-    async def wrapper(*args: Any, **kwargs: Any) -> Any:
-        try:
-            return await func(*args, **kwargs)
-        except Forbidden as e:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail=str(e)
-            ) from e
+def _detail_handler(status_code: int):
+    async def handler(request: Request, exc: Exception) -> JSONResponse:
+        return JSONResponse(status_code=status_code, content={"detail": str(exc)})
 
-    return wrapper
+    return handler
 
 
-def handle_not_found(func: Callable) -> Callable:
-    @wraps(func)
-    async def wrapper(*args: Any, **kwargs: Any) -> Any:
-        try:
-            return await func(*args, **kwargs)
-        except NotFound as e:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
-            ) from e
-
-    return wrapper
-
-
-def handle_mismatch(func: Callable) -> Callable:
-    @wraps(func)
-    async def wrapper(*args: Any, **kwargs: Any) -> Any:
-        try:
-            return await func(*args, **kwargs)
-        except (TypeError, TypesMismatchError) as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-            ) from e
-
-    return wrapper
+forbidden_handler = _detail_handler(status.HTTP_403_FORBIDDEN)
+not_found_handler = _detail_handler(status.HTTP_404_NOT_FOUND)
+mismatch_handler = _detail_handler(status.HTTP_400_BAD_REQUEST)
 
 
 async def internal_error_handler(request: Request, exc: Exception) -> JSONResponse:

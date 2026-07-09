@@ -1,7 +1,15 @@
 from functools import lru_cache
+from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _package_version() -> str:
+    try:
+        return version("backend")
+    except PackageNotFoundError:
+        return "0.0.0"
 
 
 class APISettings(BaseSettings):
@@ -10,7 +18,7 @@ class APISettings(BaseSettings):
     openapi_url: str = "/openapi.json"
     redoc_url: str = "/redoc"
     title: str = "Dinopass API Service"
-    version: str = "0.1.0"
+    version: str = _package_version()
     disable_docs: bool = False
     cors_origins: list[str] = ["http://localhost:3000"]
 

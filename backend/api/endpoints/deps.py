@@ -1,9 +1,10 @@
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator
+from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from crud.base import BaseCRUD
+from api.exceptions import Forbidden
 from crud.master_password import MasterPasswordCRUD
 from crud.password import PasswordCRUD
 from crud.session import AsyncSessionLocal
@@ -20,26 +21,37 @@ async def get_session() -> AsyncGenerator[AsyncSession]:
             raise
 
 
-def get_crud(crud_type: type[BaseCRUD]) -> Callable:
-    def _get_crud(session: AsyncSession = Depends(get_session)) -> BaseCRUD:
-        return crud_type(session)
-
-    return _get_crud
+SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
-def get_master_password_crud(
-    crud: MasterPasswordCRUD = Depends(get_crud(MasterPasswordCRUD)),
-) -> MasterPasswordCRUD:
-    return crud
+def get_master_password_crud(session: SessionDep) -> MasterPasswordCRUD:
+    return MasterPasswordCRUD(session)
 
 
-def get_password_crud(
-    crud: PasswordCRUD = Depends(get_crud(PasswordCRUD)),
-) -> PasswordCRUD:
-    return crud
+def get_password_crud(session: SessionDep) -> PasswordCRUD:
+    return PasswordCRUD(session)
 
 
-def get_settings_crud(
-    crud: SettingsCRUD = Depends(get_crud(SettingsCRUD)),
-) -> SettingsCRUD:
-    return crud
+def get_settings_crud(session: SessionDep) -> SettingsCRUD:
+    return SettingsCRUD(session)
+
+
+MasterPasswordCRUDDep = Annotated[MasterPasswordCRUD, Depends(get_master_password_crud)]
+PasswordCRUDDep = Annotated[PasswordCRUD, Depends(get_password_crud)]
+SettingsCRUDDep = Annotated[SettingsCRUD, Depends(get_settings_crud)]
+
+
+def get_key_derivation(
+    x_dino_key_derivation: Annotated[str | None, Header()] = None,
+) -> str:
+    if not x_dino_key_derivation:
+        raise Forbidden("Key derivation is missing.")
+    return x_dino_key_derivation
+
+
+KeyDerivationDep = Annotated[str, Depends(get_key_derivation)]
+
+
+async def require_master_password(crud: MasterPasswordCRUDDep) -> None:
+    if not await crud.is_initialized():
+        raise Forbidden("No master password set.")

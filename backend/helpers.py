@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import io
 import json
 from datetime import UTC, datetime
@@ -14,12 +15,17 @@ _ARGON2_LANES = 4
 _ARGON2_LENGTH = 32
 
 
+def _bcrypt_input(master_password: str) -> bytes:
+    digest = hashlib.sha256(master_password.encode()).digest()
+    return base64.b64encode(digest)
+
+
 def hash_master_password(master_password: str) -> str:
-    return bcrypt.hashpw(master_password.encode(), bcrypt.gensalt()).decode()
+    return bcrypt.hashpw(_bcrypt_input(master_password), bcrypt.gensalt()).decode()
 
 
 def verify_master_password(master_password: str, hash_key: str) -> bool:
-    return bcrypt.checkpw(master_password.encode(), hash_key.encode())
+    return bcrypt.checkpw(_bcrypt_input(master_password), hash_key.encode())
 
 
 def generate_key_derivation(salt: bytes, master_password: str) -> bytes:

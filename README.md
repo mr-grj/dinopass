@@ -1,6 +1,7 @@
 # 🦖 Dinopass
 
 [![CI](https://github.com/mr-grj/dinopass/actions/workflows/ci.yml/badge.svg)](https://github.com/mr-grj/dinopass/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/mr-grj/dinopass?color=000000&label=release)](https://github.com/mr-grj/dinopass/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-000000.svg)](./LICENSE)
 [![Python](https://img.shields.io/badge/python-3.13-000000.svg)](https://www.python.org/)
 [![PostgreSQL](https://img.shields.io/badge/postgres-16-000000.svg)](https://www.postgresql.org/)

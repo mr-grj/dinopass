@@ -18,6 +18,10 @@ class SimpleDetailSchema(BaseModel):
     detail: str
 
 
+class MetaResponse(BaseModel):
+    version: str
+
+
 class MasterPassword(BaseModel):
     master_password: str = Field(min_length=1, max_length=1024)
 
@@ -136,6 +140,7 @@ class SettingsResponse(BaseModel):
     hidden_ms: int
     debounce_ms: int
     clipboard_clear_ms: int
+    update_check_enabled: bool
 
 
 class SettingsUpdate(BaseModel):
@@ -144,6 +149,7 @@ class SettingsUpdate(BaseModel):
     hidden_ms: int = Field(ge=10_000, le=3_600_000)
     debounce_ms: int = Field(ge=100, le=10_000)
     clipboard_clear_ms: int = Field(ge=5_000, le=600_000)
+    update_check_enabled: bool
 
 
 class OnConflict(StrEnum):
@@ -156,3 +162,15 @@ class PasswordImportResult(BaseModel):
     skipped: int
     overwritten: int
     total: int
+
+
+class UpdateApplyPayload(BaseModel):
+    target: str = Field(pattern=r"^v\d+\.\d+\.\d+$")
+
+
+class UpdateApplyStatus(BaseModel):
+    state: str
+    detail: str | None = None
+    target: str | None = None
+    finished_at: str | None = None
+    updater_present: bool = False

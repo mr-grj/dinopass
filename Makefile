@@ -42,6 +42,11 @@ prod-up:
 	@echo 'Pulling and starting the production stack from GHCR images...'
 	$(COMPOSE_PROD) up -d
 
+.PHONY: prod-up-autoupdate
+prod-up-autoupdate:
+	@echo 'Starting production + the opt-in one-click self-updater (Docker socket)...'
+	$(COMPOSE_PROD) --profile autoupdate up -d
+
 .PHONY: prod-down
 prod-down:
 	@echo 'Stopping the production stack (database volume is kept)...'

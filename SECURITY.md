@@ -24,6 +24,14 @@ Things that are out of scope:
 - Vulnerabilities in third-party dependencies that don't directly affect ciphermoth - please report those upstream
 - Self-XSS or anything only exploitable by someone already authenticated with their own master password
 
+## Updates and the supply chain
+
+Release images (`ciphermoth-backend`, `-frontend`, `-updater`) are signed with [cosign](https://github.com/sigstore/cosign) - keyless, via GitHub OIDC - so each image's digest is provably built by CipherMoth's own release workflow.
+
+The **opt-in** one-click updater (the `autoupdate` compose profile) verifies those signatures against that workflow identity *before* it will run any image, and refuses anything that fails. It snapshots the database before migrating and rolls back automatically on a failed health check. The container that holds the Docker socket has **no network listener** - it acts only on a file the backend writes after an unlocked-vault, rate-limited request. If you'd rather not grant that privilege at all, leave the profile off and update by hand; the app will just show you the command.
+
+If you fork CipherMoth and publish your own images, override `COSIGN_IDENTITY_REGEXP` (and `COSIGN_OIDC_ISSUER`) on the `updater` service so it trusts *your* release workflow, not upstream's.
+
 ## One thing worth knowing
 
 CipherMoth is built to run on a machine you trust and control - your home server, a VPS behind a firewall, a Raspberry Pi in your closet. It is not built to sit directly on the open internet without a reverse proxy, HTTPS, and some thought about who can reach it. If you're deploying it that way, the README has guidance. If something goes wrong because it was exposed without those precautions, that's a configuration problem, not a vulnerability.

@@ -5,8 +5,11 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
+  FormControlLabel,
   InputAdornment,
   Stack,
+  Switch,
   TextField,
   Tooltip,
   Typography,
@@ -60,11 +63,14 @@ const FIELDS = [
 const toSec = (ms) => Math.round(ms / 1000);
 const toMs = (sec) => Math.round(Number(sec)) * 1000;
 
-const toForm = (settings) =>
-  Object.fromEntries(FIELDS.map(({ key }) => [key, toSec(settings[key])]));
+const toForm = (settings) => ({
+  ...Object.fromEntries(FIELDS.map(({ key }) => [key, toSec(settings[key])])),
+  update_check_enabled: settings.update_check_enabled ?? true,
+});
 
 const isDirty = (form, settings) =>
-  FIELDS.some(({ key }) => Number(form[key]) !== toSec(settings[key]));
+  FIELDS.some(({ key }) => Number(form[key]) !== toSec(settings[key])) ||
+  form.update_check_enabled !== (settings.update_check_enabled ?? true);
 
 const SettingsModal = ({ open, onClose }) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -95,7 +101,10 @@ const SettingsModal = ({ open, onClose }) => {
     }
     setSaving(true);
     try {
-      await update(Object.fromEntries(FIELDS.map(({ key }) => [key, toMs(form[key])])));
+      await update({
+        ...Object.fromEntries(FIELDS.map(({ key }) => [key, toMs(form[key])])),
+        update_check_enabled: form.update_check_enabled,
+      });
       enqueueSnackbar("Settings saved.", { variant: "success" });
       onClose();
     } catch (err) {
@@ -141,6 +150,37 @@ const SettingsModal = ({ open, onClose }) => {
               }}
             />
           ))}
+          <Divider sx={{ my: 0.5 }} />
+          <FormControlLabel
+            sx={{ ml: 0, justifyContent: "space-between" }}
+            labelPlacement="start"
+            control={
+              <Switch
+                checked={form.update_check_enabled}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    update_check_enabled: e.target.checked,
+                  }))
+                }
+              />
+            }
+            label={
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <Typography variant="body2">Check for updates</Typography>
+                <Tooltip
+                  title="Lets your browser ask GitHub whether a newer CipherMoth release exists. Your vault never leaves this machine; turn it off to stay fully third-party-free."
+                  arrow
+                  placement="top"
+                >
+                  <HelpOutlineIcon
+                    fontSize="small"
+                    sx={{ color: "text.disabled", cursor: "help" }}
+                  />
+                </Tooltip>
+              </Stack>
+            }
+          />
           {formError && (
             <Typography variant="body2" color="error">
               {formError}

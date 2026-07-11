@@ -11,7 +11,7 @@ A simple, self-hosted password manager with **no accounts, no cloud, and no witn
 [![License](https://img.shields.io/badge/license-MIT-000000.svg)](./LICENSE)
 [![Python](https://img.shields.io/badge/python-3.13-000000.svg)](https://www.python.org/)
 [![PostgreSQL](https://img.shields.io/badge/postgres-16-000000.svg)](https://www.postgresql.org/)
-[![Self-hosted](https://img.shields.io/badge/self--hosted-7dd3c0.svg?labelColor=000000)](#quick-start-run-your-real-vault)
+[![Self-hosted](https://img.shields.io/badge/self--hosted-7dd3c0.svg?labelColor=000000)](#get-started)
 
 </div>
 
@@ -39,6 +39,29 @@ So there's **CipherMoth**. It lives on your hardware, speaks to nobody, and keep
 **Paranoia, but productive.**
 
 It's probably overkill for most people. But it's yours, and that's the point.
+
+## Get started
+
+CipherMoth runs on your own machine with [Docker](https://docs.docker.com/get-docker/). One command sets a strong database password for you, pulls the **signed** images, and starts everything:
+
+```shell
+curl -fsSL https://raw.githubusercontent.com/mr-grj/ciphermoth/master/install.sh | sh
+```
+
+Then open **[http://localhost:3000](http://localhost:3000)**, create your master password, and you're in. It also offers to turn on [one-click updates](#staying-up-to-date).
+
+Rather see what runs before running it? Read the script first (`curl -O …/install.sh` then open it), or set it up by hand with two files:
+
+```shell
+curl -O https://raw.githubusercontent.com/mr-grj/ciphermoth/master/docker-compose.prod.yml
+curl -O https://raw.githubusercontent.com/mr-grj/ciphermoth/master/.env.prod.example
+cp .env.prod.example .env          # then set POSTGRES_PASSWORD
+docker compose -f docker-compose.prod.yml up -d
+```
+
+Your vault lives in a persistent Docker volume, so it survives restarts and updates. On a server rather than `localhost`? See [Putting it on a real server](#putting-it-on-a-real-server).
+
+> ⚠️ **There is no password recovery.** Losing your master password means losing your vault, permanently. No reset link, no support email, no backdoor. That's the trade for nobody-but-you holding the key. **Write it down somewhere safe**, and take a backup once you've added a few entries.
 
 ## Screenshots
 
@@ -133,26 +156,6 @@ The takeaway: run it on a machine and network you trust, use a strong master pas
 | Package manager | uv (backend), npm (frontend) |
 | Infrastructure | Docker, Docker Compose v2 |
 
-## Quick start (run your real vault)
-
-This is the path for your **real, everyday passwords**. You need [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/), and you do not need to clone the repo. Released images are published to GHCR, so you only need two files: [`docker-compose.prod.yml`](docker-compose.prod.yml) and [`.env.prod.example`](.env.prod.example).
-
-```shell
-curl -O https://raw.githubusercontent.com/mr-grj/ciphermoth/master/docker-compose.prod.yml
-curl -O https://raw.githubusercontent.com/mr-grj/ciphermoth/master/.env.prod.example
-
-cp .env.prod.example .env          # then edit it: set POSTGRES_PASSWORD
-docker compose -f docker-compose.prod.yml up -d
-```
-
-**Open [http://localhost:3000](http://localhost:3000)**, create a master password, and you're in.
-
-Your data lives in a persistent Docker volume (`ciphermoth_postgres_data`), so it survives restarts and updates. `docker compose -f docker-compose.prod.yml down` stops it without touching your data.
-
-On `localhost` the defaults work as-is. On a server, set `CIPHERMOTH_API_URL` and `CIPHERMOTH_FRONTEND_ORIGIN` in `.env` to your host or domain (behind HTTPS ideally) so the browser can reach the API and CORS lets it through. Pin `CIPHERMOTH_VERSION` to a release tag for reproducible deploys.
-
-> ⚠️ **There is no password recovery.** Losing your master password means losing your vault, permanently. No reset link, no support email, no backdoor. That's the trade for nobody-but-you holding the key. **One password against the void**, write it down somewhere safe, and take a backup once you've added a few entries.
-
 ## Development
 
 Want to work on CipherMoth itself? Clone the repo, then start the dev stack. It builds from your working tree and hot-reloads, and it's a throwaway sandbox with its own database, completely separate from any real vault.
@@ -245,6 +248,32 @@ CipherMoth is built to run on a machine you trust, your home server, a VPS behin
 - Don't expose Postgres (port `5432`) to the outside world
 
 One thing to know about rate limiting behind a proxy: the limits are keyed on the client IP, which the app reads from the network connection. Behind a reverse proxy every request looks like it comes from the proxy, so the limits become global instead of per client. If you want per-client rate limiting, configure your proxy to preserve the real client address (and only trust `X-Forwarded-For` from the proxy itself).
+
+## Staying up to date
+
+CipherMoth notices when a newer release is out and shows an **Update** chip in the app bar. The check runs **in your browser** against GitHub's public API — the server never phones home — and you can turn it off under Settings → "Check for updates" if you'd rather your instance talk to nobody at all.
+
+**Updating by hand** (always available): edit `CIPHERMOTH_VERSION` in your `.env` (or leave it `latest`) and re-run:
+
+```shell
+docker compose -f docker-compose.prod.yml pull && \
+docker compose -f docker-compose.prod.yml up -d
+```
+
+**One-click updates** (opt-in): if you'd like the **Update** button to do this for you, start the stack with the self-updater enabled (the installer offers to do this for you):
+
+```shell
+docker compose -f docker-compose.prod.yml --profile autoupdate up -d
+# from a repo clone you can also use: make prod-up-autoupdate
+```
+
+This adds a small `updater` container that holds the Docker socket. Because it can restart your stack, it's **off by default** and deliberately careful:
+
+- It **verifies every image is signed** (cosign / Sigstore) by CipherMoth's official release workflow before running it — a compromised registry alone can't slip you a malicious build.
+- It **snapshots the database** before applying and **rolls back automatically** if the new version fails its health check.
+- It has **no network listener** — it only reacts to a file the backend writes after an unlocked-vault, rate-limited request. Your master password is never involved.
+
+If the updater isn't enabled, the button simply shows you the manual command above.
 
 ## CLI
 

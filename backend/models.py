@@ -16,6 +16,9 @@ SETTINGS_DEFAULTS = {
     "hidden_ms": 60_000,
     "debounce_ms": 1_000,
     "clipboard_clear_ms": 30_000,
+    # When true, the browser (never the server) checks GitHub for a newer
+    # release. Off by choice keeps the instance fully third-party-free.
+    "update_check_enabled": True,
 }
 
 
@@ -86,4 +89,7 @@ class SettingsModel(BaseModel):
     )
     clipboard_clear_ms: Mapped[int] = mapped_column(
         Integer, server_default=str(SETTINGS_DEFAULTS["clipboard_clear_ms"])
+    )
+    update_check_enabled: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default="true"
     )

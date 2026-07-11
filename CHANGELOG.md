@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- **Update notifications.** CipherMoth now tells you when a newer release exists. The check runs entirely in your **browser** against GitHub's public API - the server never phones home - and can be switched off in Settings ("Check for updates") to keep an instance fully third-party-free.
+- **One-click updates (opt-in).** An optional `updater` sidecar lets you upgrade from the in-app "Update" button: it pulls the new images, restarts, and runs migrations for you. It's **off by default**; enable it with `make prod-up-autoupdate` (or `docker compose -f docker-compose.prod.yml --profile autoupdate up -d`). Without it, the app still notifies you and shows the exact command to run.
+
+### Security
+
+- **Release images are now signed with cosign** (keyless / Sigstore, via GitHub OIDC). Every published `ciphermoth-{backend,frontend,updater}` image is signed by digest.
+- **The self-updater verifies signatures before applying.** It pulls the target images, checks each digest was signed by the official release workflow's identity, and **refuses to run anything that fails verification** - so a compromised registry alone can't push a malicious build to your vault. It also snapshots the database before migrating and **auto-rolls-back** if the new version fails its health check. The privileged (Docker-socket) container has **no network listener**; it's driven only by a file the backend drops after an unlocked-vault, rate-limited request.
+
 ## [1.0.0] - 2026-07-11
 
 ### Changed

@@ -27,6 +27,7 @@ WORKDIR /app/src
 COPY --from=builder /app/.venv /app/.venv
 COPY backend/ .
 RUN chmod +x entrypoint.sh
+RUN mkdir -p /update-control && chown ciphermoth:ciphermoth /update-control
 
 USER ciphermoth
 

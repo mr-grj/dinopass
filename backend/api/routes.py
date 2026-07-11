@@ -2,8 +2,10 @@ from fastapi import APIRouter, FastAPI
 
 from api.endpoints import (
     master_password,
+    meta,
     password,
     settings,
+    updates,
 )
 from api.exceptions import (
     Forbidden,
@@ -23,8 +25,10 @@ def make_api_router() -> APIRouter:
     api_router.responses = inject_responses()
 
     api_router.include_router(master_password.router, prefix="/master_password")
+    api_router.include_router(meta.router, prefix="/meta")
     api_router.include_router(password.router, prefix="/passwords")
     api_router.include_router(settings.router, prefix="/settings")
+    api_router.include_router(updates.router, prefix="/updates")
 
     return api_router
 

@@ -1,0 +1,117 @@
+#!/bin/sh
+# CipherMoth installer: sets a strong database password, pulls the signed
+# images, and starts your vault. Safe to read before you run it.
+#
+#   curl -fsSL https://raw.githubusercontent.com/mr-grj/ciphermoth/master/install.sh | sh
+#
+# Overridable with env vars: CIPHERMOTH_REPO, CIPHERMOTH_REF, CIPHERMOTH_DIR,
+# CIPHERMOTH_AUTOUPDATE (yes/no).
+set -eu
+
+REPO="${CIPHERMOTH_REPO:-mr-grj/ciphermoth}"
+REF="${CIPHERMOTH_REF:-master}"
+BASE="https://raw.githubusercontent.com/${REPO}/${REF}"
+DIR="${CIPHERMOTH_DIR:-ciphermoth}"
+
+GLOW='\033[38;5;79m'
+BOLD='\033[1m'
+RED='\033[31m'
+NC='\033[0m'
+
+say() { printf '%b\n' "${GLOW}▪${NC} $*"; }
+info() { printf '%b\n' "  $*"; }
+warn() { printf '%b\n' "${RED}!${NC} $*"; }
+die() {
+  printf '%b\n' "${RED}✗ $*${NC}" >&2
+  exit 1
+}
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+ask_yes_no() {
+  _q="$1"
+  _def="$2"
+  _ans=""
+  if [ -r /dev/tty ]; then
+    printf '%b ' "$_q"
+    read -r _ans </dev/tty || _ans=""
+  fi
+  [ -z "$_ans" ] && _ans="$_def"
+  case "$_ans" in
+    y | Y | yes | YES) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+gen_password() {
+  if have openssl; then
+    openssl rand -base64 48 | tr -d '\n/+=' | cut -c1-40
+  else
+    head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n'
+  fi
+}
+
+ensure_docker() {
+  if ! have docker; then
+    if [ "$(uname -s)" = "Linux" ] && ask_yes_no \
+      "Docker isn't installed. Install it now via Docker's official script? [Y/n]" "Y"; then
+      curl -fsSL https://get.docker.com | sh
+    else
+      die "Install Docker first: https://docs.docker.com/get-docker/"
+    fi
+  fi
+  docker compose version >/dev/null 2>&1 ||
+    die "Docker Compose v2 is missing. Update Docker Desktop or install the compose plugin."
+  docker info >/dev/null 2>&1 ||
+    die "Docker doesn't seem to be running (or needs sudo). Start it and re-run."
+}
+
+main() {
+  say "${BOLD}CipherMoth${NC} -> your secrets stay in the dark."
+  ensure_docker
+
+  mkdir -p "$DIR"
+  cd "$DIR"
+  say "Installing into $(pwd)"
+
+  curl -fsSL "$BASE/docker-compose.prod.yml" -o docker-compose.prod.yml ||
+    die "Could not download docker-compose.prod.yml"
+
+  if [ -f .env ]; then
+    info ".env already exists -> keeping your existing settings."
+  else
+    curl -fsSL "$BASE/.env.prod.example" -o .env.tmp ||
+      die "Could not download the .env template"
+    _pw="$(gen_password)"
+    sed "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${_pw}|" .env.tmp >.env
+    rm -f .env.tmp
+    say "Generated a strong database password in .env"
+  fi
+
+  profile=""
+  if ask_yes_no \
+    "Enable one-click in-app updates? Adds a helper with Docker socket access. [Y/n]" \
+    "${CIPHERMOTH_AUTOUPDATE:-Y}"; then
+    profile="--profile autoupdate"
+    say "One-click updates enabled."
+  else
+    info "One-click updates off -> the app still notifies you and shows the manual command."
+  fi
+
+  say "Pulling signed images and starting CipherMoth…"
+  # shellcheck disable=SC2086
+  docker compose -f docker-compose.prod.yml $profile pull
+  # shellcheck disable=SC2086
+  docker compose -f docker-compose.prod.yml $profile up -d
+
+  printf '\n'
+  say "${BOLD}CipherMoth is up.${NC}"
+  info "Open ${BOLD}http://localhost:3000${NC} and create your master password."
+  info "Folder: $(pwd)"
+  info "Stop:   docker compose -f docker-compose.prod.yml down"
+  printf '\n'
+  warn "There is no password recovery. Write your master password down somewhere safe,"
+  warn "and take a backup once you've added a few entries."
+}
+
+main

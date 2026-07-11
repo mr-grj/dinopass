@@ -8,6 +8,7 @@ const DEFAULTS = {
   hidden_ms: 60_000,
   debounce_ms: 1_000,
   clipboard_clear_ms: 30_000,
+  update_check_enabled: true,
 };
 
 const Settings = {

@@ -22,6 +22,7 @@ class SettingsCRUD(BaseCRUD):
             hidden_ms=model.hidden_ms,
             debounce_ms=model.debounce_ms,
             clipboard_clear_ms=model.clipboard_clear_ms,
+            update_check_enabled=model.update_check_enabled,
         )
 
     async def get_settings(self) -> SettingsResponse:

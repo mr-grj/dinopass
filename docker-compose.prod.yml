@@ -30,6 +30,8 @@ services:
       CORS_ORIGINS: '["${CIPHERMOTH_FRONTEND_ORIGIN:-http://localhost:3000}"]'
     ports:
       - "${CIPHERMOTH_BACKEND_PORT:-8000}:80"
+    volumes:
+      - update_control:/update-control
     depends_on:
       db:
         condition: service_healthy
@@ -45,5 +47,29 @@ services:
     depends_on:
       - backend
 
+  updater:
+    image: ghcr.io/mr-grj/ciphermoth-updater:${CIPHERMOTH_VERSION:-latest}
+    restart: unless-stopped
+    profiles: ["autoupdate"]
+    environment:
+      IMAGE_REPO: ghcr.io/mr-grj/ciphermoth
+      COMPOSE_FILE: /work/docker-compose.prod.yml
+      ENV_FILE: /work/.env
+      POSTGRES_HOST: db
+      POSTGRES_USER: ${POSTGRES_USER:-ciphermoth}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in your .env}
+      POSTGRES_DB: ${POSTGRES_DB:-ciphermoth}
+      # Forks: override the identity the updater trusts.
+      # COSIGN_IDENTITY_REGEXP: '^https://github.com/<you>/ciphermoth/\.github/workflows/release\.yml@refs/tags/v.*'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:/work
+      - update_control:/update-control
+      - update_backups:/backups
+    depends_on:
+      - backend
+
 volumes:
   postgres_data:
+  update_control:
+  update_backups:

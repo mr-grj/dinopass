@@ -93,7 +93,7 @@ main() {
 
 POSTGRES_PASSWORD=${_pw}
 
-# Image version: "latest", or pin to a release tag like v1.1.0.
+# Image version: "latest", or pin to a release like 1.1.0 (no leading "v").
 CIPHERMOTH_VERSION=latest
 
 # On a server (not localhost), point these at your host or domain:

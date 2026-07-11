@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **One-click updates now find the images.** Release tags are `vX.Y.Z` but the published image tags are `X.Y.Z` (no leading `v`), so the updater was pulling a non-existent `:vX.Y.Z` and failing with "manifest unknown". It now maps the release tag to the image tag. Pinning `CIPHERMOTH_VERSION` also uses the un-prefixed form (e.g. `1.2.0`).
+- **The "Update" chip no longer disappears on hover** (its hover background was overriding the glow with a dark colour, hiding the near-black label).
+
 ## [1.2.0] - 2026-07-11
 
 ## [1.1.0] - 2026-07-11

@@ -101,26 +101,28 @@ health_ok() {
 }
 
 process_request() {
-  local target prev
+  local target prev img_tag
   target="$(jq -r '.target // empty' "$REQUEST_FILE" 2>/dev/null)"
   rm -f "$REQUEST_FILE"
   if [ -z "$target" ]; then
     log "empty/invalid request; ignoring"
     return
   fi
+
+  img_tag="${target#v}"
   prev="$(current_version)"
-  log "update requested: ${prev} -> ${target}"
+  log "update requested: ${prev} -> ${target} (image tag ${img_tag})"
 
   write_result "verifying" "Verifying image signatures" "$target"
-  if ! verify_images "$target"; then
-    write_result "failed" "Image signature verification failed. Nothing was changed." "$target"
+  if ! verify_images "$img_tag"; then
+    write_result "failed" "Could not pull or verify the ${target} images. Nothing was changed." "$target"
     return
   fi
 
   snapshot_db
 
   write_result "applying" "Applying update and restarting" "$target"
-  set_version "$target"
+  set_version "$img_tag"
   if ! compose up -d $SERVICES >&2; then
     log "compose up failed; rolling back"
     set_version "$prev"
@@ -129,7 +131,7 @@ process_request() {
     return
   fi
 
-  if health_ok "$target"; then
+  if health_ok "$img_tag"; then
     write_result "success" "Updated to ${target}." "$target"
     log "update to ${target} succeeded"
   else

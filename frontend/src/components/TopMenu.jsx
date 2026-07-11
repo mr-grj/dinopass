@@ -111,6 +111,7 @@ const TopMenu = () => {
                       fontWeight: 700,
                       cursor: "pointer",
                       "& .MuiChip-icon": { color: "#0b0b0c" },
+                      "&:hover": { bgcolor: GLOW, filter: "brightness(0.92)" },
                     }}
                   />
                 </Tooltip>

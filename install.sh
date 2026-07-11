@@ -28,6 +28,12 @@ die() {
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
+start_stack() {
+  # shellcheck disable=SC2086
+  docker compose -f docker-compose.prod.yml $1 pull &&
+    docker compose -f docker-compose.prod.yml $1 up -d
+}
+
 ask_yes_no() {
   _q="$1"
   _def="$2"
@@ -108,10 +114,16 @@ EOF
   fi
 
   say "Pulling signed images and starting CipherMoth…"
-  # shellcheck disable=SC2086
-  docker compose -f docker-compose.prod.yml $profile pull
-  # shellcheck disable=SC2086
-  docker compose -f docker-compose.prod.yml $profile up -d
+  if start_stack "$profile"; then
+    :
+  elif [ -n "$profile" ]; then
+    warn "Couldn't start with the updater (its image may not be published for this version yet)."
+    warn "Starting without one-click updates; enable it later once the image is available."
+    profile=""
+    start_stack "" || die "Failed to start CipherMoth. Check the output above."
+  else
+    die "Failed to start CipherMoth. Check the output above."
+  fi
 
   printf '\n'
   say "${BOLD}CipherMoth is up.${NC}"

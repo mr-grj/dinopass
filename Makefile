@@ -64,6 +64,17 @@ clean-prod:
 		echo 'Aborted. Nothing was removed.'; \
 	fi
 
+# Release: bump versions, stamp the changelog, tag, push, and publish a GitHub
+# release (which triggers the signed image build). Usage: make release VERSION=1.1.0
+.PHONY: release release-dry
+release:
+	@test -n "$(VERSION)" || { echo 'usage: make release VERSION=X.Y.Z'; exit 1; }
+	@scripts/release.sh "$(VERSION)"
+
+release-dry:
+	@test -n "$(VERSION)" || { echo 'usage: make release-dry VERSION=X.Y.Z'; exit 1; }
+	@scripts/release.sh "$(VERSION)" --dry-run
+
 .PHONY: lint
 lint:
 	cd backend && uv run ruff check .

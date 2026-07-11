@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-07-11
+
 ### Fixed
 
 - **Reinstalling no longer locks you out.** Deleting the install folder and re-running `install.sh` used to generate a new database password while the old Postgres volume survived, causing `password authentication failed` on unlock. The installer now detects an existing `ciphermoth_postgres_data` volume without an `.env` and stops (or offers to wipe for a fresh start) instead of silently breaking the vault.

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **Release builds can't hang indefinitely.** Added a 30-minute timeout to the image-publish job so a stalled multi-arch build fails fast instead of hanging for hours and risking a partial release (e.g. backend published but frontend not).
+
 ## [1.3.1] - 2026-07-11
 
 ### Fixed

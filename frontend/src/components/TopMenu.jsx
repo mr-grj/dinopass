@@ -33,9 +33,14 @@ const TopMenu = () => {
     (s) => s.ciphermothModels.settings.settings.update_check_enabled
   );
   const updateAvailable = useStoreState((s) => s.ciphermothModels.updates.updateAvailable);
+  const version = useStoreState((s) => s.ciphermothModels.updates.current);
   const checkForUpdates = useStoreActions((a) => a.ciphermothModels.updates.checkForUpdates);
+  const fetchVersion = useStoreActions((a) => a.ciphermothModels.updates.fetchVersion);
 
-  // Browser-side check, only when authenticated and the user hasn't opted out.
+  useEffect(() => {
+    if (userIsAuth) fetchVersion();
+  }, [userIsAuth, fetchVersion]);
+
   useEffect(() => {
     if (userIsAuth && updateCheckEnabled) checkForUpdates();
   }, [userIsAuth, updateCheckEnabled, checkForUpdates]);
@@ -72,6 +77,22 @@ const TopMenu = () => {
               </Box>
             </Typography>
             <EnvBadge />
+            {version && (
+              <Tooltip arrow title="Running version">
+                <Typography
+                  component="span"
+                  sx={{
+                    fontFamily: "'Space Mono', monospace",
+                    fontSize: 10,
+                    letterSpacing: "0.08em",
+                    color: "rgba(255,255,255,0.4)",
+                    cursor: "default",
+                  }}
+                >
+                  v{String(version).replace(/^v/, "")}
+                </Typography>
+              </Tooltip>
+            )}
           </Box>
 
           {userIsAuth ? (

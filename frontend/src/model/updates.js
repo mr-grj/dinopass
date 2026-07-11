@@ -18,11 +18,23 @@ const Updates = {
     state.releaseUrl = status.releaseUrl;
     state.updateAvailable = status.updateAvailable;
   }),
+  setVersion: action((state, version) => {
+    state.current = version;
+  }),
   setChecking: action((state, checking) => {
     state.checking = checking;
   }),
   setApply: action((state, apply) => {
     state.apply = { ...state.apply, ...apply };
+  }),
+
+  fetchVersion: thunk(async (actions) => {
+    try {
+      const { data } = await apiClient.get("/meta");
+      actions.setVersion(data.version);
+    } catch {
+      // version just won't show if the backend can't be reached
+    }
   }),
 
   checkForUpdates: thunk(async (actions) => {

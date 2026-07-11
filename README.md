@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="docs/brand/readme-banner.png" alt="CipherMoth - your secrets stay in the dark" width="100%">
-
 # CipherMoth
 
 **Your secrets stay in the dark.**

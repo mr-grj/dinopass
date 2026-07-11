@@ -9,7 +9,14 @@ def _package_version() -> str:
     try:
         return version("backend")
     except PackageNotFoundError:
-        return "0.0.0"
+        import pathlib
+        import tomllib
+
+        try:
+            pyproject = pathlib.Path(__file__).with_name("pyproject.toml")
+            return tomllib.loads(pyproject.read_text())["project"]["version"]
+        except Exception:
+            return "0.0.0"
 
 
 class APISettings(BaseSettings):

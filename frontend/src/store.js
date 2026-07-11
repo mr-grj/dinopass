@@ -1,7 +1,7 @@
 import { createStore } from "easy-peasy";
 
-import dinopassModels from "./model";
+import ciphermothModels from "./model";
 
 export const store = createStore({
-  dinopassModels,
+  ciphermothModels,
 });

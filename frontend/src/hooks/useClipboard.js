@@ -8,7 +8,7 @@ const wipe = () => navigator.clipboard.writeText("").catch(() => {});
 
 const useClipboard = () => {
   const { enqueueSnackbar } = useSnackbar();
-  const clearMs = useStoreState((s) => s.dinopassModels.settings.settings.clipboard_clear_ms);
+  const clearMs = useStoreState((s) => s.ciphermothModels.settings.settings.clipboard_clear_ms);
   const clearAtRef = useRef(null);
 
   useEffect(() => {

@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Renamed the project to CipherMoth** ("Your secrets stay in the dark."). Everything the app does is unchanged; this is a full rebrand of the name, UI theme, CLI (`ciphermoth`), Docker Compose projects, and GHCR images (`ghcr.io/mr-grj/ciphermoth-{backend,frontend}`). The per-request key header is now `x-ciphermoth-key-derivation` and backup archives contain `ciphermoth_backup.json`, so a backup taken before the rename must be restored before upgrading (or just re-export after).
+- **New black-and-glow UI theme.** A minimal dark palette with a teal "glow" accent (`#7dd3c0`) and a moth mark replaces the old black-and-white dino look. Fonts are Space Grotesk + Space Mono, self-hosted (no Google Fonts CDN, in keeping with "talks to nobody"). Login, setup, and the initial unlock are now full-screen dark screens.
+- **Simplified to one local stack + prebuilt prod.** Local development now runs a single build-from-source, hot-reload stack on `:3000`/`:8000` (`make dev`); the real vault runs from prebuilt GHCR images via `docker-compose.prod.yml` (`make prod-up`). The separate `:3100`/`:8100` dev stack and the build-from-source `make buildup` path are gone.
+
 ## [0.3.0] - 2026-07-10
 
 ### Added

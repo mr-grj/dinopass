@@ -1,6 +1,9 @@
 import { Box, Button, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 
+import MothIcon from "../MothIcon";
+import { GLOW } from "../../lib/brand";
+
 const EmptyVault = ({ onAdd }) => (
   <Box
     sx={{
@@ -16,7 +19,17 @@ const EmptyVault = ({ onAdd }) => (
       borderColor: "divider",
     }}
   >
-    <Box component="img" src="/dino.svg" alt="dino" sx={{ width: 96, height: 96, mb: 1 }} />
+    <Box
+      sx={{
+        width: 96,
+        height: 96,
+        mb: 1,
+        color: "text.primary",
+        filter: `drop-shadow(0 0 16px color-mix(in srgb, ${GLOW} 40%, transparent))`,
+      }}
+    >
+      <MothIcon width="100%" height="100%" style={{ display: "block", overflow: "visible" }} />
+    </Box>
     <Typography variant="h6" sx={{ fontWeight: 600 }}>
       The vault is empty
     </Typography>
@@ -24,7 +37,7 @@ const EmptyVault = ({ onAdd }) => (
       variant="body2"
       sx={{ color: "text.secondary", textAlign: "center", maxWidth: 320 }}
     >
-      Your prehistoric password guardian is standing by. Add your first password to get started.
+      Nobody is watching. Add your first password and let it disappear into the dark.
     </Typography>
     <Button variant="contained" startIcon={<AddIcon />} onClick={onAdd} sx={{ mt: 1 }}>
       Add First Password

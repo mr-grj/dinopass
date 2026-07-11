@@ -1,4 +1,4 @@
-# Dinopass CLI
+# CipherMoth CLI
 
 Sometimes you just want to grab a password from the terminal without switching windows. That's what the CLI is for. It's a thin client that talks to the same API as the web UI, so everything stays encrypted the same way.
 
@@ -13,22 +13,22 @@ Or run it without installing:
 
 ```shell
 cd backend
-uv run dinopass <command>
+uv run ciphermoth <command>
 ```
 
-By default the CLI talks to `http://localhost:8000/api`. Point it somewhere else with the `DINOPASS_API_URL` environment variable.
+By default the CLI talks to `http://localhost:8000/api`. Point it somewhere else with the `CIPHERMOTH_API_URL` environment variable.
 
 ## Commands
 
 ```
-dinopass password list                     List all passwords
-dinopass password get <name>               Reveal a password (and its live 2FA code)
-dinopass password create <name>            Add a new password (interactive)
-dinopass password update <name>            Update value, website, 2FA or description (interactive)
-dinopass password delete <name>            Delete a password (asks for confirmation)
-dinopass backup [--out <dir>]              Export an encrypted backup ZIP
-dinopass import <file> [--on-conflict]     Import from a Dinopass backup ZIP (skip|overwrite)
-dinopass import-csv <file> [--on-conflict] Import a CSV from another manager (skip|overwrite)
+ciphermoth password list                     List all passwords
+ciphermoth password get <name>               Reveal a password (and its live 2FA code)
+ciphermoth password create <name>            Add a new password (interactive)
+ciphermoth password update <name>            Update value, website, 2FA or description (interactive)
+ciphermoth password delete <name>            Delete a password (asks for confirmation)
+ciphermoth backup [--out <dir>]              Export an encrypted backup ZIP
+ciphermoth import <file> [--on-conflict]     Import from a CipherMoth backup ZIP (skip|overwrite)
+ciphermoth import-csv <file> [--on-conflict] Import a CSV from another manager (skip|overwrite)
 ```
 
 Every command that touches encrypted data prompts for the master password. Use `--help` on any command for details.
@@ -37,7 +37,7 @@ Every command that touches encrypted data prompts for the master password. Use `
 
 ```shell
 # Add a new password
-$ dinopass password create github
+$ ciphermoth password create github
 Master password:
 Password value:
 Repeat for confirmation:
@@ -45,7 +45,7 @@ Description: Personal account
 ✓  Created github
 
 # Reveal it
-$ dinopass password get github
+$ ciphermoth password get github
 Master password:
 
   github
@@ -53,19 +53,19 @@ Master password:
   Description  Personal account
 
 # List everything
-$ dinopass password list
+$ ciphermoth password list
 Master password:
 Name      Description       Backed up
 github    Personal account  –
 gmail     Work email        ✓
 
 # Create an encrypted backup
-$ dinopass backup --out ~/backups
+$ ciphermoth backup --out ~/backups
 Master password:
-✓  Backup saved to ~/backups/dinopass_backup_20260314_120000.zip
+✓  Backup saved to ~/backups/ciphermoth_backup_20260314_120000.zip
 
 # Import with overwrite
-$ dinopass import dinopass_backup_20260314_120000.zip --on-conflict overwrite
+$ ciphermoth import ciphermoth_backup_20260314_120000.zip --on-conflict overwrite
 Master password:
 ✓  Import complete - 3 added, 1 overwritten, 0 skipped
 ```

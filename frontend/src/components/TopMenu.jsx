@@ -14,7 +14,9 @@ import SettingsIcon from "@mui/icons-material/Settings";
 
 import { isAuth, removeKeyDerivation } from "../utils";
 import { DEV_ACCENT, IS_DEV } from "../lib/appEnv";
+import { GLOW } from "../lib/brand";
 import EnvBadge from "./EnvBadge";
+import MothIcon from "./MothIcon";
 import SettingsModal from "./SettingsModal";
 
 const TopMenu = () => {
@@ -35,14 +37,23 @@ const TopMenu = () => {
       <Container maxWidth="lg">
         <Toolbar disableGutters>
           <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 1 }}>
-            <Box
-              component="img"
-              src="/dino.svg"
-              alt="dino"
-              sx={{ height: 26, filter: "invert(1)", display: "block" }}
-            />
-            <Typography component="h1" variant="h6" noWrap sx={{ color: "inherit" }}>
-              Dinopass
+            <Box sx={{ width: 24, height: 24, display: "flex", color: "inherit" }}>
+              <MothIcon
+                width="100%"
+                height="100%"
+                style={{ display: "block", overflow: "visible" }}
+              />
+            </Box>
+            <Typography
+              component="h1"
+              variant="h6"
+              noWrap
+              sx={{ color: "inherit", fontWeight: 600 }}
+            >
+              Cipher
+              <Box component="span" sx={{ color: GLOW }}>
+                Moth
+              </Box>
             </Typography>
             <EnvBadge />
           </Box>

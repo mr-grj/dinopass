@@ -16,18 +16,18 @@ RUN npm run build
 
 FROM node:20-alpine AS runtime
 
-RUN addgroup -S dinopass && adduser -S dinopass -G dinopass
+RUN addgroup -S ciphermoth && adduser -S ciphermoth -G ciphermoth
 
 WORKDIR /app
 
 RUN npm install -g serve
 
-COPY --from=builder --chown=dinopass:dinopass /app/dist ./dist
+COPY --from=builder --chown=ciphermoth:ciphermoth /app/dist ./dist
 COPY --from=builder /app/serve.json ./serve.json
 COPY docker/frontend/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-USER dinopass
+USER ciphermoth
 
 EXPOSE 3000
 

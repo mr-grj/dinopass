@@ -35,7 +35,7 @@ def get_application() -> FastAPI:
         allow_origins=settings.cors_origins,
         allow_credentials=False,
         allow_methods=["*"],
-        allow_headers=["Content-Type", "x-dino-key-derivation"],
+        allow_headers=["Content-Type", "x-ciphermoth-key-derivation"],
     )
 
     @server.middleware("http")

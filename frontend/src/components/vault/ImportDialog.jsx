@@ -52,7 +52,7 @@ const ImportResult = ({ result }) => {
 };
 
 const ImportDialog = ({ open, onClose, onImport, onImportCsv }) => {
-  const [mode, setMode] = useState("dinopass");
+  const [mode, setMode] = useState("ciphermoth");
   const [file, setFile] = useState(null);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -62,7 +62,7 @@ const ImportDialog = ({ open, onClose, onImport, onImportCsv }) => {
 
   useEffect(() => {
     if (open) {
-      setMode("dinopass");
+      setMode("ciphermoth");
       setFile(null);
       setPassword("");
       setError("");
@@ -113,8 +113,8 @@ const ImportDialog = ({ open, onClose, onImport, onImportCsv }) => {
         ) : (
           <Stack spacing={2} sx={{ mt: 1 }}>
             <ToggleButtonGroup value={mode} exclusive onChange={changeMode} size="small" fullWidth>
-              <ToggleButton value="dinopass" sx={{ textTransform: "none" }}>
-                Dinopass backup
+              <ToggleButton value="ciphermoth" sx={{ textTransform: "none" }}>
+                CipherMoth backup
               </ToggleButton>
               <ToggleButton value="csv" sx={{ textTransform: "none" }}>
                 CSV from another app
@@ -124,7 +124,7 @@ const ImportDialog = ({ open, onClose, onImport, onImportCsv }) => {
             <Typography variant="body2" sx={{ color: "text.secondary" }}>
               {isCsv
                 ? "Upload a CSV exported from Chrome, Bitwarden, KeePass, Proton Pass and similar. Columns are matched automatically."
-                : "Upload a dinopass backup ZIP and enter your master password to restore passwords."}
+                : "Upload a CipherMoth backup ZIP and enter your master password to restore passwords."}
             </Typography>
 
             <Button

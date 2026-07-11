@@ -2,10 +2,10 @@ import MasterPassword from "./masterPassword";
 import Passwords from "./passwords";
 import Settings from "./settings";
 
-const dinopassModels = {
+const ciphermothModels = {
   masterPassword: MasterPassword,
   passwords: Passwords,
   settings: Settings,
 };
 
-export default dinopassModels;
+export default ciphermothModels;

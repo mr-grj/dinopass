@@ -46,7 +46,10 @@ const TotpCell = ({ secret, onCopy }) => {
         onClick={() => onCopy?.(code)}
         sx={{ display: "flex", alignItems: "center", gap: 0.75, cursor: "pointer" }}
       >
-        <Typography variant="body2" sx={{ fontFamily: "monospace", fontWeight: 600 }}>
+        <Typography
+          variant="body2"
+          sx={{ fontFamily: "'Space Mono', monospace", fontWeight: 700, color: "#1f7a68" }}
+        >
           {code.slice(0, 3)} {code.slice(3)}
         </Typography>
         <CircularProgress

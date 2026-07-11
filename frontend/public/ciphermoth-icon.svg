@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="CipherMoth icon">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="44%" r="55%">
+      <stop offset="0%" stop-color="#7dd3c0" stop-opacity="0.5"></stop>
+      <stop offset="65%" stop-color="#7dd3c0" stop-opacity="0"></stop>
+    </radialGradient>
+    <clipPath id="r"><rect width="128" height="128" rx="28"></rect></clipPath>
+  </defs>
+  <g clip-path="url(#r)">
+    <rect width="128" height="128" fill="#0b0b0c"></rect>
+    <rect width="128" height="128" fill="url(#glow)"></rect>
+  </g>
+  <g transform="translate(24 24) scale(0.8)" fill="#f4f4f2">
+    <path d="M50 24 C46 24 44 29 44 37 C44 53 47 69 50 82 C53 69 56 53 56 37 C56 29 54 24 50 24 Z"></path>
+    <circle cx="50" cy="21" r="5"></circle>
+    <path d="M50 30 C66 21 80 19 88 23 C91 31 88 44 81 49 C69 53 58 51 50 50 Z"></path>
+    <path d="M50 53 C63 53 75 59 78 68 C80 77 73 83 65 82 C57 80 52 72 50 70 Z"></path>
+    <path d="M50 30 C34 21 20 19 12 23 C9 31 12 44 19 49 C31 53 42 51 50 50 Z"></path>
+    <path d="M50 53 C37 53 25 59 22 68 C20 77 27 83 35 82 C43 80 48 72 50 70 Z"></path>
+    <g fill="none" stroke="#f4f4f2" stroke-width="2.2" stroke-linecap="round">
+      <path d="M52 18 C58 11 65 9 70 10"></path>
+      <path d="M48 18 C42 11 35 9 30 10"></path>
+    </g>
+    <circle cx="70" cy="10" r="2.4"></circle>
+    <circle cx="30" cy="10" r="2.4"></circle>
+  </g>
+</svg>

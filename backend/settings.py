@@ -17,7 +17,7 @@ class APISettings(BaseSettings):
     docs_url: str = "/docs"
     openapi_url: str = "/openapi.json"
     redoc_url: str = "/redoc"
-    title: str = "Dinopass API Service"
+    title: str = "CipherMoth API Service"
     version: str = _package_version()
     disable_docs: bool = False
     cors_origins: list[str] = ["http://localhost:3000"]
@@ -42,9 +42,9 @@ class APISettings(BaseSettings):
 class DBSettings(BaseSettings):
     postgres_host: str = "127.0.0.1"
     postgres_port: int = 5432
-    postgres_db: str = "dinopass"
-    postgres_user: str = "dinopass"
-    postgres_password: str = "dinopass"
+    postgres_db: str = "ciphermoth"
+    postgres_user: str = "ciphermoth"
+    postgres_password: str = "ciphermoth"
     pool_recycle: int = 900
 
     model_config = SettingsConfigDict(env_file=".db.env", extra="ignore")

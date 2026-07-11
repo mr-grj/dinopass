@@ -105,7 +105,7 @@ const Passwords = {
       const url = URL.createObjectURL(response.data);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `dinopass_backup_${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.zip`;
+      link.download = `ciphermoth_backup_${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.zip`;
       link.click();
       URL.revokeObjectURL(url);
       await actions.get();

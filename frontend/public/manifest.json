@@ -1,15 +1,20 @@
 {
-  "short_name": "Dinopass",
-  "name": "Dinopass",
+  "short_name": "CipherMoth",
+  "name": "CipherMoth",
   "icons": [
     {
-      "src": "dino.svg",
+      "src": "ciphermoth-icon.svg",
       "type": "image/svg+xml",
       "sizes": "any"
+    },
+    {
+      "src": "apple-touch-icon-180.png",
+      "type": "image/png",
+      "sizes": "180x180"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#0b0b0c",
+  "background_color": "#f4f4f2"
 }

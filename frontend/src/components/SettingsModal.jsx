@@ -69,8 +69,8 @@ const isDirty = (form, settings) =>
 const SettingsModal = ({ open, onClose }) => {
   const { enqueueSnackbar } = useSnackbar();
 
-  const { update } = useStoreActions((a) => a.dinopassModels.settings);
-  const settings = useStoreState((s) => s.dinopassModels.settings.settings);
+  const { update } = useStoreActions((a) => a.ciphermothModels.settings);
+  const settings = useStoreState((s) => s.ciphermothModels.settings.settings);
 
   const [form, setForm] = useState(() => toForm(settings));
   const [formError, setFormError] = useState("");

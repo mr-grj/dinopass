@@ -1,7 +1,7 @@
 [project]
 name = "backend"
 version = "0.3.0"
-description = "Dinopass Password Manager API"
+description = "CipherMoth Password Manager API"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.139.0",
@@ -29,7 +29,7 @@ dev = [
 ]
 
 [project.scripts]
-dinopass = "cli:app"
+ciphermoth = "cli:app"
 
 [build-system]
 requires = ["hatchling"]

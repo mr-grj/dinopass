@@ -6,6 +6,8 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
+    "@fontsource-variable/space-grotesk": "^5.2.10",
+    "@fontsource/space-mono": "^5.2.9",
     "@mui/icons-material": "^9.2.0",
     "@mui/material": "^9.2.0",
     "@mui/x-data-grid": "^9.8.0",

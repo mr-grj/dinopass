@@ -8,21 +8,62 @@ import TopMenu from "./components/TopMenu";
 import useAutoLogout from "./hooks/useAutoLogout";
 import routes from "./routes";
 import { isAuth } from "./utils";
+import {
+  BORDER,
+  BORDER_STRONG,
+  GLOW,
+  INFO,
+  INK,
+  OK,
+  PAPER_DARK,
+  SURFACE,
+  TEXT_DISABLED,
+  TEXT_ON_DARK,
+  TEXT_SECONDARY,
+  WARN,
+  WEAK,
+} from "./lib/brand";
+
+const SANS = "'Space Grotesk Variable', system-ui, sans-serif";
+const MONO = "'Space Mono', ui-monospace, monospace";
 
 const theme = createTheme({
   palette: {
-    primary: {
-      main: "#000000",
-      contrastText: "#ffffff",
-    },
+    primary: { main: INK, contrastText: SURFACE },
+    secondary: { main: GLOW, contrastText: INK },
+    success: { main: OK },
+    warning: { main: WARN },
+    error: { main: WEAK },
+    info: { main: INFO },
+    background: { default: SURFACE, paper: "#ffffff" },
+    text: { primary: INK, secondary: TEXT_SECONDARY, disabled: TEXT_DISABLED },
+    divider: BORDER,
+  },
+  shape: { borderRadius: 8 },
+  typography: {
+    fontFamily: SANS,
+    fontFamilyMonospace: MONO,
+    h4: { fontWeight: 700, letterSpacing: "-0.01em" },
+    h5: { fontWeight: 700, letterSpacing: "-0.01em" },
+    h6: { fontWeight: 700 },
   },
   components: {
     MuiTooltip: {
-      defaultProps: {
-        disableInteractive: true,
-        enterDelay: 400,
-        enterNextDelay: 400,
+      defaultProps: { disableInteractive: true, enterDelay: 400, enterNextDelay: 400 },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: { borderRadius: 7, fontWeight: 600, letterSpacing: "0.04em" },
+        outlined: {
+          backgroundColor: "#ffffff",
+          borderColor: BORDER_STRONG,
+          color: INK,
+          "&:hover": { backgroundColor: "#ffffff", borderColor: INK },
+        },
       },
+    },
+    MuiDialog: {
+      styleOverrides: { paper: { borderRadius: 14 } },
     },
   },
 });
@@ -30,10 +71,29 @@ const theme = createTheme({
 const AppContent = () => {
   useAutoLogout();
 
-  const getSettings = useStoreActions((a) => a.dinopassModels.settings.get);
+  const authed = isAuth();
+  const getSettings = useStoreActions((a) => a.ciphermothModels.settings.get);
   useEffect(() => {
-    if (isAuth()) getSettings();
-  }, [getSettings]);
+    if (authed) getSettings();
+  }, [authed, getSettings]);
+
+  const appRoutes = (
+    <Routes>
+      {routes.map((route) => (
+        <Route key={route.path} path={route.path} element={route.element} />
+      ))}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+  );
+
+  if (!authed) {
+    return (
+      <>
+        <CssBaseline />
+        {appRoutes}
+      </>
+    );
+  }
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -42,21 +102,15 @@ const AppContent = () => {
       <Box
         component="main"
         sx={{
-          backgroundColor: (t) =>
-            t.palette.mode === "light" ? t.palette.grey[100] : t.palette.grey[900],
+          bgcolor: "background.default",
           flexGrow: 1,
-          height: "100vh",
+          minHeight: "100vh",
           overflow: "auto",
         }}
       >
         <Toolbar />
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-          <Routes>
-            {routes.map((route) => (
-              <Route key={route.path} path={route.path} element={route.element} />
-            ))}
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
+          {appRoutes}
         </Container>
       </Box>
     </Box>
@@ -66,20 +120,19 @@ const AppContent = () => {
 const snackbarStyles = (
   <GlobalStyles
     styles={{
-      // Info and warning keep the minimal black look; success and error get
-      // clear colour cues so the outcome is obvious at a glance.
-      ".notistack-MuiContent-info, .notistack-MuiContent-warning": {
-        backgroundColor: "#000000 !important",
-        color: "#ffffff !important",
+      // Toasts share a single dark surface with a coloured accent stripe so the
+      // outcome reads at a glance without breaking the black-and-glow palette.
+      ".notistack-MuiContent": {
+        backgroundColor: `${PAPER_DARK} !important`,
+        color: `${TEXT_ON_DARK} !important`,
+        fontFamily: `${SANS} !important`,
+        borderRadius: "10px !important",
+        border: "1px solid rgba(255,255,255,0.12)",
       },
-      ".notistack-MuiContent-success": {
-        backgroundColor: "#2e7d32 !important",
-        color: "#ffffff !important",
-      },
-      ".notistack-MuiContent-error": {
-        backgroundColor: "#d32f2f !important",
-        color: "#ffffff !important",
-      },
+      ".notistack-MuiContent-success": { borderLeft: `3px solid ${GLOW} !important` },
+      ".notistack-MuiContent-error": { borderLeft: `3px solid ${WEAK} !important` },
+      ".notistack-MuiContent-warning": { borderLeft: `3px solid ${WARN} !important` },
+      ".notistack-MuiContent-info": { borderLeft: `3px solid ${INFO} !important` },
     }}
   />
 );

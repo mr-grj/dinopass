@@ -19,7 +19,7 @@ const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "touchstart", "scr
 const useAutoLogout = () => {
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
-  const settings = useStoreState((s) => s.dinopassModels.settings.settings);
+  const settings = useStoreState((s) => s.ciphermothModels.settings.settings);
   const inactivityMs = settings.inactivity_ms;
   const warnBeforeMs = settings.warn_before_ms;
   const hiddenMs = settings.hidden_ms;

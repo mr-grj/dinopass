@@ -10,11 +10,11 @@ const charClasses = (password) => ({
 });
 
 const STRENGTH_LEVELS = [
-  { label: "Very Weak", color: "#d32f2f", recommend: true },
-  { label: "Weak", color: "#e65100", recommend: true },
-  { label: "Fair", color: "#f9a825", recommend: true },
-  { label: "Strong", color: "#2e7d32", recommend: false },
-  { label: "Very Strong", color: "#1b5e20", recommend: false },
+  { label: "Very Weak", color: "#d15b5b", recommend: true },
+  { label: "Weak", color: "#d15b5b", recommend: true },
+  { label: "Fair", color: "#e0982f", recommend: true },
+  { label: "Strong", color: "#1f8a5b", recommend: false },
+  { label: "Very Strong", color: "#1f8a5b", recommend: false },
 ];
 
 // 5-level scale used across the vault (strength bar + row icons).

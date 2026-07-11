@@ -1,4 +1,4 @@
-# Dinopass frontend
+# CipherMoth frontend
 
 React 19 + [Vite](https://vite.dev/) + MUI v9. State via easy-peasy, toasts via notistack.
 

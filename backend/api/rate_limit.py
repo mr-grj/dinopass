@@ -7,4 +7,4 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 def rate(default: str) -> str:
-    return os.environ.get("DINOPASS_RATE_LIMIT", default)
+    return os.environ.get("CIPHERMOTH_RATE_LIMIT", default)

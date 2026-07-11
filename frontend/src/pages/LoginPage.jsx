@@ -1,28 +1,51 @@
 import { useEffect, useState } from "react";
-import {
-  Alert,
-  Box,
-  Button,
-  Checkbox,
-  CircularProgress,
-  FormControlLabel,
-  LinearProgress,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Checkbox, FormControlLabel, LinearProgress, Typography } from "@mui/material";
 import { useStoreActions, useStoreState } from "easy-peasy";
 import { useSnackbar } from "notistack";
 
+import LoadingScreen from "../components/LoadingScreen";
+import MothIcon from "../components/MothIcon";
 import PasswordField from "../components/PasswordField";
 import { getMasterPasswordStrength } from "../lib/passwordStrength";
+import {
+  GLOW,
+  GLOW_SOFT,
+  INK,
+  PAPER_DARK,
+  TEXT_ON_DARK,
+  TEXT_ON_DARK_MUTED,
+  WARN,
+} from "../lib/brand";
+
+const darkFieldSx = {
+  "& .MuiOutlinedInput-root": {
+    color: TEXT_ON_DARK,
+    "& fieldset": { borderColor: "rgba(255,255,255,0.16)" },
+    "&:hover fieldset": { borderColor: "rgba(255,255,255,0.3)" },
+    "&.Mui-focused fieldset": { borderColor: GLOW, borderWidth: 2 },
+  },
+  "& .MuiInputLabel-root": { color: TEXT_ON_DARK_MUTED },
+  "& .MuiInputLabel-root.Mui-focused": { color: GLOW },
+  "& .MuiIconButton-root": { color: TEXT_ON_DARK_MUTED },
+};
+
+const unlockButtonSx = {
+  bgcolor: GLOW,
+  color: INK,
+  fontWeight: 700,
+  letterSpacing: "0.06em",
+  py: 1.6,
+  "&:hover": { bgcolor: GLOW_SOFT },
+};
 
 const LoginPage = () => {
   const { enqueueSnackbar } = useSnackbar();
 
   const { fetchStatus, check, create, setValue, setConfirm, setError } = useStoreActions(
-    (a) => a.dinopassModels.masterPassword
+    (a) => a.ciphermothModels.masterPassword
   );
   const { initialized, error, value, confirm, loading } = useStoreState(
-    (s) => s.dinopassModels.masterPassword
+    (s) => s.ciphermothModels.masterPassword
   );
 
   useEffect(() => {
@@ -71,28 +94,21 @@ const LoginPage = () => {
   };
 
   if (initialized === null) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "60vh",
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
+    return <LoadingScreen />;
   }
 
   return (
     <Box
       sx={{
+        position: "fixed",
+        inset: 0,
+        bgcolor: INK,
         display: "flex",
-        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        minHeight: "70vh",
+        p: 3,
+        overflow: "auto",
+        zIndex: (t) => t.zIndex.modal,
       }}
     >
       <Box
@@ -100,35 +116,59 @@ const LoginPage = () => {
         onSubmit={(e) => e.preventDefault()}
         sx={{
           width: "100%",
-          maxWidth: 400,
-          display: "flex",
-          flexDirection: "column",
-          gap: 2.5,
-          p: { xs: 3, sm: 4 },
-          bgcolor: "background.paper",
-          borderRadius: 3,
-          boxShadow: 3,
+          maxWidth: initialized ? 400 : 440,
+          bgcolor: PAPER_DARK,
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 2,
+          px: { xs: 3, sm: 4.25 },
+          py: 5,
+          textAlign: "center",
         }}
       >
         <Box
           sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 1,
-            mb: 0.5,
+            width: 56,
+            mx: "auto",
+            mb: 2.25,
+            color: TEXT_ON_DARK,
+            filter: `drop-shadow(0 0 18px color-mix(in srgb, ${GLOW} 50%, transparent))`,
           }}
         >
-          <Box component="img" src="/dino.svg" alt="dino" sx={{ width: 64, height: 64 }} />
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            {initialized ? "Welcome back" : "Set up your vault"}
-          </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center" }}>
-            {initialized
-              ? "Enter your master password to unlock your vault."
-              : "Create a master password to protect all your passwords."}
-          </Typography>
+          <MothIcon width="100%" height="100%" style={{ display: "block", overflow: "visible" }} />
         </Box>
+
+        {initialized ? (
+          <>
+            <Typography sx={{ fontSize: 24, fontWeight: 700, color: TEXT_ON_DARK }}>
+              Cipher
+              <Box component="span" sx={{ color: GLOW }}>
+                Moth
+              </Box>
+            </Typography>
+            <Typography
+              sx={{
+                mt: 1,
+                mb: 3.25,
+                fontFamily: "'Space Mono', monospace",
+                fontSize: 12,
+                color: TEXT_ON_DARK_MUTED,
+              }}
+            >
+              Your secrets stay in the dark.
+            </Typography>
+          </>
+        ) : (
+          <>
+            <Typography sx={{ fontSize: 23, fontWeight: 700, color: TEXT_ON_DARK }}>
+              Set up your vault
+            </Typography>
+            <Typography
+              sx={{ mt: 1, mb: 3, fontSize: 13, color: TEXT_ON_DARK_MUTED, lineHeight: 1.5 }}
+            >
+              One master password protects everything. Choose it well. It is the only key.
+            </Typography>
+          </>
+        )}
 
         <PasswordField
           label="Master Password"
@@ -140,15 +180,16 @@ const LoginPage = () => {
           }}
           autoFocus
           autoComplete={initialized ? "current-password" : "new-password"}
+          sx={darkFieldSx}
         />
 
         {!initialized && value && strength && (
-          <Box>
+          <Box sx={{ mt: 2, textAlign: "left" }}>
             <LinearProgress
               variant="determinate"
               value={strength.value}
               color={strength.color}
-              sx={{ borderRadius: 1, height: 6 }}
+              sx={{ borderRadius: 1, height: 6, bgcolor: "rgba(255,255,255,0.1)" }}
             />
             <Typography
               variant="caption"
@@ -161,27 +202,40 @@ const LoginPage = () => {
         )}
 
         {!initialized && (
-          <PasswordField
-            label="Confirm Master Password"
-            required
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleCreate();
-            }}
-            autoComplete="new-password"
-          />
-        )}
-
-        {!initialized && (
-          <>
-            <Alert severity="warning" variant="outlined" sx={{ py: 0.5 }}>
-              <Typography variant="caption">
-                There is no &ldquo;Forgot password&rdquo;. Losing your master password means losing
-                access to your vault permanently.
+          <Box sx={{ mt: 2 }}>
+            <PasswordField
+              label="Confirm Master Password"
+              required
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleCreate();
+              }}
+              autoComplete="new-password"
+              sx={darkFieldSx}
+            />
+            <Box
+              sx={{
+                mt: 2,
+                display: "flex",
+                gap: 1.25,
+                textAlign: "left",
+                border: `1px solid ${WARN}`,
+                bgcolor: "rgba(224,152,47,0.08)",
+                borderRadius: 1.5,
+                p: 1.6,
+              }}
+            >
+              <Box component="span" sx={{ color: WARN, lineHeight: 1.4 }}>
+                ⚠
+              </Box>
+              <Typography variant="caption" sx={{ color: WARN, lineHeight: 1.5 }}>
+                There is no &ldquo;Forgot password&rdquo;. Lose your master password and the vault
+                is gone, permanently. That is the trade for nobody-but-you holding the key.
               </Typography>
-            </Alert>
+            </Box>
             <FormControlLabel
+              sx={{ mt: 1, ml: 0, alignItems: "center" }}
               control={
                 <Checkbox
                   size="small"
@@ -190,15 +244,16 @@ const LoginPage = () => {
                     setAcknowledged(e.target.checked);
                     setError(null);
                   }}
+                  sx={{ color: GLOW, "&.Mui-checked": { color: GLOW }, py: 0.25 }}
                 />
               }
               label={
-                <Typography variant="caption">
+                <Typography variant="caption" sx={{ color: "#cfd2d4" }}>
                   I understand my master password cannot be recovered.
                 </Typography>
               }
             />
-          </>
+          </Box>
         )}
 
         <Button
@@ -208,15 +263,14 @@ const LoginPage = () => {
           loading={loading}
           disabled={!initialized && !acknowledged}
           onClick={initialized ? handleLogin : handleCreate}
+          sx={{ mt: 3, ...unlockButtonSx }}
         >
           {initialized ? "Unlock Vault" : "Create Vault"}
         </Button>
 
-        {!initialized && (
-          <Typography variant="caption" sx={{ color: "text.secondary", textAlign: "center" }}>
-            Closing this tab locks your vault. That is by design.
-          </Typography>
-        )}
+        <Typography sx={{ mt: 2.75, fontSize: 11, color: "#56585b" }}>
+          Closing this tab locks your vault. That is by design.
+        </Typography>
       </Box>
     </Box>
   );

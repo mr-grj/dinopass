@@ -42,11 +42,11 @@ SettingsCRUDDep = Annotated[SettingsCRUD, Depends(get_settings_crud)]
 
 
 def get_key_derivation(
-    x_dino_key_derivation: Annotated[str | None, Header()] = None,
+    x_ciphermoth_key_derivation: Annotated[str | None, Header()] = None,
 ) -> str:
-    if not x_dino_key_derivation:
+    if not x_ciphermoth_key_derivation:
         raise Forbidden("Key derivation is missing.")
-    return x_dino_key_derivation
+    return x_ciphermoth_key_derivation
 
 
 KeyDerivationDep = Annotated[str, Depends(get_key_derivation)]

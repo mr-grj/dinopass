@@ -43,7 +43,7 @@ const PasswordGenerator = ({ options, onChangeLength, onToggleClass, onRegenerat
             onClick={() => onToggleClass(key)}
             color={options[key] ? "primary" : "default"}
             variant={options[key] ? "filled" : "outlined"}
-            sx={{ fontFamily: "monospace", fontWeight: 600 }}
+            sx={{ fontFamily: "'Space Mono', monospace", fontWeight: 600 }}
           />
         ))}
         <Box sx={{ flex: 1 }} />

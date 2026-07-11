@@ -246,7 +246,7 @@ async def backup_passwords(
     key_derivation: KeyDerivationDep,
 ) -> StreamingResponse:
     data = await crud.create_backup(body.master_password, key_derivation)
-    filename = f"dinopass_backup_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.zip"
+    filename = f"ciphermoth_backup_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.zip"
     return StreamingResponse(
         io.BytesIO(data),
         media_type="application/zip",

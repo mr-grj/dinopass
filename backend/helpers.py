@@ -93,5 +93,5 @@ def create_encrypted_zip(entries: list[dict[str, object]], password: str) -> byt
         buf, "w", compression=pyzipper.ZIP_DEFLATED, encryption=pyzipper.WZ_AES
     ) as zf:
         zf.setpassword(password.encode())
-        zf.writestr("dinopass_backup.json", payload)
+        zf.writestr("ciphermoth_backup.json", payload)
     return buf.getvalue()

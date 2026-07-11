@@ -20,7 +20,7 @@ ENV PYTHONUNBUFFERED=1 \
     PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH=/app/src
 
-RUN useradd -ms /bin/bash dinopass
+RUN useradd -ms /bin/bash ciphermoth
 
 WORKDIR /app/src
 
@@ -28,6 +28,6 @@ COPY --from=builder /app/.venv /app/.venv
 COPY backend/ .
 RUN chmod +x entrypoint.sh
 
-USER dinopass
+USER ciphermoth
 
 CMD ["./entrypoint.sh"]

@@ -11,8 +11,8 @@ from rich.table import Table
 from helpers import generate_totp
 
 app = typer.Typer(
-    name="dinopass",
-    help="Manage your self-hosted dinopass vault from the terminal.",
+    name="ciphermoth",
+    help="Manage your self-hosted ciphermoth vault from the terminal.",
     no_args_is_help=True,
     rich_markup_mode="rich",
 )
@@ -28,7 +28,7 @@ _err = Console(stderr=True)
 
 
 def _api_url() -> str:
-    return os.environ.get("DINOPASS_API_URL", "http://localhost:8000/api").rstrip("/")
+    return os.environ.get("CIPHERMOTH_API_URL", "http://localhost:8000/api").rstrip("/")
 
 
 def _die(msg: str) -> NoReturn:
@@ -66,7 +66,7 @@ def _unlock(client: httpx.Client) -> tuple[str, str]:
 
 
 def _hdr(key: str) -> dict[str, str]:
-    return {"x-dino-key-derivation": key}
+    return {"x-ciphermoth-key-derivation": key}
 
 
 @pw_app.command("list")
@@ -294,7 +294,7 @@ def cmd_backup(
     _check(resp)
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    filename = f"dinopass_backup_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.zip"
+    filename = f"ciphermoth_backup_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.zip"
     dest = out_dir / filename
     dest.write_bytes(resp.content)
 
@@ -303,7 +303,7 @@ def cmd_backup(
 
 @app.command("import")
 def cmd_import(
-    file: Annotated[Path, typer.Argument(help="Path to the dinopass backup ZIP.")],
+    file: Annotated[Path, typer.Argument(help="Path to the ciphermoth backup ZIP.")],
     on_conflict: Annotated[
         str,
         typer.Option(

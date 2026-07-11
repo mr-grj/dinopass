@@ -17,14 +17,14 @@ jobs:
     strategy:
       matrix:
         include:
-          - image: dinopass-backend
+          - image: ciphermoth-backend
             dockerfile: docker/backend/Dockerfile
             build-args: ""
-          - image: dinopass-frontend
+          - image: ciphermoth-frontend
             dockerfile: docker/frontend/Dockerfile
             # Baked placeholder; entrypoint.sh swaps in the real URL at runtime.
             build-args: |
-              VITE_API_URL=__DINOPASS_API_URL__
+              VITE_API_URL=__CIPHERMOTH_API_URL__
     steps:
       - uses: actions/checkout@v4
 

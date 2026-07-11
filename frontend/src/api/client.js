@@ -9,7 +9,7 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use((config) => {
   const keyDerivation = getKeyDerivation();
   if (keyDerivation) {
-    config.headers["x-dino-key-derivation"] = keyDerivation;
+    config.headers["x-ciphermoth-key-derivation"] = keyDerivation;
   }
   return config;
 });

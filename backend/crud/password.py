@@ -321,7 +321,7 @@ class PasswordCRUD(BaseCRUD):
         try:
             with pyzipper.AESZipFile(io.BytesIO(file_bytes), "r") as zf:
                 zf.setpassword(master_password.encode())
-                with zf.open("dinopass_backup.json") as entry:
+                with zf.open("ciphermoth_backup.json") as entry:
                     raw = entry.read(_MAX_JSON_BYTES + 1)
             if len(raw) > _MAX_JSON_BYTES:
                 raise TypesMismatchError("Backup content is too large.")
@@ -329,7 +329,7 @@ class PasswordCRUD(BaseCRUD):
             raise
         except Exception as e:
             raise TypesMismatchError(
-                "Could not read backup file. Ensure it is a valid dinopass backup."
+                "Could not read backup file. Ensure it is a valid ciphermoth backup."
             ) from e
 
         try:

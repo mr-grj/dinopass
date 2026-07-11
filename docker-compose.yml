@@ -1,5 +1,6 @@
-# Production stack
-name: dinopass
+# Local development stack: build from source with hot-reload (UI :3000, API :8000).
+# The real vault runs from prebuilt GHCR images via docker-compose.prod.yml.
+name: ciphermoth-dev
 
 services:
   db:
@@ -10,7 +11,7 @@ services:
       - ./backend/.db.env
     restart: unless-stopped
     networks:
-      - dinopass
+      - ciphermoth
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
@@ -20,36 +21,47 @@ services:
   backend:
     build:
       context: .
-      dockerfile: docker/backend/Dockerfile
+      dockerfile: docker/backend/Dockerfile.dev
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn main:app --host 0.0.0.0 --port 80 --reload"
     ports:
       - "8000:80"
     env_file:
       - ./backend/.db.env
     environment:
       CORS_ORIGINS: '["http://localhost:3000"]'
+    volumes:
+      - ./backend:/app/src
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     networks:
-      - dinopass
+      - ciphermoth
 
   frontend:
     build:
       context: .
-      dockerfile: docker/frontend/Dockerfile
-      args:
-        VITE_API_URL: http://localhost:8000/api
+      dockerfile: docker/frontend/Dockerfile.dev
     ports:
       - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:8000/api
+      VITE_PORT: "3000"
+      VITE_USE_POLLING: "true"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    stdin_open: true
     restart: unless-stopped
     depends_on:
       - backend
     networks:
-      - dinopass
+      - ciphermoth
 
 volumes:
   postgres_data:
 
 networks:
-  dinopass:
+  ciphermoth:

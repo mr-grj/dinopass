@@ -1,14 +1,14 @@
-# Run Dinopass from prebuilt images
-name: dinopass
+# Run CipherMoth from prebuilt images: the real, daily-use vault.
+name: ciphermoth
 
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-dinopass}
+      POSTGRES_USER: ${POSTGRES_USER:-ciphermoth}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in your .env}
-      POSTGRES_DB: ${POSTGRES_DB:-dinopass}
+      POSTGRES_DB: ${POSTGRES_DB:-ciphermoth}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data/
@@ -19,29 +19,29 @@ services:
       retries: 10
 
   backend:
-    image: ghcr.io/mr-grj/dinopass-backend:${DINOPASS_VERSION:-latest}
+    image: ghcr.io/mr-grj/ciphermoth-backend:${CIPHERMOTH_VERSION:-latest}
     restart: unless-stopped
     environment:
       POSTGRES_HOST: db
-      POSTGRES_USER: ${POSTGRES_USER:-dinopass}
+      POSTGRES_USER: ${POSTGRES_USER:-ciphermoth}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in your .env}
-      POSTGRES_DB: ${POSTGRES_DB:-dinopass}
+      POSTGRES_DB: ${POSTGRES_DB:-ciphermoth}
       # The browser origin that serves the UI; CORS must allow it.
-      CORS_ORIGINS: '["${DINOPASS_FRONTEND_ORIGIN:-http://localhost:3000}"]'
+      CORS_ORIGINS: '["${CIPHERMOTH_FRONTEND_ORIGIN:-http://localhost:3000}"]'
     ports:
-      - "${DINOPASS_BACKEND_PORT:-8000}:80"
+      - "${CIPHERMOTH_BACKEND_PORT:-8000}:80"
     depends_on:
       db:
         condition: service_healthy
 
   frontend:
-    image: ghcr.io/mr-grj/dinopass-frontend:${DINOPASS_VERSION:-latest}
+    image: ghcr.io/mr-grj/ciphermoth-frontend:${CIPHERMOTH_VERSION:-latest}
     restart: unless-stopped
     environment:
       # The URL the browser uses to reach the API. Injected at container start.
-      VITE_API_URL: ${DINOPASS_API_URL:-http://localhost:8000/api}
+      VITE_API_URL: ${CIPHERMOTH_API_URL:-http://localhost:8000/api}
     ports:
-      - "${DINOPASS_FRONTEND_PORT:-3000}:3000"
+      - "${CIPHERMOTH_FRONTEND_PORT:-3000}:3000"
     depends_on:
       - backend
 

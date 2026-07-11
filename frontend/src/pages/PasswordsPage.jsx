@@ -29,11 +29,12 @@ import useClipboard from "../hooks/useClipboard";
 const buildSubtitle = (loading, passwords) => {
   if (loading) return "Loading…";
   const n = passwords.length;
-  if (n === 0) return "Nothing here yet. Your dino is hungry for passwords.";
-  const word = n === 1 ? "password" : "passwords";
-  if (passwords.every((p) => p.backed_up)) return `${n} ${word}, all backed up and locked tight.`;
-  if (passwords.some((p) => p.backed_up)) return `${n} ${word} - backup is outdated.`;
-  return `${n} ${word} stored: no backup yet.`;
+  if (n === 0) return "Nothing here yet. Your secrets are waiting for the dark.";
+  const word = n === 1 ? "secret" : "secrets";
+  if (passwords.every((p) => p.backed_up))
+    return `${n} ${word} in the dark · backed up and locked tight.`;
+  if (passwords.some((p) => p.backed_up)) return `${n} ${word} in the dark · backup is outdated.`;
+  return `${n} ${word} in the dark · no backup yet.`;
 };
 
 const PasswordsPage = () => {
@@ -41,8 +42,8 @@ const PasswordsPage = () => {
   const copy = useClipboard();
 
   const { get, create, update, remove, backup, importPasswords, importCsv, toggleFavorite } =
-    useStoreActions((actions) => actions.dinopassModels.passwords);
-  const { error, loading, passwords } = useStoreState((state) => state.dinopassModels.passwords);
+    useStoreActions((actions) => actions.ciphermothModels.passwords);
+  const { error, loading, passwords } = useStoreState((state) => state.ciphermothModels.passwords);
 
   const [visibleRows, setVisibleRows] = useState(new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -168,8 +169,8 @@ const PasswordsPage = () => {
         sx={{ justifyContent: "space-between", alignItems: "flex-start", mb: 2.5 }}
       >
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-            Dino Vault
+          <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+            The Vault
           </Typography>
           <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
             {subtitle}
@@ -263,9 +264,16 @@ const PasswordsPage = () => {
           }}
           sx={{
             bgcolor: "background.paper",
-            borderRadius: 2,
+            borderRadius: 2.5,
+            borderColor: "divider",
             "& .MuiDataGrid-cell": { display: "flex", alignItems: "center" },
-            "& .MuiDataGrid-columnHeader": { bgcolor: "grey.50" },
+            "& .MuiDataGrid-columnHeaders": { borderColor: "divider" },
+            "& .MuiDataGrid-columnHeader": { bgcolor: "background.paper" },
+            "& .MuiDataGrid-columnHeaderTitle": {
+              fontWeight: 600,
+              color: "text.secondary",
+            },
+            "& .MuiDataGrid-row:hover": { bgcolor: "#fafafa" },
             "& .MuiDataGrid-cell:focus": { outline: "none" },
             "& .MuiDataGrid-cell:focus-within": { outline: "none" },
             "& .rowHoverActions": {

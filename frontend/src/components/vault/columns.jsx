@@ -15,6 +15,7 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
 import TotpCell from "./TotpCell";
 import { getPasswordStrength } from "../../lib/passwordStrength";
+import { GLOW } from "../../lib/brand";
 
 const ValueCell = ({ text, mono = false, masked = false, color = "text.primary", actions }) => (
   <Box sx={{ display: "flex", alignItems: "center", width: "100%", minWidth: 0 }}>
@@ -26,7 +27,7 @@ const ValueCell = ({ text, mono = false, masked = false, color = "text.primary",
         overflow: "hidden",
         textOverflow: "ellipsis",
         whiteSpace: "nowrap",
-        fontFamily: mono ? "monospace" : undefined,
+        fontFamily: mono ? "'Space Mono', monospace" : undefined,
         letterSpacing: masked ? 2 : 0,
         color,
       }}
@@ -108,7 +109,7 @@ export const createColumns = ({
       <Tooltip title={params.value ? "Remove from favorites" : "Mark as favorite"}>
         <IconButton size="small" onClick={() => onToggleFavorite(params.row)}>
           {params.value ? (
-            <StarIcon fontSize="small" sx={{ color: "#f5b301" }} />
+            <StarIcon fontSize="small" sx={{ color: GLOW }} />
           ) : (
             <StarBorderIcon fontSize="small" sx={{ color: "text.disabled" }} />
           )}

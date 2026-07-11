@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-07-11
+
 ### Added
 
 - **Update notifications.** CipherMoth now tells you when a newer release exists. The check runs entirely in your **browser** against GitHub's public API - the server never phones home - and can be switched off in Settings ("Check for updates") to keep an instance fully third-party-free.

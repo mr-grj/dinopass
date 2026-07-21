@@ -43,6 +43,7 @@ const EMPTY_FORM = {
   description: "",
   tags: [],
   custom_fields: [],
+  folder: "",
   favorite: false,
 };
 const GEN_DEFAULTS = { length: 16, uppercase: true, lowercase: true, numbers: true, symbols: true };
@@ -67,6 +68,7 @@ const toForm = (target) =>
           value: f.value ?? "",
           hidden: !!f.hidden,
         })),
+        folder: target.folder ?? "",
         favorite: target.favorite ?? false,
       }
     : EMPTY_FORM;
@@ -195,7 +197,14 @@ const HistoryRow = ({ entry, onCopy }) => {
   );
 };
 
-const PasswordFormDialog = ({ open, editTarget, onClose, onSubmit, onCopy }) => {
+const PasswordFormDialog = ({
+  open,
+  editTarget,
+  onClose,
+  onSubmit,
+  onCopy,
+  folderOptions = [],
+}) => {
   const [form, setForm] = useState(EMPTY_FORM);
   const [formError, setFormError] = useState("");
   const [showValue, setShowValue] = useState(false);
@@ -290,6 +299,7 @@ const PasswordFormDialog = ({ open, editTarget, onClose, onSubmit, onCopy }) => 
         description: form.description.trim() || null,
         tags: form.tags,
         custom_fields: normalizeCustomFields(form.custom_fields),
+        folder: form.folder.trim() || null,
         favorite: form.favorite,
       });
     } catch (err) {
@@ -310,6 +320,7 @@ const PasswordFormDialog = ({ open, editTarget, onClose, onSubmit, onCopy }) => 
     form.totp_secret === (editTarget.totp_secret ?? "") &&
     form.description === (editTarget.description ?? "") &&
     form.favorite === (editTarget.favorite ?? false) &&
+    (form.folder.trim() || "") === (editTarget.folder ?? "") &&
     form.tags.join(" ") === (editTarget.tags ?? []).join(" ") &&
     JSON.stringify(normalizeCustomFields(form.custom_fields)) ===
       JSON.stringify(normalizeCustomFields(editTarget.custom_fields));
@@ -393,6 +404,21 @@ const PasswordFormDialog = ({ open, editTarget, onClose, onSubmit, onCopy }) => 
           )}
           <StrengthBar password={form.password_value} />
         </Stack>
+
+        <Autocomplete
+          freeSolo
+          size="small"
+          options={folderOptions}
+          inputValue={form.folder}
+          onInputChange={(_, value) => {
+            setForm((prev) => ({ ...prev, folder: value }));
+            setFormError("");
+          }}
+          renderInput={(params) => (
+            <TextField {...params} label="Folder (optional)" placeholder="e.g. Work, Personal" />
+          )}
+          sx={{ mt: 1.5 }}
+        />
 
         <Box sx={{ mt: 1.5 }}>
           <FormSection

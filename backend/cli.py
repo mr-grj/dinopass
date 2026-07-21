@@ -119,6 +119,9 @@ def pw_get(name: Annotated[str, typer.Argument(help="Password name.")]) -> None:
     if item.get("totp_secret"):
         _out.print(f"  [dim]2FA code[/dim]     {generate_totp(item['totp_secret'])}")
 
+    if item.get("folder"):
+        _out.print(f"  [dim]Folder[/dim]       {item['folder']}")
+
     if item.get("tags"):
         _out.print(f"  [dim]Tags[/dim]         {', '.join(item['tags'])}")
 
@@ -154,6 +157,7 @@ def pw_create(name: Annotated[str, typer.Argument(help="Password name.")]) -> No
         description = (
             typer.prompt("Description", default="", show_default=False) or None
         )
+        folder = typer.prompt("Folder", default="", show_default=False) or None
         resp = client.post(
             "/passwords/create",
             json={
@@ -163,6 +167,7 @@ def pw_create(name: Annotated[str, typer.Argument(help="Password name.")]) -> No
                 "url": url,
                 "totp_secret": totp_secret,
                 "description": description,
+                "folder": folder,
             },
             headers=headers,
         )
@@ -223,6 +228,14 @@ def pw_update(name: Annotated[str, typer.Argument(help="Password name.")]) -> No
             )
             or None
         )
+        new_folder = (
+            typer.prompt(
+                "New folder",
+                default=current.get("folder") or "",
+                show_default=bool(current.get("folder")),
+            )
+            or None
+        )
 
         resp = client.patch(
             "/passwords/update",
@@ -236,6 +249,7 @@ def pw_update(name: Annotated[str, typer.Argument(help="Password name.")]) -> No
                     "description": current.get("description"),
                     "tags": current.get("tags", []),
                     "custom_fields": current.get("custom_fields", []),
+                    "folder": current.get("folder"),
                     "favorite": current.get("favorite", False),
                 },
                 "new_password": {
@@ -247,6 +261,7 @@ def pw_update(name: Annotated[str, typer.Argument(help="Password name.")]) -> No
                     "description": new_description,
                     "tags": current.get("tags", []),
                     "custom_fields": current.get("custom_fields", []),
+                    "folder": new_folder,
                     "favorite": current.get("favorite", False),
                 },
             },

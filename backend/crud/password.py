@@ -42,6 +42,7 @@ _CSV_FIELD_ALIASES: dict[str, tuple[str, ...]] = {
     "value": ("password", "login_password", "pass"),
     "url": ("url", "uri", "login_uri", "website", "web site", "site", "link"),
     "description": ("notes", "note", "description", "comment", "comments", "extra"),
+    "folder": ("folder", "grouping", "group", "category", "collection"),
     "totp_secret": (
         "totp",
         "login_totp",
@@ -159,6 +160,7 @@ class PasswordCRUD(BaseCRUD):
             description=model.description,
             tags=self._decode_tags(key_derivation, model),
             custom_fields=self._decode_custom_fields(key_derivation, model),
+            folder=decrypt_optional(key_derivation, model.folder),
             favorite=model.favorite,
             backed_up=model.backed_up,
             updated=model.updated,
@@ -217,6 +219,7 @@ class PasswordCRUD(BaseCRUD):
                 custom_fields=self._encode_custom_fields(
                     key_derivation, [f.model_dump() for f in password.custom_fields]
                 ),
+                folder=encrypt_optional(key_derivation, password.folder),
                 favorite=password.favorite,
             )
         )
@@ -268,6 +271,7 @@ class PasswordCRUD(BaseCRUD):
         model.custom_fields = self._encode_custom_fields(
             key_derivation, [f.model_dump() for f in new_password.custom_fields]
         )
+        model.folder = encrypt_optional(key_derivation, new_password.folder)
         model.favorite = new_password.favorite
 
         model.backed_up = False
@@ -339,6 +343,7 @@ class PasswordCRUD(BaseCRUD):
                 "description": p.description,
                 "tags": self._decode_tags(key_derivation, p),
                 "custom_fields": self._decode_custom_fields(key_derivation, p),
+                "folder": decrypt_optional(key_derivation, p.folder),
                 "favorite": p.favorite,
             }
             for p in passwords
@@ -365,6 +370,7 @@ class PasswordCRUD(BaseCRUD):
         description: str | None,
         tags: list[str],
         custom_fields: list[dict[str, object]],
+        folder: str | None,
         favorite: bool,
     ) -> str:
         current = existing.get(name)
@@ -381,6 +387,7 @@ class PasswordCRUD(BaseCRUD):
             current.custom_fields = self._encode_custom_fields(
                 key_derivation, custom_fields
             )
+            current.folder = encrypt_optional(key_derivation, folder)
             current.favorite = favorite
             current.backed_up = False
 
@@ -395,6 +402,7 @@ class PasswordCRUD(BaseCRUD):
             description=description,
             tags=self._encode_tags(key_derivation, tags),
             custom_fields=self._encode_custom_fields(key_derivation, custom_fields),
+            folder=encrypt_optional(key_derivation, folder),
             favorite=favorite,
         )
         self.session.add(model)
@@ -467,6 +475,7 @@ class PasswordCRUD(BaseCRUD):
                 description=entry.get("description"),
                 tags=raw_tags if isinstance(raw_tags, list) else [],
                 custom_fields=self._normalize_custom_fields(entry.get("custom_fields")),
+                folder=entry.get("folder"),
                 favorite=bool(entry.get("favorite", False)),
             )
             counts[outcome] += 1
@@ -516,6 +525,7 @@ class PasswordCRUD(BaseCRUD):
                 description=self._csv_cell(row, column_for, "description"),
                 tags=[],
                 custom_fields=[],
+                folder=self._csv_cell(row, column_for, "folder"),
                 favorite=False,
             )
             counts[outcome] += 1

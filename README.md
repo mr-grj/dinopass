@@ -84,7 +84,7 @@ The basics you'd expect:
 - Store the website, a username, tags, and a two-factor (TOTP) secret alongside each password
 - Add your own custom fields to any entry (PINs, recovery codes, security answers), each optionally hidden and all encrypted at rest
 - Built-in two-factor codes: paste a 2FA secret and CipherMoth shows the live rolling code, computed in your browser
-- Favorites and tags to keep a growing vault tidy, plus password history so a changed password is never truly gone
+- Favorites, folders, and tags to keep a growing vault tidy, plus password history so a changed password is never truly gone
 - Trash for deletions: entries you remove go to a Trash you can restore from, or empty for good when you're sure
 - Vault health check that flags weak, reused, and old passwords, runs entirely on your device, nothing is sent anywhere
 - Password generator with configurable length and character sets, cryptographically secure, not the `Math.random()` kind

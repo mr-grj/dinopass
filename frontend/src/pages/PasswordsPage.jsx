@@ -4,6 +4,7 @@ import {
   Button,
   CircularProgress,
   InputAdornment,
+  MenuItem,
   Stack,
   TextField,
   Typography,
@@ -69,6 +70,7 @@ const PasswordsPage = () => {
   const [healthOpen, setHealthOpen] = useState(false);
   const [trashOpen, setTrashOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [folderFilter, setFolderFilter] = useState("");
 
   useEffect(() => {
     get();
@@ -175,16 +177,27 @@ const PasswordsPage = () => {
     [visibleRows, toggleVisibility, handleToggleFavorite, copy, openEdit]
   );
 
+  const folderOptions = useMemo(
+    () =>
+      [...new Set(passwords.map((p) => p.folder).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b)
+      ),
+    [passwords]
+  );
+  const activeFolder = folderOptions.includes(folderFilter) ? folderFilter : "";
+
   const filteredPasswords = useMemo(() => {
     const query = search.trim().toLowerCase();
+    const byFolder = activeFolder ? passwords.filter((p) => p.folder === activeFolder) : passwords;
     const matches = !query
-      ? passwords
-      : passwords.filter(
+      ? byFolder
+      : byFolder.filter(
           (p) =>
             p.password_name.toLowerCase().includes(query) ||
             p.username?.toLowerCase().includes(query) ||
             p.description?.toLowerCase().includes(query) ||
             p.url?.toLowerCase().includes(query) ||
+            p.folder?.toLowerCase().includes(query) ||
             p.tags?.some((tag) => tag.toLowerCase().includes(query)) ||
             p.custom_fields?.some(
               (f) =>
@@ -197,7 +210,7 @@ const PasswordsPage = () => {
       (a, b) =>
         Number(b.favorite) - Number(a.favorite) || a.password_name.localeCompare(b.password_name)
     );
-  }, [passwords, search]);
+  }, [passwords, search, activeFolder]);
 
   const subtitle = useMemo(() => buildSubtitle(loading, passwords), [loading, passwords]);
   const isEmpty = !loading && passwords.length === 0;
@@ -254,22 +267,41 @@ const PasswordsPage = () => {
       </Stack>
 
       {!isEmpty && (
-        <TextField
-          size="small"
-          placeholder="Search name, username, website or tag…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          sx={{ mb: 2, width: 320 }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" sx={{ color: "text.disabled" }} />
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
+        <Stack direction="row" spacing={1.5} sx={{ mb: 2, alignItems: "center" }}>
+          <TextField
+            size="small"
+            placeholder="Search name, username, website or tag…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            sx={{ width: 320 }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" sx={{ color: "text.disabled" }} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+          {folderOptions.length > 0 && (
+            <TextField
+              select
+              size="small"
+              label="Folder"
+              value={activeFolder}
+              onChange={(e) => setFolderFilter(e.target.value)}
+              sx={{ width: 200 }}
+            >
+              <MenuItem value="">All folders</MenuItem>
+              {folderOptions.map((f) => (
+                <MenuItem key={f} value={f}>
+                  {f}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+        </Stack>
       )}
 
       {loading && (
@@ -340,6 +372,7 @@ const PasswordsPage = () => {
       <PasswordFormDialog
         open={dialogOpen}
         editTarget={editTarget}
+        folderOptions={folderOptions}
         onClose={() => setDialogOpen(false)}
         onSubmit={handleSubmit}
         onCopy={copy}

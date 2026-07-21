@@ -119,6 +119,30 @@ export const createColumns = ({
   },
   { field: "password_name", headerName: "Name", flex: 1, minWidth: 130 },
   {
+    field: "folder",
+    headerName: "Folder",
+    flex: 0.7,
+    minWidth: 110,
+    renderCell: (params) =>
+      params.value ? (
+        <Typography
+          variant="body2"
+          sx={{
+            color: "text.secondary",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {params.value}
+        </Typography>
+      ) : (
+        <Typography variant="body2" sx={{ color: "text.disabled" }}>
+          -
+        </Typography>
+      ),
+  },
+  {
     field: "username",
     headerName: "Username / email",
     flex: 1,

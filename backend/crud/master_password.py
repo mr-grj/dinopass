@@ -116,6 +116,9 @@ class MasterPasswordCRUD(BaseCRUD):
             pwd.custom_fields = self._reencrypt_optional(
                 key_derivation, new_key_derivation, pwd.custom_fields, pwd
             )
+            pwd.folder = self._reencrypt_optional(
+                key_derivation, new_key_derivation, pwd.folder, pwd
+            )
             pwd.password_history = self._reencrypt_optional(
                 key_derivation, new_key_derivation, pwd.password_history, pwd
             )

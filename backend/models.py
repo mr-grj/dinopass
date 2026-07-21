@@ -68,6 +68,7 @@ class PasswordModel(BaseModel):
     totp_secret: Mapped[bytes | None] = mapped_column(LargeBinary)
     tags: Mapped[bytes | None] = mapped_column(LargeBinary)
     custom_fields: Mapped[bytes | None] = mapped_column(LargeBinary)
+    folder: Mapped[bytes | None] = mapped_column(LargeBinary)
     password_history: Mapped[bytes | None] = mapped_column(LargeBinary)
     favorite: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="false"

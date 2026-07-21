@@ -15,6 +15,7 @@ _MAX_TAG_LENGTH = 40
 _MAX_CUSTOM_FIELDS = 30
 _MAX_FIELD_LABEL = 100
 _MAX_FIELD_VALUE = 4096
+_MAX_FOLDER_LENGTH = 200
 
 
 class SimpleDetailSchema(BaseModel):
@@ -93,6 +94,7 @@ class Password(BaseModel):
     custom_fields: list[CustomField] = Field(
         default_factory=list, max_length=_MAX_CUSTOM_FIELDS
     )
+    folder: str | None = Field(default=None, max_length=_MAX_FOLDER_LENGTH)
     favorite: bool = False
 
     model_config = ConfigDict(str_strip_whitespace=True)
@@ -101,6 +103,11 @@ class Password(BaseModel):
     @classmethod
     def _normalize_totp(cls, value: str | None) -> str | None:
         return normalize_totp_secret(value)
+
+    @field_validator("folder")
+    @classmethod
+    def _clean_folder(cls, value: str | None) -> str | None:
+        return value or None
 
     @field_validator("tags")
     @classmethod

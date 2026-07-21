@@ -185,7 +185,12 @@ const PasswordsPage = () => {
             p.username?.toLowerCase().includes(query) ||
             p.description?.toLowerCase().includes(query) ||
             p.url?.toLowerCase().includes(query) ||
-            p.tags?.some((tag) => tag.toLowerCase().includes(query))
+            p.tags?.some((tag) => tag.toLowerCase().includes(query)) ||
+            p.custom_fields?.some(
+              (f) =>
+                f.label.toLowerCase().includes(query) ||
+                (!f.hidden && f.value.toLowerCase().includes(query))
+            )
         );
 
     return [...matches].sort(

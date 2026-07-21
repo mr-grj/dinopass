@@ -99,6 +99,40 @@ class PasswordCRUD(BaseCRUD):
 
         return data if isinstance(data, list) else []
 
+    def _encode_custom_fields(
+        self, key_derivation: str, fields: list[dict[str, object]]
+    ) -> bytes | None:
+        if not fields:
+            return None
+        return encrypt(key_derivation, json.dumps(fields).encode())
+
+    def _decode_custom_fields(
+        self, key_derivation: str, model: PasswordModel
+    ) -> list[dict[str, object]]:
+        raw = decrypt_optional(key_derivation, model.custom_fields)
+        if not raw:
+            return []
+
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            return []
+
+        if not isinstance(data, list):
+            return []
+
+        cleaned: list[dict[str, object]] = []
+        for item in data:
+            if isinstance(item, dict) and item.get("label"):
+                cleaned.append(
+                    {
+                        "label": item.get("label"),
+                        "value": item.get("value", ""),
+                        "hidden": bool(item.get("hidden", False)),
+                    }
+                )
+        return cleaned
+
     def _decode_history(
         self, key_derivation: str, model: PasswordModel
     ) -> list[dict[str, str]]:
@@ -124,6 +158,7 @@ class PasswordCRUD(BaseCRUD):
             totp_secret=decrypt_optional(key_derivation, model.totp_secret),
             description=model.description,
             tags=self._decode_tags(key_derivation, model),
+            custom_fields=self._decode_custom_fields(key_derivation, model),
             favorite=model.favorite,
             backed_up=model.backed_up,
             updated=model.updated,
@@ -179,6 +214,9 @@ class PasswordCRUD(BaseCRUD):
                 totp_secret=encrypt_optional(key_derivation, password.totp_secret),
                 description=password.description,
                 tags=self._encode_tags(key_derivation, password.tags),
+                custom_fields=self._encode_custom_fields(
+                    key_derivation, [f.model_dump() for f in password.custom_fields]
+                ),
                 favorite=password.favorite,
             )
         )
@@ -227,6 +265,9 @@ class PasswordCRUD(BaseCRUD):
         model.totp_secret = encrypt_optional(key_derivation, new_password.totp_secret)
         model.description = new_password.description
         model.tags = self._encode_tags(key_derivation, new_password.tags)
+        model.custom_fields = self._encode_custom_fields(
+            key_derivation, [f.model_dump() for f in new_password.custom_fields]
+        )
         model.favorite = new_password.favorite
 
         model.backed_up = False
@@ -242,10 +283,10 @@ class PasswordCRUD(BaseCRUD):
 
     async def delete_password(self, password_name: str) -> PasswordDelete:
         model = await self._get_password_model(password_name)
-        # The `deleted` column is a naive TIMESTAMP (like created/updated), so
-        # strip the tzinfo to match what asyncpg expects for that column.
         model.deleted = datetime.now(UTC).replace(tzinfo=None)
+
         await self.session.flush()
+
         return PasswordDelete(deleted=True, detail="Password moved to trash.")
 
     async def restore_password(self, password_name: str) -> PasswordUpdate:
@@ -297,6 +338,7 @@ class PasswordCRUD(BaseCRUD):
                 "totp_secret": decrypt_optional(key_derivation, p.totp_secret),
                 "description": p.description,
                 "tags": self._decode_tags(key_derivation, p),
+                "custom_fields": self._decode_custom_fields(key_derivation, p),
                 "favorite": p.favorite,
             }
             for p in passwords
@@ -322,6 +364,7 @@ class PasswordCRUD(BaseCRUD):
         totp_secret: str | None,
         description: str | None,
         tags: list[str],
+        custom_fields: list[dict[str, object]],
         favorite: bool,
     ) -> str:
         current = existing.get(name)
@@ -335,6 +378,9 @@ class PasswordCRUD(BaseCRUD):
             current.totp_secret = encrypt_optional(key_derivation, totp_secret)
             current.description = description
             current.tags = self._encode_tags(key_derivation, tags)
+            current.custom_fields = self._encode_custom_fields(
+                key_derivation, custom_fields
+            )
             current.favorite = favorite
             current.backed_up = False
 
@@ -348,6 +394,7 @@ class PasswordCRUD(BaseCRUD):
             totp_secret=encrypt_optional(key_derivation, totp_secret),
             description=description,
             tags=self._encode_tags(key_derivation, tags),
+            custom_fields=self._encode_custom_fields(key_derivation, custom_fields),
             favorite=favorite,
         )
         self.session.add(model)
@@ -419,6 +466,7 @@ class PasswordCRUD(BaseCRUD):
                 totp_secret=entry.get("totp_secret"),
                 description=entry.get("description"),
                 tags=raw_tags if isinstance(raw_tags, list) else [],
+                custom_fields=self._normalize_custom_fields(entry.get("custom_fields")),
                 favorite=bool(entry.get("favorite", False)),
             )
             counts[outcome] += 1
@@ -467,12 +515,29 @@ class PasswordCRUD(BaseCRUD):
                 totp_secret=self._csv_totp(row, column_for),
                 description=self._csv_cell(row, column_for, "description"),
                 tags=[],
+                custom_fields=[],
                 favorite=False,
             )
             counts[outcome] += 1
 
         await self.session.flush()
         return self._result(counts)
+
+    @staticmethod
+    def _normalize_custom_fields(raw: object) -> list[dict[str, object]]:
+        if not isinstance(raw, list):
+            return []
+        fields: list[dict[str, object]] = []
+        for item in raw:
+            if isinstance(item, dict) and item.get("label"):
+                fields.append(
+                    {
+                        "label": str(item.get("label")),
+                        "value": str(item.get("value", "")),
+                        "hidden": bool(item.get("hidden", False)),
+                    }
+                )
+        return fields
 
     @staticmethod
     def _map_csv_columns(fieldnames: Sequence[str]) -> dict[str, str]:

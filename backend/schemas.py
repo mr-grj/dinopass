@@ -12,6 +12,9 @@ from validators import normalize_totp_secret, validate_master_password_strength
 
 _MAX_TAGS = 20
 _MAX_TAG_LENGTH = 40
+_MAX_CUSTOM_FIELDS = 30
+_MAX_FIELD_LABEL = 100
+_MAX_FIELD_VALUE = 4096
 
 
 class SimpleDetailSchema(BaseModel):
@@ -71,6 +74,14 @@ class MasterPasswordStatus(BaseModel):
     initialized: bool
 
 
+class CustomField(BaseModel):
+    label: str = Field(default="", max_length=_MAX_FIELD_LABEL)
+    value: str = Field(default="", max_length=_MAX_FIELD_VALUE)
+    hidden: bool = False
+
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+
 class Password(BaseModel):
     password_name: str = Field(min_length=1, max_length=255)
     username: str | None = Field(default=None, max_length=255)
@@ -79,6 +90,9 @@ class Password(BaseModel):
     totp_secret: str | None = Field(default=None, max_length=512)
     description: str | None = Field(default=None, max_length=1024)
     tags: list[str] = Field(default_factory=list, max_length=_MAX_TAGS)
+    custom_fields: list[CustomField] = Field(
+        default_factory=list, max_length=_MAX_CUSTOM_FIELDS
+    )
     favorite: bool = False
 
     model_config = ConfigDict(str_strip_whitespace=True)
@@ -97,6 +111,11 @@ class Password(BaseModel):
             if tag and tag not in cleaned:
                 cleaned.append(tag)
         return cleaned
+
+    @field_validator("custom_fields")
+    @classmethod
+    def _clean_custom_fields(cls, value: list[CustomField]) -> list[CustomField]:
+        return [field for field in value if field.label]
 
 
 class PasswordHistoryEntry(BaseModel):

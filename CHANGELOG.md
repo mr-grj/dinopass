@@ -4,7 +4,12 @@
 
 ### Added
 
+- **Custom fields per entry.** Each password can now carry arbitrary labelled fields (a PIN, a recovery code, a security-question answer…). Mark a field **hidden** to keep its value masked in views, like a password. Custom fields are encrypted at rest with the same vault key as everything else, included in backups, and searchable by label (and by value when not hidden). Up to 30 per entry.
 - **Trash (soft-delete + restore).** Deleting a vault entry now moves it to a **Trash** instead of erasing it. A new Trash dialog lets you **restore** an entry or **delete it forever**. Trashed entries are excluded from the vault list, search, backups, imports, and vault-health - they simply wait until you restore or purge them, and a name freed by trashing can be reused right away. New CLI commands: `ciphermoth password trash`, `ciphermoth password restore <name>`, and `ciphermoth password purge <name>` (`password delete` now moves to trash).
+
+### Changed
+
+- **Cleaner Add/Edit password modal.** The form now keeps your core credentials (name, username, website, password) front and centre, and tucks the extras (two-factor, tags, custom fields, notes, history) into tidy collapsible sections. Sections open automatically when an entry already has that content and stay collapsed when empty, so adding a password is uncluttered and editing never hides anything.
 
 ### Fixed
 

@@ -44,10 +44,6 @@ class MasterPasswordModel(BaseModel):
 
 class PasswordModel(BaseModel):
     __tablename__ = "passwords"
-
-    # Uniqueness is enforced only among live (non-trashed) rows via a partial
-    # unique index, so a name freed up by a soft-delete can be reused while the
-    # trashed copy still lingers awaiting restore or purge.
     __table_args__ = (
         Index(
             "uq_passwords_name_active",
@@ -71,6 +67,7 @@ class PasswordModel(BaseModel):
     url: Mapped[bytes | None] = mapped_column(LargeBinary)
     totp_secret: Mapped[bytes | None] = mapped_column(LargeBinary)
     tags: Mapped[bytes | None] = mapped_column(LargeBinary)
+    custom_fields: Mapped[bytes | None] = mapped_column(LargeBinary)
     password_history: Mapped[bytes | None] = mapped_column(LargeBinary)
     favorite: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="false"

@@ -82,6 +82,7 @@ The basics you'd expect:
 - All passwords encrypted at rest; the encryption key is derived from your master password and never touches the server
 - Web UI for day-to-day use: create, edit, delete, search by name, username, website, or tag
 - Store the website, a username, tags, and a two-factor (TOTP) secret alongside each password
+- Add your own custom fields to any entry (PINs, recovery codes, security answers), each optionally hidden and all encrypted at rest
 - Built-in two-factor codes: paste a 2FA secret and CipherMoth shows the live rolling code, computed in your browser
 - Favorites and tags to keep a growing vault tidy, plus password history so a changed password is never truly gone
 - Trash for deletions: entries you remove go to a Trash you can restore from, or empty for good when you're sure

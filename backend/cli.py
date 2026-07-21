@@ -122,6 +122,10 @@ def pw_get(name: Annotated[str, typer.Argument(help="Password name.")]) -> None:
     if item.get("tags"):
         _out.print(f"  [dim]Tags[/dim]         {', '.join(item['tags'])}")
 
+    for field in item.get("custom_fields") or []:
+        shown = "••••••••" if field.get("hidden") else field.get("value", "")
+        _out.print(f"  [dim]{field['label']}[/dim]  {shown}")
+
     if item.get("description"):
         _out.print(f"  [dim]Description[/dim]  {item['description']}")
 
@@ -231,6 +235,7 @@ def pw_update(name: Annotated[str, typer.Argument(help="Password name.")]) -> No
                     "totp_secret": current.get("totp_secret"),
                     "description": current.get("description"),
                     "tags": current.get("tags", []),
+                    "custom_fields": current.get("custom_fields", []),
                     "favorite": current.get("favorite", False),
                 },
                 "new_password": {
@@ -241,6 +246,7 @@ def pw_update(name: Annotated[str, typer.Argument(help="Password name.")]) -> No
                     "totp_secret": new_totp,
                     "description": new_description,
                     "tags": current.get("tags", []),
+                    "custom_fields": current.get("custom_fields", []),
                     "favorite": current.get("favorite", False),
                 },
             },

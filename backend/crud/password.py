@@ -55,16 +55,25 @@ _CSV_FIELD_ALIASES: dict[str, tuple[str, ...]] = {
 
 
 class PasswordCRUD(BaseCRUD):
-    async def _get_password_model(self, password_name: str) -> PasswordModel:
+    async def _get_password_model(
+        self, password_name: str, *, deleted: bool = False
+    ) -> PasswordModel:
+        trashed = (
+            PasswordModel.deleted.is_not(None)
+            if deleted
+            else PasswordModel.deleted.is_(None)
+        )
         result = (
             await self.session.execute(
                 select(PasswordModel).where(
-                    PasswordModel.password_name == password_name
+                    PasswordModel.password_name == password_name,
+                    trashed,
                 )
             )
         ).scalar()
         if not result:
-            raise NotFound(f"No password found for '{password_name}'.")
+            where = "trash" if deleted else "vault"
+            raise NotFound(f"No password found for '{password_name}' in the {where}.")
         return result
 
     def _decrypt_or_raise(self, key_derivation: str, model: PasswordModel) -> str:
@@ -118,6 +127,7 @@ class PasswordCRUD(BaseCRUD):
             favorite=model.favorite,
             backed_up=model.backed_up,
             updated=model.updated,
+            deleted=model.deleted,
             password_history=self._decode_history(key_derivation, model),
         )
 
@@ -132,7 +142,19 @@ class PasswordCRUD(BaseCRUD):
     async def get_passwords(self, key_derivation: str) -> list[PasswordResponse]:
         models = (
             await self.session.execute(
-                select(PasswordModel).order_by(PasswordModel.password_name)
+                select(PasswordModel)
+                .where(PasswordModel.deleted.is_(None))
+                .order_by(PasswordModel.password_name)
+            )
+        ).scalars()
+        return [self._to_response(m, key_derivation) for m in models]
+
+    async def get_trash(self, key_derivation: str) -> list[PasswordResponse]:
+        models = (
+            await self.session.execute(
+                select(PasswordModel)
+                .where(PasswordModel.deleted.is_not(None))
+                .order_by(PasswordModel.deleted.desc())
             )
         ).scalars()
         return [self._to_response(m, key_derivation) for m in models]
@@ -176,7 +198,8 @@ class PasswordCRUD(BaseCRUD):
             conflict = (
                 await self.session.execute(
                     select(PasswordModel).where(
-                        PasswordModel.password_name == new_password.password_name
+                        PasswordModel.password_name == new_password.password_name,
+                        PasswordModel.deleted.is_(None),
                     )
                 )
             ).scalar()
@@ -219,9 +242,36 @@ class PasswordCRUD(BaseCRUD):
 
     async def delete_password(self, password_name: str) -> PasswordDelete:
         model = await self._get_password_model(password_name)
+        # The `deleted` column is a naive TIMESTAMP (like created/updated), so
+        # strip the tzinfo to match what asyncpg expects for that column.
+        model.deleted = datetime.now(UTC).replace(tzinfo=None)
+        await self.session.flush()
+        return PasswordDelete(deleted=True, detail="Password moved to trash.")
+
+    async def restore_password(self, password_name: str) -> PasswordUpdate:
+        model = await self._get_password_model(password_name, deleted=True)
+        conflict = (
+            await self.session.execute(
+                select(PasswordModel).where(
+                    PasswordModel.password_name == password_name,
+                    PasswordModel.deleted.is_(None),
+                )
+            )
+        ).scalar()
+        if conflict:
+            raise TypesMismatchError(
+                f"An active password named '{password_name}' already exists. "
+                "Rename or delete it before restoring."
+            )
+        model.deleted = None
+        await self.session.flush()
+        return PasswordUpdate(updated=True, detail="Password restored from trash.")
+
+    async def purge_password(self, password_name: str) -> PasswordDelete:
+        model = await self._get_password_model(password_name, deleted=True)
         await self.session.delete(model)
         await self.session.flush()
-        return PasswordDelete(deleted=True, detail="Password deleted successfully.")
+        return PasswordDelete(deleted=True, detail="Password permanently deleted.")
 
     async def create_backup(self, master_password: str, key_derivation: str) -> bytes:
         await self._verify_master_password(master_password)
@@ -229,7 +279,9 @@ class PasswordCRUD(BaseCRUD):
         passwords = (
             (
                 await self.session.execute(
-                    select(PasswordModel).order_by(PasswordModel.password_name)
+                    select(PasswordModel)
+                    .where(PasswordModel.deleted.is_(None))
+                    .order_by(PasswordModel.password_name)
                 )
             )
             .scalars()
@@ -306,7 +358,11 @@ class PasswordCRUD(BaseCRUD):
     async def _load_existing(self) -> dict[str, PasswordModel]:
         return {
             model.password_name: model
-            for model in (await self.session.execute(select(PasswordModel))).scalars()
+            for model in (
+                await self.session.execute(
+                    select(PasswordModel).where(PasswordModel.deleted.is_(None))
+                )
+            ).scalars()
         }
 
     async def import_passwords(

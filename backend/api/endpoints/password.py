@@ -54,6 +54,20 @@ async def get_passwords(
 
 
 @router.get(
+    "/trash",
+    name="passwords:trash",
+    response_model=list[PasswordResponse],
+    dependencies=[Depends(require_master_password)],
+    responses=inject_responses({status.HTTP_403_FORBIDDEN: SimpleDetailSchema}),
+)
+async def get_trash(
+    crud: PasswordCRUDDep,
+    key_derivation: KeyDerivationDep,
+) -> list[PasswordResponse]:
+    return await crud.get_trash(key_derivation)
+
+
+@router.get(
     "/{password_name}",
     name="passwords:get_by_name",
     response_model=PasswordResponse,
@@ -155,6 +169,45 @@ async def delete_password(
     crud: PasswordCRUDDep,
 ) -> PasswordDelete:
     return await crud.delete_password(password_name)
+
+
+@router.post(
+    "/{password_name}/restore",
+    name="passwords:restore",
+    response_model=PasswordUpdate,
+    dependencies=[Depends(require_master_password)],
+    responses=inject_responses(
+        {
+            status.HTTP_404_NOT_FOUND: SimpleDetailSchema,
+            status.HTTP_403_FORBIDDEN: SimpleDetailSchema,
+            status.HTTP_400_BAD_REQUEST: SimpleDetailSchema,
+        }
+    ),
+)
+async def restore_password(
+    password_name: str,
+    crud: PasswordCRUDDep,
+) -> PasswordUpdate:
+    return await crud.restore_password(password_name)
+
+
+@router.delete(
+    "/{password_name}/purge",
+    name="passwords:purge",
+    response_model=PasswordDelete,
+    dependencies=[Depends(require_master_password)],
+    responses=inject_responses(
+        {
+            status.HTTP_404_NOT_FOUND: SimpleDetailSchema,
+            status.HTTP_403_FORBIDDEN: SimpleDetailSchema,
+        }
+    ),
+)
+async def purge_password(
+    password_name: str,
+    crud: PasswordCRUDDep,
+) -> PasswordDelete:
+    return await crud.purge_password(password_name)
 
 
 @router.post(

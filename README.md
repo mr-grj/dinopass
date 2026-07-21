@@ -84,6 +84,7 @@ The basics you'd expect:
 - Store the website, a username, tags, and a two-factor (TOTP) secret alongside each password
 - Built-in two-factor codes: paste a 2FA secret and CipherMoth shows the live rolling code, computed in your browser
 - Favorites and tags to keep a growing vault tidy, plus password history so a changed password is never truly gone
+- Trash for deletions: entries you remove go to a Trash you can restore from, or empty for good when you're sure
 - Vault health check that flags weak, reused, and old passwords, runs entirely on your device, nothing is sent anywhere
 - Password generator with configurable length and character sets, cryptographically secure, not the `Math.random()` kind
 - Strength indicator on every password so you can see at a glance which ones are embarrassing
@@ -251,7 +252,7 @@ One thing to know about rate limiting behind a proxy: the limits are keyed on th
 
 ## Staying up to date
 
-CipherMoth notices when a newer release is out and shows an **Update** chip in the app bar. The check runs **in your browser** against GitHub's public API — the server never phones home — and you can turn it off under Settings → "Check for updates" if you'd rather your instance talk to nobody at all.
+CipherMoth notices when a newer release is out and shows an **Update** chip in the app bar. The check runs **in your browser** against GitHub's public API - the server never phones home - and you can turn it off under Settings → "Check for updates" if you'd rather your instance talk to nobody at all.
 
 **Updating by hand** (always available): edit `CIPHERMOTH_VERSION` in your `.env` (or leave it `latest`) and re-run:
 
@@ -269,9 +270,9 @@ docker compose -f docker-compose.prod.yml --profile autoupdate up -d
 
 This adds a small `updater` container that holds the Docker socket. Because it can restart your stack, it's **off by default** and deliberately careful:
 
-- It **verifies every image is signed** (cosign / Sigstore) by CipherMoth's official release workflow before running it — a compromised registry alone can't slip you a malicious build.
+- It **verifies every image is signed** (cosign / Sigstore) by CipherMoth's official release workflow before running it - a compromised registry alone can't slip you a malicious build.
 - It **snapshots the database** before applying and **rolls back automatically** if the new version fails its health check.
-- It has **no network listener** — it only reacts to a file the backend writes after an unlocked-vault, rate-limited request. Your master password is never involved.
+- It has **no network listener** - it only reacts to a file the backend writes after an unlocked-vault, rate-limited request. Your master password is never involved.
 
 If the updater isn't enabled, the button simply shows you the manual command above.
 

@@ -3,10 +3,12 @@ from datetime import datetime
 from sqlalchemy import (
     TIMESTAMP,
     Boolean,
+    Index,
     Integer,
     LargeBinary,
     String,
     func,
+    text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -43,6 +45,18 @@ class MasterPasswordModel(BaseModel):
 class PasswordModel(BaseModel):
     __tablename__ = "passwords"
 
+    # Uniqueness is enforced only among live (non-trashed) rows via a partial
+    # unique index, so a name freed up by a soft-delete can be reused while the
+    # trashed copy still lingers awaiting restore or purge.
+    __table_args__ = (
+        Index(
+            "uq_passwords_name_active",
+            "password_name",
+            unique=True,
+            postgresql_where=text("deleted IS NULL"),
+        ),
+    )
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     created: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=func.now())
     updated: Mapped[datetime] = mapped_column(
@@ -50,7 +64,7 @@ class PasswordModel(BaseModel):
     )
     deleted: Mapped[datetime | None] = mapped_column(TIMESTAMP, default=None)
 
-    password_name: Mapped[str] = mapped_column(String, unique=True)
+    password_name: Mapped[str] = mapped_column(String)
     username: Mapped[str | None] = mapped_column(String)
     password_value: Mapped[bytes] = mapped_column(LargeBinary)
     description: Mapped[str | None] = mapped_column(String)

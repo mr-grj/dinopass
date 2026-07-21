@@ -25,7 +25,10 @@ ciphermoth password list                     List all passwords
 ciphermoth password get <name>               Reveal a password (and its live 2FA code)
 ciphermoth password create <name>            Add a new password (interactive)
 ciphermoth password update <name>            Update value, website, 2FA or description (interactive)
-ciphermoth password delete <name>            Delete a password (asks for confirmation)
+ciphermoth password delete <name>            Move a password to the trash (asks for confirmation)
+ciphermoth password trash                    List entries currently in the trash
+ciphermoth password restore <name>           Restore a trashed entry back to the vault
+ciphermoth password purge <name>             Permanently delete a trashed entry (asks for confirmation)
 ciphermoth backup [--out <dir>]              Export an encrypted backup ZIP
 ciphermoth import <file> [--on-conflict]     Import from a CipherMoth backup ZIP (skip|overwrite)
 ciphermoth import-csv <file> [--on-conflict] Import a CSV from another manager (skip|overwrite)

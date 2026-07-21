@@ -6,6 +6,7 @@ const Passwords = {
   error: null,
   loading: false,
   passwords: [],
+  trash: [],
 
   setError: action((state, error) => {
     state.error = error;
@@ -15,6 +16,9 @@ const Passwords = {
   }),
   setPasswords: action((state, passwords) => {
     state.passwords = passwords;
+  }),
+  setTrash: action((state, trash) => {
+    state.trash = trash;
   }),
 
   get: thunk(async (actions) => {
@@ -52,6 +56,35 @@ const Passwords = {
     try {
       await apiClient.delete(`/passwords/${encodeURIComponent(passwordName)}`);
       await actions.get();
+      await actions.getTrash();
+    } catch (err) {
+      throw new Error(err.response?.data?.detail ?? "Failed to delete password.");
+    }
+  }),
+
+  getTrash: thunk(async (actions) => {
+    try {
+      const { data } = await apiClient.get("/passwords/trash");
+      actions.setTrash(data);
+    } catch (err) {
+      throw new Error(err.response?.data?.detail ?? "Failed to load trash.");
+    }
+  }),
+
+  restore: thunk(async (actions, passwordName) => {
+    try {
+      await apiClient.post(`/passwords/${encodeURIComponent(passwordName)}/restore`);
+      await actions.get();
+      await actions.getTrash();
+    } catch (err) {
+      throw new Error(err.response?.data?.detail ?? "Failed to restore password.");
+    }
+  }),
+
+  purge: thunk(async (actions, passwordName) => {
+    try {
+      await apiClient.delete(`/passwords/${encodeURIComponent(passwordName)}/purge`);
+      await actions.getTrash();
     } catch (err) {
       throw new Error(err.response?.data?.detail ?? "Failed to delete password.");
     }

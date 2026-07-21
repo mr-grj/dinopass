@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Trash (soft-delete + restore).** Deleting a vault entry now moves it to a **Trash** instead of erasing it. A new Trash dialog lets you **restore** an entry or **delete it forever**. Trashed entries are excluded from the vault list, search, backups, imports, and vault-health - they simply wait until you restore or purge them, and a name freed by trashing can be reused right away. New CLI commands: `ciphermoth password trash`, `ciphermoth password restore <name>`, and `ciphermoth password purge <name>` (`password delete` now moves to trash).
+
 ### Fixed
 
 - **Release builds can't hang indefinitely.** Added a 30-minute timeout to the image-publish job so a stalled multi-arch build fails fast instead of hanging for hours and risking a partial release (e.g. backend published but frontend not).

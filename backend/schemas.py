@@ -107,6 +107,7 @@ class PasswordHistoryEntry(BaseModel):
 class PasswordResponse(Password):
     backed_up: bool
     updated: datetime
+    deleted: datetime | None = None
     password_history: list[PasswordHistoryEntry] = Field(default_factory=list)
 
 

@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import DownloadIcon from "@mui/icons-material/Download";
 import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
 import SearchIcon from "@mui/icons-material/Search";
@@ -23,6 +24,7 @@ import EmptyVault from "../components/vault/EmptyVault";
 import HealthDialog from "../components/vault/HealthDialog";
 import ImportDialog from "../components/vault/ImportDialog";
 import PasswordFormDialog from "../components/vault/PasswordFormDialog";
+import TrashDialog from "../components/vault/TrashDialog";
 import { createColumns } from "../components/vault/columns";
 import useClipboard from "../hooks/useClipboard";
 
@@ -41,9 +43,22 @@ const PasswordsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const copy = useClipboard();
 
-  const { get, create, update, remove, backup, importPasswords, importCsv, toggleFavorite } =
-    useStoreActions((actions) => actions.ciphermothModels.passwords);
-  const { error, loading, passwords } = useStoreState((state) => state.ciphermothModels.passwords);
+  const {
+    get,
+    create,
+    update,
+    remove,
+    backup,
+    importPasswords,
+    importCsv,
+    toggleFavorite,
+    getTrash,
+    restore,
+    purge,
+  } = useStoreActions((actions) => actions.ciphermothModels.passwords);
+  const { error, loading, passwords, trash } = useStoreState(
+    (state) => state.ciphermothModels.passwords
+  );
 
   const [visibleRows, setVisibleRows] = useState(new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -52,11 +67,13 @@ const PasswordsPage = () => {
   const [backupOpen, setBackupOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [healthOpen, setHealthOpen] = useState(false);
+  const [trashOpen, setTrashOpen] = useState(false);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     get();
-  }, [get]);
+    getTrash();
+  }, [get, getTrash]);
 
   useEffect(() => {
     if (error) enqueueSnackbar(error, { variant: "error" });
@@ -114,11 +131,29 @@ const PasswordsPage = () => {
   const handleDelete = async () => {
     try {
       await remove(deleteTarget);
-      enqueueSnackbar("Password deleted.", { variant: "success" });
+      enqueueSnackbar("Moved to trash.", { variant: "success" });
     } catch (err) {
       enqueueSnackbar(err.message, { variant: "error" });
     } finally {
       setDeleteTarget(null);
+    }
+  };
+
+  const handleRestore = async (name) => {
+    try {
+      await restore(name);
+      enqueueSnackbar("Restored from trash.", { variant: "success" });
+    } catch (err) {
+      enqueueSnackbar(err.message, { variant: "error" });
+    }
+  };
+
+  const handlePurge = async (name) => {
+    try {
+      await purge(name);
+      enqueueSnackbar("Permanently deleted.", { variant: "success" });
+    } catch (err) {
+      enqueueSnackbar(err.message, { variant: "error" });
     }
   };
 
@@ -199,6 +234,13 @@ const PasswordsPage = () => {
             onClick={() => setImportOpen(true)}
           >
             Import
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<DeleteOutlineIcon />}
+            onClick={() => setTrashOpen(true)}
+          >
+            {trash.length ? `Trash (${trash.length})` : "Trash"}
           </Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={openAdd}>
             Add Password
@@ -319,14 +361,21 @@ const PasswordsPage = () => {
       />
       <ConfirmDialog
         open={!!deleteTarget}
-        title="Delete Password"
-        confirmText="Delete"
+        title="Move to Trash"
+        confirmText="Move to Trash"
         confirmColor="error"
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
       >
-        Are you sure you want to delete <strong>{deleteTarget}</strong>? This cannot be undone.
+        Move <strong>{deleteTarget}</strong> to Trash? You can restore it later from the Trash.
       </ConfirmDialog>
+      <TrashDialog
+        open={trashOpen}
+        trash={trash}
+        onClose={() => setTrashOpen(false)}
+        onRestore={handleRestore}
+        onPurge={handlePurge}
+      />
     </Box>
   );
 };

@@ -29,7 +29,7 @@ DATE="$(date -u +%Y-%m-%d)"
 cd "$(git rev-parse --show-toplevel)"
 
 command -v gh >/dev/null 2>&1 || die "the GitHub CLI (gh) is required: https://cli.github.com"
-gh auth status >/dev/null 2>&1 || die "not logged in to gh — run: gh auth login"
+gh auth status >/dev/null 2>&1 || die "not logged in to gh - run: gh auth login"
 command -v uv >/dev/null 2>&1 || die "uv is required (backend lockfile)"
 
 branch="$(git rev-parse --abbrev-ref HEAD)"
@@ -76,7 +76,7 @@ awk -v ver="$VERSION" '
 files="backend/pyproject.toml backend/uv.lock frontend/package.json frontend/package-lock.json CHANGELOG.md"
 
 if [ "$DRY_RUN" = "--dry-run" ]; then
-  say "DRY RUN — changes that would be committed:"
+  say "DRY RUN - changes that would be committed:"
   # shellcheck disable=SC2086
   git --no-pager diff -- $files || true
   printf '\n'
@@ -97,7 +97,7 @@ say "Committed and tagged ${TAG}"
 
 git push origin "$branch"
 git push origin "$TAG"
-say "Pushed — the image-publish workflow is now building & signing images"
+say "Pushed - the image-publish workflow is now building & signing images"
 
 gh release create "$TAG" --title "$TAG" --notes-file "$notes"
 rm -f "$notes"

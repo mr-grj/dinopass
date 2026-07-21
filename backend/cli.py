@@ -268,13 +268,71 @@ def pw_delete(
             _check(exists)
 
         if not yes:
-            typer.confirm(f"Delete '{name}'?", abort=True)
+            typer.confirm(f"Move '{name}' to trash?", abort=True)
 
         resp = client.delete(f"/passwords/{name}", headers=headers)
 
     _check(resp)
 
-    _ok(f"Deleted [cyan]{name}[/cyan]")
+    _ok(f"Moved [cyan]{name}[/cyan] to trash")
+
+
+@pw_app.command("trash")
+def pw_trash() -> None:
+    with httpx.Client(base_url=_api_url(), timeout=30) as client:
+        _, key = _unlock(client)
+        resp = client.get("/passwords/trash", headers=_hdr(key))
+
+    _check(resp)
+
+    items: list[dict] = resp.json()
+    if not items:
+        _out.print("[dim]The trash is empty.[/dim]")
+        return
+
+    table = Table(show_header=True, header_style="bold", box=None, padding=(0, 2, 0, 0))
+    table.add_column("Name", style="cyan")
+    table.add_column("Description", style="dim")
+    table.add_column("Deleted", style="dim")
+
+    for item in items:
+        table.add_row(
+            item["password_name"],
+            item.get("description") or "-",
+            (item.get("deleted") or "-")[:19].replace("T", " "),
+        )
+
+    _out.print(table)
+
+
+@pw_app.command("restore")
+def pw_restore(name: Annotated[str, typer.Argument(help="Password name.")]) -> None:
+    with httpx.Client(base_url=_api_url(), timeout=30) as client:
+        _, key = _unlock(client)
+        resp = client.post(f"/passwords/{name}/restore", headers=_hdr(key))
+
+    _check(resp)
+
+    _ok(f"Restored [cyan]{name}[/cyan]")
+
+
+@pw_app.command("purge")
+def pw_purge(
+    name: Annotated[str, typer.Argument(help="Password name.")],
+    yes: Annotated[
+        bool, typer.Option("--yes", "-y", help="Skip confirmation.")
+    ] = False,
+) -> None:
+    if not yes:
+        typer.confirm(f"Permanently delete '{name}' from trash?", abort=True)
+
+    with httpx.Client(base_url=_api_url(), timeout=30) as client:
+        _, key = _unlock(client)
+        resp = client.delete(f"/passwords/{name}/purge", headers=_hdr(key))
+
+    _check(resp)
+
+    _ok(f"Permanently deleted [cyan]{name}[/cyan]")
 
 
 @app.command("backup")

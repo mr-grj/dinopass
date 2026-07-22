@@ -11,11 +11,12 @@ const ageInDays = (updated) =>
   updated ? (Date.now() - new Date(updated).getTime()) / 86_400_000 : 0;
 
 export const analyzeVault = (passwords) => {
+  const logins = passwords.filter((entry) => entry.kind !== "note");
   const weak = [];
   const stale = [];
   const byValue = new Map();
 
-  for (const entry of passwords) {
+  for (const entry of logins) {
     const strength = getPasswordStrength(entry.password_value);
     if (strength && strength.level <= 2) weak.push(entry);
 
@@ -33,9 +34,7 @@ export const analyzeVault = (passwords) => {
 
   const flagged = new Set([...weak, ...reused, ...stale].map((entry) => entry.password_name));
   const score =
-    passwords.length === 0
-      ? 100
-      : Math.round(((passwords.length - flagged.size) / passwords.length) * 100);
+    logins.length === 0 ? 100 : Math.round(((logins.length - flagged.size) / logins.length) * 100);
 
-  return { weak, reused, stale, score, total: passwords.length };
+  return { weak, reused, stale, score, total: logins.length };
 };

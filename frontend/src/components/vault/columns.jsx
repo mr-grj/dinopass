@@ -10,6 +10,7 @@ import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
+import StickyNote2OutlinedIcon from "@mui/icons-material/StickyNote2Outlined";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
@@ -117,7 +118,28 @@ export const createColumns = ({
       </Tooltip>
     ),
   },
-  { field: "password_name", headerName: "Name", flex: 1, minWidth: 130 },
+  {
+    field: "password_name",
+    headerName: "Name",
+    flex: 1,
+    minWidth: 130,
+    renderCell: (params) =>
+      params.row.kind === "note" ? (
+        <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", minWidth: 0 }}>
+          <Tooltip title="Secure note">
+            <StickyNote2OutlinedIcon fontSize="small" sx={{ color: "text.disabled" }} />
+          </Tooltip>
+          <Typography
+            variant="body2"
+            sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+          >
+            {params.value}
+          </Typography>
+        </Stack>
+      ) : (
+        params.value
+      ),
+  },
   {
     field: "folder",
     headerName: "Folder",
@@ -253,7 +275,7 @@ export const createColumns = ({
     align: "center",
     headerAlign: "center",
     renderCell: (params) => {
-      const { password_name, password_value, url, backed_up } = params.row;
+      const { password_name, password_value, url, backed_up, kind } = params.row;
       return (
         <Stack direction="row" spacing={0} sx={{ alignItems: "center", height: "100%" }}>
           <Box sx={{ visibility: url ? "visible" : "hidden" }}>
@@ -274,7 +296,7 @@ export const createColumns = ({
             </IconButton>
           </Tooltip>
           <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 1 }} />
-          <StrengthIndicator password={password_value} />
+          {kind !== "note" && <StrengthIndicator password={password_value} />}
           <Tooltip title={backed_up ? "Password backed up" : "Password not backed up"}>
             <Box sx={{ display: "flex", alignItems: "center" }}>
               {backed_up ? (

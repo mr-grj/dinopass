@@ -12,6 +12,8 @@ import {
   IconButton,
   Stack,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Tooltip,
   Typography,
 } from "@mui/material";
@@ -21,10 +23,12 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutlined";
+import KeyOutlinedIcon from "@mui/icons-material/KeyOutlined";
 import LockOpenOutlinedIcon from "@mui/icons-material/LockOpenOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
+import StickyNote2OutlinedIcon from "@mui/icons-material/StickyNote2Outlined";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
@@ -36,6 +40,7 @@ import { GLOW } from "../../lib/brand";
 
 const EMPTY_FORM = {
   password_name: "",
+  kind: "login",
   username: "",
   password_value: "",
   url: "",
@@ -57,6 +62,7 @@ const toForm = (target) =>
   target
     ? {
         password_name: target.password_name,
+        kind: target.kind ?? "login",
         username: target.username ?? "",
         password_value: target.password_value,
         url: target.url ?? "",
@@ -224,6 +230,8 @@ const PasswordFormDialog = ({
     setShowGenerator(false);
   }, [open, editTarget]);
 
+  const isNote = form.kind === "note";
+
   const toggleSection = (key) => () => setSections((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const setField = (field) => (e) => {
@@ -285,18 +293,19 @@ const PasswordFormDialog = ({
       return;
     }
     if (!form.password_value.trim()) {
-      setFormError("Password value is required.");
+      setFormError(isNote ? "Note content is required." : "Password value is required.");
       return;
     }
     setSubmitting(true);
     try {
       await onSubmit({
         password_name: form.password_name.trim(),
-        username: form.username.trim() || null,
+        kind: form.kind,
+        username: isNote ? null : form.username.trim() || null,
         password_value: form.password_value,
-        url: form.url.trim() || null,
-        totp_secret: form.totp_secret.trim() || null,
-        description: form.description.trim() || null,
+        url: isNote ? null : form.url.trim() || null,
+        totp_secret: isNote ? null : form.totp_secret.trim() || null,
+        description: isNote ? null : form.description.trim() || null,
         tags: form.tags,
         custom_fields: normalizeCustomFields(form.custom_fields),
         folder: form.folder.trim() || null,
@@ -325,10 +334,18 @@ const PasswordFormDialog = ({
     JSON.stringify(normalizeCustomFields(form.custom_fields)) ===
       JSON.stringify(normalizeCustomFields(editTarget.custom_fields));
 
+  const title = editTarget
+    ? isNote
+      ? "Edit Secure Note"
+      : "Edit Password"
+    : isNote
+      ? "Add Secure Note"
+      : "Add Password";
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        {editTarget ? "Edit Password" : "Add Password"}
+        {title}
         <Tooltip title={form.favorite ? "Remove from favorites" : "Mark as favorite"}>
           <IconButton onClick={() => setForm((p) => ({ ...p, favorite: !p.favorite }))}>
             {form.favorite ? <StarIcon sx={{ color: GLOW }} /> : <StarBorderIcon />}
@@ -336,6 +353,26 @@ const PasswordFormDialog = ({
         </Tooltip>
       </DialogTitle>
       <DialogContent dividers>
+        {!editTarget && (
+          <ToggleButtonGroup
+            exclusive
+            fullWidth
+            size="small"
+            value={form.kind}
+            onChange={(_, value) => value && setForm((prev) => ({ ...prev, kind: value }))}
+            sx={{ mb: 2 }}
+          >
+            <ToggleButton value="login">
+              <KeyOutlinedIcon fontSize="small" sx={{ mr: 0.75 }} />
+              Login
+            </ToggleButton>
+            <ToggleButton value="note">
+              <StickyNote2OutlinedIcon fontSize="small" sx={{ mr: 0.75 }} />
+              Secure note
+            </ToggleButton>
+          </ToggleButtonGroup>
+        )}
+
         <Stack spacing={1.5}>
           <TextField
             label="Name"
@@ -346,63 +383,88 @@ const PasswordFormDialog = ({
             required
             fullWidth
             autoFocus
-            helperText={editTarget ? "Name cannot be changed" : "e.g. GitHub, Gmail, Netflix"}
-          />
-          <TextField
-            label="Username / email (optional)"
-            size="small"
-            value={form.username}
-            onChange={setField("username")}
-            fullWidth
-            placeholder="e.g. john@example.com"
-            slotProps={{
-              htmlInput: { spellCheck: false, autoCorrect: "off", autoCapitalize: "none" },
-            }}
-          />
-          <TextField
-            label="Website (optional)"
-            size="small"
-            value={form.url}
-            onChange={setField("url")}
-            fullWidth
-            placeholder="e.g. https://github.com"
-            slotProps={{
-              htmlInput: { spellCheck: false, autoCorrect: "off", autoCapitalize: "none" },
-            }}
-          />
-          <PasswordField
-            label="Password"
-            size="small"
-            value={form.password_value}
-            onChange={(e) => {
-              setField("password_value")(e);
-              if (showGenerator) setShowGenerator(false);
-            }}
-            required
-            autoComplete="new-password"
-            show={showValue}
-            onToggleShow={() => setShowValue((v) => !v)}
-            adornment={
-              <Tooltip title={showGenerator ? "Close generator" : "Generate password"}>
-                <IconButton
-                  onClick={toggleGenerator}
-                  size="small"
-                  color={showGenerator ? "primary" : "default"}
-                >
-                  <AutoFixHighIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+            helperText={
+              editTarget
+                ? "Name cannot be changed"
+                : isNote
+                  ? "e.g. Recovery codes, Wi-Fi, Passport"
+                  : "e.g. GitHub, Gmail, Netflix"
             }
           />
-          {showGenerator && (
-            <PasswordGenerator
-              options={genOpts}
-              onChangeLength={changeGenLength}
-              onToggleClass={toggleGenClass}
-              onRegenerate={() => applyGenerated(genOpts)}
+
+          {isNote ? (
+            <TextField
+              label="Note"
+              size="small"
+              value={form.password_value}
+              onChange={setField("password_value")}
+              required
+              fullWidth
+              multiline
+              minRows={6}
+              autoComplete="off"
+              placeholder="Anything you want to keep encrypted and safe."
+              slotProps={{ htmlInput: { spellCheck: false } }}
             />
+          ) : (
+            <>
+              <TextField
+                label="Username / email (optional)"
+                size="small"
+                value={form.username}
+                onChange={setField("username")}
+                fullWidth
+                placeholder="e.g. john@example.com"
+                slotProps={{
+                  htmlInput: { spellCheck: false, autoCorrect: "off", autoCapitalize: "none" },
+                }}
+              />
+              <TextField
+                label="Website (optional)"
+                size="small"
+                value={form.url}
+                onChange={setField("url")}
+                fullWidth
+                placeholder="e.g. https://github.com"
+                slotProps={{
+                  htmlInput: { spellCheck: false, autoCorrect: "off", autoCapitalize: "none" },
+                }}
+              />
+              <PasswordField
+                label="Password"
+                size="small"
+                value={form.password_value}
+                onChange={(e) => {
+                  setField("password_value")(e);
+                  if (showGenerator) setShowGenerator(false);
+                }}
+                required
+                autoComplete="new-password"
+                show={showValue}
+                onToggleShow={() => setShowValue((v) => !v)}
+                adornment={
+                  <Tooltip title={showGenerator ? "Close generator" : "Generate password"}>
+                    <IconButton
+                      onClick={toggleGenerator}
+                      size="small"
+                      color={showGenerator ? "primary" : "default"}
+                    >
+                      <AutoFixHighIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                }
+              />
+              {showGenerator && (
+                <PasswordGenerator
+                  options={genOpts}
+                  onChangeLength={changeGenLength}
+                  onToggleClass={toggleGenClass}
+                  onRegenerate={() => applyGenerated(genOpts)}
+                />
+              )}
+              <StrengthBar password={form.password_value} />
+            </>
           )}
-          <StrengthBar password={form.password_value} />
         </Stack>
 
         <Autocomplete
@@ -421,35 +483,37 @@ const PasswordFormDialog = ({
         />
 
         <Box sx={{ mt: 1.5 }}>
-          <FormSection
-            label="Two-factor"
-            preview={form.totp_secret ? "Configured" : ""}
-            open={sections.totp}
-            onToggle={toggleSection("totp")}
-          >
-            <PasswordField
-              label="Two-factor secret (optional)"
-              size="small"
-              value={form.totp_secret}
-              onChange={setField("totp_secret")}
-              autoComplete="off"
-              show={showTotp}
-              onToggleShow={() => setShowTotp((v) => !v)}
-              helperText="Paste a base32 secret or an otpauth:// link to show 2FA codes here."
-              adornment={
-                <Tooltip
-                  arrow
-                  placement="top"
-                  title="This is for the rolling 6-digit code some sites ask for after your password. When you turn on authenticator-app 2FA (Google Authenticator, Authy and similar), the site shows a setup key or QR code. Paste that key here (a base32 secret or an otpauth:// link) and CipherMoth will show the live code in your vault. Leave blank if you keep 2FA on your phone."
-                >
-                  <HelpOutlineIcon
-                    fontSize="small"
-                    sx={{ color: "text.disabled", cursor: "help", mr: 0.5 }}
-                  />
-                </Tooltip>
-              }
-            />
-          </FormSection>
+          {!isNote && (
+            <FormSection
+              label="Two-factor"
+              preview={form.totp_secret ? "Configured" : ""}
+              open={sections.totp}
+              onToggle={toggleSection("totp")}
+            >
+              <PasswordField
+                label="Two-factor secret (optional)"
+                size="small"
+                value={form.totp_secret}
+                onChange={setField("totp_secret")}
+                autoComplete="off"
+                show={showTotp}
+                onToggleShow={() => setShowTotp((v) => !v)}
+                helperText="Paste a base32 secret or an otpauth:// link to show 2FA codes here."
+                adornment={
+                  <Tooltip
+                    arrow
+                    placement="top"
+                    title="This is for the rolling 6-digit code some sites ask for after your password. When you turn on authenticator-app 2FA (Google Authenticator, Authy and similar), the site shows a setup key or QR code. Paste that key here (a base32 secret or an otpauth:// link) and CipherMoth will show the live code in your vault. Leave blank if you keep 2FA on your phone."
+                  >
+                    <HelpOutlineIcon
+                      fontSize="small"
+                      sx={{ color: "text.disabled", cursor: "help", mr: 0.5 }}
+                    />
+                  </Tooltip>
+                }
+              />
+            </FormSection>
+          )}
 
           <FormSection
             label="Tags"
@@ -505,25 +569,27 @@ const PasswordFormDialog = ({
             </Stack>
           </FormSection>
 
-          <FormSection
-            label="Notes"
-            preview={form.description}
-            open={sections.notes}
-            onToggle={toggleSection("notes")}
-          >
-            <TextField
-              label="Description"
-              size="small"
-              value={form.description}
-              onChange={setField("description")}
-              fullWidth
-              multiline
-              rows={2}
-              placeholder="e.g. Personal account, work email…"
-            />
-          </FormSection>
+          {!isNote && (
+            <FormSection
+              label="Notes"
+              preview={form.description}
+              open={sections.notes}
+              onToggle={toggleSection("notes")}
+            >
+              <TextField
+                label="Description"
+                size="small"
+                value={form.description}
+                onChange={setField("description")}
+                fullWidth
+                multiline
+                rows={2}
+                placeholder="e.g. Personal account, work email…"
+              />
+            </FormSection>
+          )}
 
-          {editTarget && history.length > 0 && (
+          {!isNote && editTarget && history.length > 0 && (
             <FormSection
               label="Password history"
               count={history.length}

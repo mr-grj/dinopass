@@ -107,8 +107,9 @@ def pw_get(name: Annotated[str, typer.Argument(help="Password name.")]) -> None:
 
     item = resp.json()
 
+    value_label = "Note" if item.get("kind") == "note" else "Value"
     _out.print(f"\n  [bold cyan]{item['password_name']}[/bold cyan]")
-    _out.print(f"  [dim]Value[/dim]        {item['password_value']}")
+    _out.print(f"  [dim]{value_label}[/dim]        {item['password_value']}")
 
     if item.get("username"):
         _out.print(f"  [dim]Username[/dim]     {item['username']}")
@@ -242,6 +243,7 @@ def pw_update(name: Annotated[str, typer.Argument(help="Password name.")]) -> No
             json={
                 "password": {
                     "password_name": name,
+                    "kind": current.get("kind", "login"),
                     "username": current.get("username"),
                     "password_value": current["password_value"],
                     "url": current.get("url"),
@@ -254,6 +256,7 @@ def pw_update(name: Annotated[str, typer.Argument(help="Password name.")]) -> No
                 },
                 "new_password": {
                     "password_name": name,
+                    "kind": current.get("kind", "login"),
                     "username": new_username,
                     "password_value": new_value,
                     "url": new_url,

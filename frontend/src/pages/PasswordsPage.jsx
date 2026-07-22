@@ -122,10 +122,14 @@ const PasswordsPage = () => {
         },
         new_password: entry,
       });
-      enqueueSnackbar("Password updated.", { variant: "success" });
+      enqueueSnackbar(entry.kind === "note" ? "Secure note updated." : "Password updated.", {
+        variant: "success",
+      });
     } else {
       await create(entry);
-      enqueueSnackbar("Password created.", { variant: "success" });
+      enqueueSnackbar(entry.kind === "note" ? "Secure note created." : "Password created.", {
+        variant: "success",
+      });
     }
     setDialogOpen(false);
   };
@@ -261,7 +265,7 @@ const PasswordsPage = () => {
             {trash.length ? `Trash (${trash.length})` : "Trash"}
           </Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={openAdd}>
-            Add Password
+            Add
           </Button>
         </Stack>
       </Stack>

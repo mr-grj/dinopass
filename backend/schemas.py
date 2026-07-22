@@ -85,6 +85,7 @@ class CustomField(BaseModel):
 
 class Password(BaseModel):
     password_name: str = Field(min_length=1, max_length=255)
+    kind: str = Field(default="login")
     username: str | None = Field(default=None, max_length=255)
     password_value: str = Field(min_length=1)
     url: str | None = Field(default=None, max_length=2048)
@@ -108,6 +109,11 @@ class Password(BaseModel):
     @classmethod
     def _clean_folder(cls, value: str | None) -> str | None:
         return value or None
+
+    @field_validator("kind")
+    @classmethod
+    def _clean_kind(cls, value: str) -> str:
+        return value if value in ("login", "note") else "login"
 
     @field_validator("tags")
     @classmethod

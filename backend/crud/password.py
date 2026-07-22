@@ -153,6 +153,7 @@ class PasswordCRUD(BaseCRUD):
     ) -> PasswordResponse:
         return PasswordResponse(
             password_name=model.password_name,
+            kind=model.kind,
             username=model.username,
             password_value=self._decrypt_or_raise(key_derivation, model),
             url=decrypt_optional(key_derivation, model.url),
@@ -208,6 +209,7 @@ class PasswordCRUD(BaseCRUD):
         self.session.add(
             PasswordModel(
                 password_name=password.password_name,
+                kind=password.kind,
                 username=password.username,
                 password_value=encrypt(
                     key_derivation, password.password_value.encode()
@@ -248,17 +250,20 @@ class PasswordCRUD(BaseCRUD):
                 raise TypesMismatchError("A password with that name already exists.")
             model.password_name = new_password.password_name
 
+        model.kind = new_password.kind
+
         old_value = self._decrypt_or_raise(key_derivation, model)
         if old_value != new_password.password_value:
-            history = self._decode_history(key_derivation, model)
-            history.insert(
-                0,
-                {"value": old_value, "changed_at": datetime.now(UTC).isoformat()},
-            )
-            del history[_HISTORY_LIMIT:]
-            model.password_history = encrypt(
-                key_derivation, json.dumps(history).encode()
-            )
+            if new_password.kind == "login":
+                history = self._decode_history(key_derivation, model)
+                history.insert(
+                    0,
+                    {"value": old_value, "changed_at": datetime.now(UTC).isoformat()},
+                )
+                del history[_HISTORY_LIMIT:]
+                model.password_history = encrypt(
+                    key_derivation, json.dumps(history).encode()
+                )
             model.password_value = encrypt(
                 key_derivation, new_password.password_value.encode()
             )
@@ -336,6 +341,7 @@ class PasswordCRUD(BaseCRUD):
         entries: list[dict[str, object]] = [
             {
                 "name": p.password_name,
+                "kind": p.kind,
                 "username": p.username,
                 "value": self._decrypt_or_raise(key_derivation, p),
                 "url": decrypt_optional(key_derivation, p.url),
@@ -364,6 +370,7 @@ class PasswordCRUD(BaseCRUD):
         on_conflict: OnConflict,
         name: str,
         value: str,
+        kind: str,
         username: str | None,
         url: str | None,
         totp_secret: str | None,
@@ -379,6 +386,7 @@ class PasswordCRUD(BaseCRUD):
                 return "skipped"
 
             current.password_value = encrypt(key_derivation, value.encode())
+            current.kind = kind
             current.username = username
             current.url = encrypt_optional(key_derivation, url)
             current.totp_secret = encrypt_optional(key_derivation, totp_secret)
@@ -395,6 +403,7 @@ class PasswordCRUD(BaseCRUD):
 
         model = PasswordModel(
             password_name=name,
+            kind=kind,
             username=username,
             password_value=encrypt(key_derivation, value.encode()),
             url=encrypt_optional(key_derivation, url),
@@ -469,6 +478,7 @@ class PasswordCRUD(BaseCRUD):
                 on_conflict=on_conflict,
                 name=name,
                 value=value,
+                kind="note" if entry.get("kind") == "note" else "login",
                 username=entry.get("username"),
                 url=entry.get("url"),
                 totp_secret=entry.get("totp_secret"),
@@ -519,6 +529,7 @@ class PasswordCRUD(BaseCRUD):
                 on_conflict=on_conflict,
                 name=name,
                 value=value,
+                kind="login",
                 username=self._csv_cell(row, column_for, "username"),
                 url=self._csv_cell(row, column_for, "url"),
                 totp_secret=self._csv_totp(row, column_for),

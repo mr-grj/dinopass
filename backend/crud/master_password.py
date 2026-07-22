@@ -7,12 +7,13 @@ from api.exceptions import Forbidden, NotFound, TypesMismatchError
 from crud.base import BaseCRUD
 from helpers import (
     decrypt,
+    decrypt_bytes,
     encrypt,
     generate_key_derivation,
     hash_master_password,
     verify_master_password,
 )
-from models import MasterPasswordModel, PasswordModel
+from models import MasterPasswordModel, PasswordAttachmentModel, PasswordModel
 from schemas import (
     MasterPasswordCheck,
     MasterPasswordCreate,
@@ -47,6 +48,26 @@ class MasterPasswordCRUD(BaseCRUD):
         if token is None:
             return None
         return cls._reencrypt(old_key, new_key, token, pwd)
+
+    @staticmethod
+    def _reencrypt_text(
+        old_key: bytes | str, new_key: bytes | str, token: bytes | None
+    ) -> bytes | None:
+        if token is None:
+            return None
+        plaintext = decrypt(old_key, token)
+        if plaintext is None:
+            raise TypesMismatchError("Could not decrypt an attachment.")
+        return encrypt(new_key, plaintext.encode())
+
+    @staticmethod
+    def _reencrypt_binary(
+        old_key: bytes | str, new_key: bytes | str, token: bytes
+    ) -> bytes:
+        raw = decrypt_bytes(old_key, token)
+        if raw is None:
+            raise TypesMismatchError("Could not decrypt an attachment.")
+        return encrypt(new_key, raw)
 
     async def is_initialized(self) -> bool:
         return await fetch_master_password(self.session) is not None
@@ -121,6 +142,20 @@ class MasterPasswordCRUD(BaseCRUD):
             )
             pwd.password_history = self._reencrypt_optional(
                 key_derivation, new_key_derivation, pwd.password_history, pwd
+            )
+
+        attachments = (
+            await self.session.execute(select(PasswordAttachmentModel))
+        ).scalars()
+        for att in attachments:
+            att.filename = self._reencrypt_binary(
+                key_derivation, new_key_derivation, att.filename
+            )
+            att.content = self._reencrypt_binary(
+                key_derivation, new_key_derivation, att.content
+            )
+            att.content_type = self._reencrypt_text(
+                key_derivation, new_key_derivation, att.content_type
             )
 
         model.salt = new_salt

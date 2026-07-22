@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 
 import pyzipper
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
 from api.exceptions import Forbidden, NotFound, TypesMismatchError
@@ -19,7 +19,7 @@ from helpers import (
     encrypt_optional,
     verify_master_password,
 )
-from models import PasswordModel
+from models import PasswordAttachmentModel, PasswordModel
 from schemas import (
     OnConflict,
     Password,
@@ -149,7 +149,7 @@ class PasswordCRUD(BaseCRUD):
         return data if isinstance(data, list) else []
 
     def _to_response(
-        self, model: PasswordModel, key_derivation: str
+        self, model: PasswordModel, key_derivation: str, attachment_count: int = 0
     ) -> PasswordResponse:
         return PasswordResponse(
             password_name=model.password_name,
@@ -167,7 +167,23 @@ class PasswordCRUD(BaseCRUD):
             updated=model.updated,
             deleted=model.deleted,
             password_history=self._decode_history(key_derivation, model),
+            attachment_count=attachment_count,
         )
+
+    async def _attachment_counts(self, password_ids: list[int]) -> dict[int, int]:
+        if not password_ids:
+            return {}
+        rows = (
+            await self.session.execute(
+                select(
+                    PasswordAttachmentModel.password_id,
+                    func.count(),
+                )
+                .where(PasswordAttachmentModel.password_id.in_(password_ids))
+                .group_by(PasswordAttachmentModel.password_id)
+            )
+        ).all()
+        return {password_id: count for password_id, count in rows}
 
     async def _verify_master_password(self, master_password: str) -> None:
         mp_model = await fetch_master_password(self.session)
@@ -178,24 +194,34 @@ class PasswordCRUD(BaseCRUD):
             raise Forbidden("Incorrect master password.")
 
     async def get_passwords(self, key_derivation: str) -> list[PasswordResponse]:
-        models = (
-            await self.session.execute(
-                select(PasswordModel)
-                .where(PasswordModel.deleted.is_(None))
-                .order_by(PasswordModel.password_name)
-            )
-        ).scalars()
-        return [self._to_response(m, key_derivation) for m in models]
+        models = list(
+            (
+                await self.session.execute(
+                    select(PasswordModel)
+                    .where(PasswordModel.deleted.is_(None))
+                    .order_by(PasswordModel.password_name)
+                )
+            ).scalars()
+        )
+        counts = await self._attachment_counts([m.id for m in models])
+        return [
+            self._to_response(m, key_derivation, counts.get(m.id, 0)) for m in models
+        ]
 
     async def get_trash(self, key_derivation: str) -> list[PasswordResponse]:
-        models = (
-            await self.session.execute(
-                select(PasswordModel)
-                .where(PasswordModel.deleted.is_not(None))
-                .order_by(PasswordModel.deleted.desc())
-            )
-        ).scalars()
-        return [self._to_response(m, key_derivation) for m in models]
+        models = list(
+            (
+                await self.session.execute(
+                    select(PasswordModel)
+                    .where(PasswordModel.deleted.is_not(None))
+                    .order_by(PasswordModel.deleted.desc())
+                )
+            ).scalars()
+        )
+        counts = await self._attachment_counts([m.id for m in models])
+        return [
+            self._to_response(m, key_derivation, counts.get(m.id, 0)) for m in models
+        ]
 
     async def get_password(
         self, password_name: str, key_derivation: str

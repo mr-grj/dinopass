@@ -2,6 +2,7 @@ import { Box, Chip, Divider, IconButton, Stack, Tooltip, Typography } from "@mui
 import GppBadIcon from "@mui/icons-material/GppBad";
 import GppGoodIcon from "@mui/icons-material/GppGood";
 import GppMaybeIcon from "@mui/icons-material/GppMaybe";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlined";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -123,22 +124,35 @@ export const createColumns = ({
     headerName: "Name",
     flex: 1,
     minWidth: 130,
-    renderCell: (params) =>
-      params.row.kind === "note" ? (
+    renderCell: (params) => {
+      const count = params.row.attachment_count ?? 0;
+      const clip = count > 0 && (
+        <Tooltip title={`${count} attachment${count === 1 ? "" : "s"}`}>
+          <Stack direction="row" spacing={0.25} sx={{ alignItems: "center", flexShrink: 0 }}>
+            <AttachFileIcon sx={{ fontSize: 15, color: "text.disabled" }} />
+            <Typography variant="caption" sx={{ color: "text.disabled" }}>
+              {count}
+            </Typography>
+          </Stack>
+        </Tooltip>
+      );
+      return (
         <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", minWidth: 0 }}>
-          <Tooltip title="Secure note">
-            <StickyNote2OutlinedIcon fontSize="small" sx={{ color: "text.disabled" }} />
-          </Tooltip>
+          {params.row.kind === "note" && (
+            <Tooltip title="Secure note">
+              <StickyNote2OutlinedIcon fontSize="small" sx={{ color: "text.disabled" }} />
+            </Tooltip>
+          )}
           <Typography
             variant="body2"
-            sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+            sx={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
           >
             {params.value}
           </Typography>
+          {clip}
         </Stack>
-      ) : (
-        params.value
-      ),
+      );
+    },
   },
   {
     field: "folder",

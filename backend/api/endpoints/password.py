@@ -1,5 +1,6 @@
 import io
 from datetime import UTC, datetime
+from urllib.parse import quote
 
 from fastapi import (
     APIRouter,
@@ -12,6 +13,7 @@ from fastapi import (
 from starlette.responses import StreamingResponse
 
 from api.endpoints.deps import (
+    AttachmentCRUDDep,
     KeyDerivationDep,
     PasswordCRUDDep,
     get_key_derivation,
@@ -21,6 +23,7 @@ from api.exceptions import TypesMismatchError
 from api.rate_limit import limiter, rate
 from api.responses import inject_responses
 from schemas import (
+    AttachmentResponse,
     FavoriteUpdatePayload,
     MasterPassword,
     OnConflict,
@@ -37,6 +40,15 @@ from schemas import (
 router = APIRouter(tags=["passwords"])
 
 _MAX_IMPORT_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
+_MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024  # 5 MB
+
+
+def _safe_content_disposition(filename: str) -> str:
+    cleaned = filename.replace("\r", "").replace("\n", "").replace('"', "")
+    cleaned = cleaned.strip() or "attachment"
+    ascii_name = cleaned.encode("ascii", "replace").decode("ascii").replace("?", "_")
+    quoted = quote(cleaned, safe="")
+    return f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quoted}"
 
 
 @router.get(
@@ -208,6 +220,110 @@ async def purge_password(
     crud: PasswordCRUDDep,
 ) -> PasswordDelete:
     return await crud.purge_password(password_name)
+
+
+@router.get(
+    "/{password_name}/attachments",
+    name="attachments:list",
+    response_model=list[AttachmentResponse],
+    dependencies=[Depends(require_master_password)],
+    responses=inject_responses(
+        {
+            status.HTTP_404_NOT_FOUND: SimpleDetailSchema,
+            status.HTTP_403_FORBIDDEN: SimpleDetailSchema,
+        }
+    ),
+)
+async def list_attachments(
+    password_name: str,
+    crud: AttachmentCRUDDep,
+    key_derivation: KeyDerivationDep,
+) -> list[AttachmentResponse]:
+    return await crud.list_attachments(password_name, key_derivation)
+
+
+@router.post(
+    "/{password_name}/attachments",
+    name="attachments:add",
+    response_model=AttachmentResponse,
+    dependencies=[Depends(require_master_password)],
+    responses=inject_responses(
+        {
+            status.HTTP_404_NOT_FOUND: SimpleDetailSchema,
+            status.HTTP_403_FORBIDDEN: SimpleDetailSchema,
+            status.HTTP_400_BAD_REQUEST: SimpleDetailSchema,
+            status.HTTP_429_TOO_MANY_REQUESTS: SimpleDetailSchema,
+        }
+    ),
+)
+@limiter.limit(rate("60/hour"))
+async def add_attachment(
+    request: Request,
+    password_name: str,
+    file: UploadFile,
+    crud: AttachmentCRUDDep,
+    key_derivation: KeyDerivationDep,
+) -> AttachmentResponse:
+    if file.size is not None and file.size > _MAX_ATTACHMENT_BYTES:
+        raise TypesMismatchError("Attachment too large. Maximum size is 5 MB.")
+    data = await file.read()
+    if len(data) > _MAX_ATTACHMENT_BYTES:
+        raise TypesMismatchError("Attachment too large. Maximum size is 5 MB.")
+    return await crud.add_attachment(
+        password_name=password_name,
+        filename=file.filename or "attachment",
+        content_type=file.content_type,
+        data=data,
+        key_derivation=key_derivation,
+    )
+
+
+@router.get(
+    "/{password_name}/attachments/{attachment_id}",
+    name="attachments:download",
+    dependencies=[Depends(require_master_password)],
+    responses=inject_responses(
+        {
+            status.HTTP_404_NOT_FOUND: SimpleDetailSchema,
+            status.HTTP_403_FORBIDDEN: SimpleDetailSchema,
+        }
+    ),
+)
+async def download_attachment(
+    password_name: str,
+    attachment_id: int,
+    crud: AttachmentCRUDDep,
+    key_derivation: KeyDerivationDep,
+) -> StreamingResponse:
+    filename, content_type, data = await crud.get_attachment_data(
+        password_name, attachment_id, key_derivation
+    )
+    return StreamingResponse(
+        io.BytesIO(data),
+        media_type=content_type or "application/octet-stream",
+        headers={"Content-Disposition": _safe_content_disposition(filename)},
+    )
+
+
+@router.delete(
+    "/{password_name}/attachments/{attachment_id}",
+    name="attachments:delete",
+    response_model=PasswordDelete,
+    dependencies=[Depends(require_master_password), Depends(get_key_derivation)],
+    responses=inject_responses(
+        {
+            status.HTTP_404_NOT_FOUND: SimpleDetailSchema,
+            status.HTTP_403_FORBIDDEN: SimpleDetailSchema,
+        }
+    ),
+)
+async def delete_attachment(
+    password_name: str,
+    attachment_id: int,
+    crud: AttachmentCRUDDep,
+) -> PasswordDelete:
+    await crud.delete_attachment(password_name, attachment_id)
+    return PasswordDelete(deleted=True, detail="Attachment deleted.")
 
 
 @router.post(

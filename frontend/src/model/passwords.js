@@ -101,6 +101,70 @@ const Passwords = {
     }
   }),
 
+  fetchAttachments: thunk(async (actions, passwordName) => {
+    try {
+      const { data } = await apiClient.get(
+        `/passwords/${encodeURIComponent(passwordName)}/attachments`
+      );
+      return data;
+    } catch (err) {
+      throw new Error(err.response?.data?.detail ?? "Failed to load attachments.");
+    }
+  }),
+
+  uploadAttachment: thunk(async (actions, { passwordName, file }) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const { data } = await apiClient.post(
+        `/passwords/${encodeURIComponent(passwordName)}/attachments`,
+        formData
+      );
+      await actions.get();
+      return data;
+    } catch (err) {
+      throw new Error(err.response?.data?.detail ?? "Failed to upload attachment.");
+    }
+  }),
+
+  downloadAttachment: thunk(async (actions, { passwordName, attachmentId, filename }) => {
+    try {
+      const response = await apiClient.get(
+        `/passwords/${encodeURIComponent(passwordName)}/attachments/${attachmentId}`,
+        { responseType: "blob" }
+      );
+      const url = URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename || "attachment";
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      let detail = "Failed to download attachment.";
+      if (err.response?.data instanceof Blob) {
+        try {
+          detail = JSON.parse(await err.response.data.text()).detail ?? detail;
+        } catch {
+          // Blob wasn't JSON; fall back to the generic message.
+        }
+      } else {
+        detail = err.response?.data?.detail ?? detail;
+      }
+      throw new Error(detail);
+    }
+  }),
+
+  deleteAttachment: thunk(async (actions, { passwordName, attachmentId }) => {
+    try {
+      await apiClient.delete(
+        `/passwords/${encodeURIComponent(passwordName)}/attachments/${attachmentId}`
+      );
+      await actions.get();
+    } catch (err) {
+      throw new Error(err.response?.data?.detail ?? "Failed to delete attachment.");
+    }
+  }),
+
   importPasswords: thunk(async (actions, { file, masterPassword, onConflict }) => {
     try {
       const formData = new FormData();

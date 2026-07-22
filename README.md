@@ -84,6 +84,7 @@ The basics you'd expect:
 - Secure notes for free-form secrets (recovery codes, Wi-Fi, passport details), encrypted at rest just like passwords
 - Store the website, a username, tags, and a two-factor (TOTP) secret alongside each password
 - Add your own custom fields to any entry (PINs, recovery codes, security answers), each optionally hidden and all encrypted at rest
+- Attach files to any entry (recovery-code PDFs, license keys, key files) - up to 5 MB each, encrypted at rest with your vault key just like everything else
 - Built-in two-factor codes: paste a 2FA secret and CipherMoth shows the live rolling code, computed in your browser
 - Favorites, folders, and tags to keep a growing vault tidy, plus password history so a changed password is never truly gone
 - Trash for deletions: entries you remove go to a Trash you can restore from, or empty for good when you're sure

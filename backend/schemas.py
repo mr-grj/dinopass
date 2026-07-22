@@ -1,10 +1,12 @@
 from datetime import datetime
 from enum import StrEnum
+from typing import Annotated
 
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    StringConstraints,
     field_validator,
 )
 
@@ -87,7 +89,9 @@ class Password(BaseModel):
     password_name: str = Field(min_length=1, max_length=255)
     kind: str = Field(default="login")
     username: str | None = Field(default=None, max_length=255)
-    password_value: str = Field(min_length=1)
+    password_value: Annotated[
+        str, StringConstraints(strip_whitespace=False, min_length=1)
+    ]
     url: str | None = Field(default=None, max_length=2048)
     totp_secret: str | None = Field(default=None, max_length=512)
     description: str | None = Field(default=None, max_length=1024)
@@ -141,6 +145,15 @@ class PasswordResponse(Password):
     updated: datetime
     deleted: datetime | None = None
     password_history: list[PasswordHistoryEntry] = Field(default_factory=list)
+    attachment_count: int = 0
+
+
+class AttachmentResponse(BaseModel):
+    id: int
+    filename: str
+    content_type: str | None = None
+    size_bytes: int
+    created: datetime
 
 
 class FavoriteUpdatePayload(BaseModel):

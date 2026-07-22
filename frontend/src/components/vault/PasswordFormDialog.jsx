@@ -33,6 +33,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
 import PasswordField from "../PasswordField";
+import AttachmentsSection from "./AttachmentsSection";
 import PasswordGenerator, { CHAR_KEYS } from "./PasswordGenerator";
 import StrengthBar from "./StrengthBar";
 import { generatePassword } from "../../lib/passwordGenerator";
@@ -84,6 +85,7 @@ const sectionsForTarget = (target) => ({
   tags: (target?.tags?.length ?? 0) > 0,
   custom: (target?.custom_fields?.length ?? 0) > 0,
   notes: !!target?.description,
+  attachments: (target?.attachment_count ?? 0) > 0,
   history: false,
 });
 
@@ -219,6 +221,7 @@ const PasswordFormDialog = ({
   const [sections, setSections] = useState(() => sectionsForTarget(null));
   const [genOpts, setGenOpts] = useState(GEN_DEFAULTS);
   const [submitting, setSubmitting] = useState(false);
+  const [attachmentsDirty, setAttachmentsDirty] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -228,6 +231,7 @@ const PasswordFormDialog = ({
     setShowValue(false);
     setShowTotp(false);
     setShowGenerator(false);
+    setAttachmentsDirty(false);
   }, [open, editTarget]);
 
   const isNote = form.kind === "note";
@@ -292,11 +296,19 @@ const PasswordFormDialog = ({
       setFormError("Name is required.");
       return;
     }
+
     if (!form.password_value.trim()) {
       setFormError(isNote ? "Note content is required." : "Password value is required.");
       return;
     }
+
+    if (editTarget && unchanged) {
+      onClose();
+      return;
+    }
+
     setSubmitting(true);
+
     try {
       await onSubmit({
         password_name: form.password_name.trim(),
@@ -590,6 +602,20 @@ const PasswordFormDialog = ({
             </FormSection>
           )}
 
+          {editTarget && (
+            <FormSection
+              label="Attachments"
+              count={editTarget.attachment_count ?? 0}
+              open={sections.attachments}
+              onToggle={toggleSection("attachments")}
+            >
+              <AttachmentsSection
+                passwordName={editTarget.password_name}
+                onChanged={() => setAttachmentsDirty(true)}
+              />
+            </FormSection>
+          )}
+
           {!isNote && editTarget && history.length > 0 && (
             <FormSection
               label="Password history"
@@ -620,9 +646,9 @@ const PasswordFormDialog = ({
           variant="contained"
           onClick={handleSubmit}
           loading={submitting}
-          disabled={unchanged}
+          disabled={unchanged && !attachmentsDirty}
         >
-          {editTarget ? "Update" : "Create"}
+          {editTarget ? (unchanged && attachmentsDirty ? "Done" : "Update") : "Create"}
         </Button>
       </DialogActions>
     </Dialog>

@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import (
     TIMESTAMP,
     Boolean,
+    ForeignKey,
     Index,
     Integer,
     LargeBinary,
@@ -77,6 +78,23 @@ class PasswordModel(BaseModel):
     backed_up: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="false"
     )
+
+
+class PasswordAttachmentModel(BaseModel):
+    __tablename__ = "password_attachments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=func.now())
+    password_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("passwords.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    filename: Mapped[bytes] = mapped_column(LargeBinary)
+    content: Mapped[bytes] = mapped_column(LargeBinary)
+    content_type: Mapped[bytes | None] = mapped_column(LargeBinary)
+    size_bytes: Mapped[int] = mapped_column(Integer)
 
 
 class SettingsModel(BaseModel):

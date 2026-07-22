@@ -5,6 +5,7 @@ from fastapi import Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.exceptions import Forbidden
+from crud.attachment import AttachmentCRUD
 from crud.master_password import MasterPasswordCRUD
 from crud.password import PasswordCRUD
 from crud.session import AsyncSessionLocal
@@ -36,9 +37,14 @@ def get_settings_crud(session: SessionDep) -> SettingsCRUD:
     return SettingsCRUD(session)
 
 
+def get_attachment_crud(session: SessionDep) -> AttachmentCRUD:
+    return AttachmentCRUD(session)
+
+
 MasterPasswordCRUDDep = Annotated[MasterPasswordCRUD, Depends(get_master_password_crud)]
 PasswordCRUDDep = Annotated[PasswordCRUD, Depends(get_password_crud)]
 SettingsCRUDDep = Annotated[SettingsCRUD, Depends(get_settings_crud)]
+AttachmentCRUDDep = Annotated[AttachmentCRUD, Depends(get_attachment_crud)]
 
 
 def get_key_derivation(

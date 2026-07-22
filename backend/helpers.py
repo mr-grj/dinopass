@@ -53,6 +53,13 @@ def decrypt(key: bytes | str, encrypted_value: bytes) -> str | None:
         return None
 
 
+def decrypt_bytes(key: bytes | str, encrypted_value: bytes) -> bytes | None:
+    try:
+        return Fernet(key).decrypt(encrypted_value)
+    except InvalidToken:
+        return None
+
+
 def encrypt_optional(key: bytes | str, value: str | None) -> bytes | None:
     if value is None:
         return None

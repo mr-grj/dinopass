@@ -402,9 +402,10 @@ const PasswordFormDialog = ({
               fullWidth
               multiline
               minRows={6}
+              maxRows={6}
               autoComplete="off"
               placeholder="Anything you want to keep encrypted and safe."
-              slotProps={{ htmlInput: { spellCheck: false } }}
+              slotProps={{ htmlInput: { spellCheck: false, style: { overflow: "auto" } } }}
             />
           ) : (
             <>

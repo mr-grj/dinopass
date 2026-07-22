@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-07-22
+
 ### Added
 
 - **File attachments.** Attach files to any vault entry - recovery-code PDFs, license keys, SSH key files, anything up to 5 MB each (25 MB total per entry). Open an entry and use the **Attachments** section to upload, download, or remove files; the vault grid shows a paperclip with a count for entries that have them. Filenames (including non-ASCII names like `Preț.pdf`) and contents are Fernet-encrypted with your vault key exactly like passwords, re-encrypted on master-password change, and cascade-deleted when you permanently delete an entry - so the database never leaks what you've stored.

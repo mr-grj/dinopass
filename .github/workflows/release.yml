@@ -9,32 +9,102 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  publish:
+  # Build each architecture on its own NATIVE runner (no QEMU). Emulated arm64
+  # Node/Vite builds took ~26 min and timed out; native arm64 builds in a couple
+  # of minutes. Each job pushes an untagged, digest-only image; the merge job
+  # stitches the per-arch digests into one multi-arch tag and signs it.
+  build:
+    name: build ${{ matrix.image.name }} (${{ matrix.platform.slug }})
+    runs-on: ${{ matrix.platform.runner }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - name: ciphermoth-backend
+            dockerfile: docker/backend/Dockerfile
+            args: ""
+          - name: ciphermoth-frontend
+            dockerfile: docker/frontend/Dockerfile
+            # Baked placeholder; entrypoint.sh swaps in the real URL at runtime.
+            args: VITE_API_URL=__CIPHERMOTH_API_URL__
+          - name: ciphermoth-updater
+            dockerfile: docker/updater/Dockerfile
+            args: ""
+        platform:
+          - arch: linux/amd64
+            runner: ubuntu-latest
+            slug: amd64
+          - arch: linux/arm64
+            runner: ubuntu-24.04-arm
+            slug: arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.image.dockerfile }}
+          platforms: ${{ matrix.platform.arch }}
+          build-args: ${{ matrix.image.args }}
+          cache-from: type=gha,scope=${{ matrix.image.name }}-${{ matrix.platform.slug }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image.name }}-${{ matrix.platform.slug }}
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image.name }},push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ matrix.image.name }}-${{ matrix.platform.slug }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  # Combine the per-arch digests into one multi-arch tag, then cosign-sign the
+  # resulting manifest-list digest (the digest the updater resolves + verifies).
+  merge:
+    name: merge & sign ${{ matrix.image }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    needs: build
+    timeout-minutes: 10
     permissions:
       contents: read
       packages: write
       id-token: write
     strategy:
+      fail-fast: false
       matrix:
-        include:
-          - image: ciphermoth-backend
-            dockerfile: docker/backend/Dockerfile
-            build-args: ""
-          - image: ciphermoth-frontend
-            dockerfile: docker/frontend/Dockerfile
-            # Baked placeholder; entrypoint.sh swaps in the real URL at runtime.
-            build-args: |
-              VITE_API_URL=__CIPHERMOTH_API_URL__
-          - image: ciphermoth-updater
-            dockerfile: docker/updater/Dockerfile
-            build-args: ""
+        image:
+          - ciphermoth-backend
+          - ciphermoth-frontend
+          - ciphermoth-updater
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digest-${{ matrix.image }}-*
+          merge-multiple: true
 
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
@@ -60,24 +130,22 @@ jobs:
             type=ref,event=branch
             type=sha,format=short
 
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ${{ matrix.dockerfile }}
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: ${{ matrix.build-args }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: true
-          sbom: true
+      - name: Create multi-arch manifest and push
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}@sha256:%s ' *)
+
+      - name: Resolve manifest-list digest
+        id: digest
+        run: |
+          image="${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}"
+          digest="$(docker buildx imagetools inspect "${image}:${{ steps.meta.outputs.version }}" --format '{{ json .Manifest.Digest }}' | tr -d '\"')"
+          echo "digest=${digest}" >> "$GITHUB_OUTPUT"
 
       - name: Sign image with cosign
         env:
           IMAGE: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}
-          DIGEST: ${{ steps.build.outputs.digest }}
+          DIGEST: ${{ steps.digest.outputs.digest }}
         run: cosign sign --yes "${IMAGE}@${DIGEST}"

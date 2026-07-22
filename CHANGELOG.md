@@ -10,10 +10,12 @@
 
 ### Changed
 
+- **Redesigned Vault Health.** The health report now leads with a circular score gauge and a plain-language status (Healthy / Needs attention / At risk), a row of weak/reused/old stat tiles, and clearer issue cards you can tap to jump straight to the entry. Still computed entirely on your device.
 - **Cleaner Add/Edit password modal.** The form now keeps your core credentials (name, username, website, password) front and centre, and tucks the extras (two-factor, tags, custom fields, notes, history) into tidy collapsible sections. Sections open automatically when an entry already has that content and stay collapsed when empty, so adding a password is uncluttered and editing never hides anything.
 
 ### Fixed
 
+- **No more stray highlight on toolbar buttons.** Closing a dialog with Escape used to leave a dark pulsing blob on the button that opened it (a stuck focus ripple). Ripples are now off in favour of a crisp focus outline, so keyboard focus stays clearly visible without the artifact.
 - **Release builds can't hang indefinitely.** Added a 30-minute timeout to the image-publish job so a stalled multi-arch build fails fast instead of hanging for hours and risking a partial release (e.g. backend published but frontend not).
 
 ## [1.3.1] - 2026-07-11

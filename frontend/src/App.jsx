@@ -51,14 +51,29 @@ const theme = createTheme({
     MuiTooltip: {
       defaultProps: { disableInteractive: true, enterDelay: 400, enterNextDelay: 400 },
     },
+    MuiButtonBase: {
+      defaultProps: { disableRipple: true },
+    },
     MuiButton: {
       styleOverrides: {
-        root: { borderRadius: 7, fontWeight: 600, letterSpacing: "0.04em" },
+        root: {
+          borderRadius: 7,
+          fontWeight: 600,
+          letterSpacing: "0.04em",
+          "&.Mui-focusVisible": { outline: `2px solid ${GLOW}`, outlineOffset: "2px" },
+        },
         outlined: {
           backgroundColor: "#ffffff",
           borderColor: BORDER_STRONG,
           color: INK,
           "&:hover": { backgroundColor: "#ffffff", borderColor: INK },
+        },
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          "&.Mui-focusVisible": { outline: `2px solid ${GLOW}`, outlineOffset: "2px" },
         },
       },
     },

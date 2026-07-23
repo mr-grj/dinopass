@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-07-23
+
 ### Fixed
 
 - **Clearer form errors.** When the server rejects an entry (an invalid 2FA secret, an over-long field, or too many tags or custom fields), the add/edit dialog now shows the actual reason instead of a stray "[object Object]". The name field is also capped at 255 characters as you type, so you can't overshoot the limit by accident.

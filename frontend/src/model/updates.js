@@ -49,11 +49,10 @@ const Updates = {
 
   fetchApplyStatus: thunk(async (actions) => {
     try {
-      const { data } = await apiClient.get("/updates/apply/status");
+      const { data } = await apiClient.get("/updates/apply/status", { timeout: 5000 });
       actions.setApply(data);
       return data;
     } catch {
-      actions.setApply({ state: "idle", updater_present: false });
       return null;
     }
   }),

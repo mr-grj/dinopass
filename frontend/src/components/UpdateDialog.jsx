@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Box,
@@ -40,55 +40,61 @@ const UpdateDialog = ({ open, onClose }) => {
   );
 
   const [busy, setBusy] = useState(false);
-  const timerRef = useRef(null);
-  const deadlineRef = useRef(0);
 
   const updaterPresent = apply?.updater_present;
 
-  const stopPolling = useCallback(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-  }, []);
-
-  const poll = useCallback(async () => {
-    const status = await fetchApplyStatus();
-    const state = status?.state;
-    if (state && DONE.has(state)) {
-      stopPolling();
-      setBusy(false);
-      if (state === "success") {
-        enqueueSnackbar("Update complete. Reloading…", { variant: "success" });
-        setTimeout(() => window.location.reload(), 1500);
-      } else {
-        enqueueSnackbar(STATE_COPY[state], { variant: "error" });
-      }
-      return;
-    }
-    if (Date.now() > deadlineRef.current) {
-      stopPolling();
-      setBusy(false);
-      checkForUpdates();
-      enqueueSnackbar("Still updating in the background, refresh in a moment.", {
-        variant: "info",
-      });
-      return;
-    }
-    timerRef.current = setTimeout(poll, POLL_MS);
-  }, [fetchApplyStatus, stopPolling, enqueueSnackbar, checkForUpdates]);
-
   useEffect(() => {
     if (open) fetchApplyStatus();
-    return stopPolling;
-  }, [open, fetchApplyStatus, stopPolling]);
+  }, [open, fetchApplyStatus]);
+
+  useEffect(() => {
+    if (!busy) return undefined;
+
+    const deadline = Date.now() + TIMEOUT_MS;
+    let done = false;
+    const finish = (fn) => {
+      if (done) return;
+      done = true;
+      clearInterval(id);
+      fn();
+    };
+
+    const tick = async () => {
+      const status = await fetchApplyStatus();
+      const state = status?.state;
+      if (state && DONE.has(state)) {
+        finish(() => {
+          if (state === "success") {
+            enqueueSnackbar("Update complete. Reloading…", { variant: "success" });
+            setTimeout(() => window.location.reload(), 1500);
+          } else {
+            setBusy(false);
+            enqueueSnackbar(STATE_COPY[state], { variant: "error" });
+          }
+        });
+      } else if (Date.now() > deadline) {
+        finish(() => {
+          setBusy(false);
+          checkForUpdates();
+          enqueueSnackbar("Still updating in the background, refresh in a moment.", {
+            variant: "info",
+          });
+        });
+      }
+    };
+
+    const id = setInterval(tick, POLL_MS);
+    tick();
+    return () => {
+      done = true;
+      clearInterval(id);
+    };
+  }, [busy, fetchApplyStatus, enqueueSnackbar, checkForUpdates]);
 
   const handleApply = async () => {
     setBusy(true);
     try {
       await applyUpdate(latest);
-      deadlineRef.current = Date.now() + TIMEOUT_MS;
-      timerRef.current = setTimeout(poll, POLL_MS);
     } catch (err) {
       setBusy(false);
       enqueueSnackbar(err.message, { variant: "error" });

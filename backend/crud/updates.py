@@ -15,6 +15,7 @@ _RESULT_FILE = _CONTROL_DIR / "result.json"
 _READY_FILE = _CONTROL_DIR / "updater.ready"
 
 _TERMINAL = {"success", "failed", "rolled_back"}
+_IN_PROGRESS = {"verifying", "applying"}
 
 
 def _updater_present() -> bool:
@@ -43,7 +44,7 @@ def get_apply_status() -> dict:
             result = {}
 
     state = result.get("state")
-    if state not in _TERMINAL:
+    if state not in _TERMINAL and state not in _IN_PROGRESS:
         state = "requested" if _REQUEST_FILE.exists() else "idle"
 
     return {

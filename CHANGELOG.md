@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **The one-click update dialog no longer gets stuck on "Working...".** After the update applied, the modal could sit on a loading spinner until you refreshed the page manually, because a status request that hung while the stack restarted froze the progress check. The dialog now polls resiliently (with a request timeout) and reloads on its own once the new version is live, and it shows real progress ("Verifying...", "Applying...") instead of a generic spinner.
+
 ## [1.4.1] - 2026-07-23
 
 ### Fixed

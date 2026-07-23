@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.4.3] - 2026-07-23
+
 ### Added
 
 - **Light and dark themes.** The whole app now flips between a dark canvas (the black-and-glow look from the login screen) and a light one, and remembers your choice. Switch it with the little moth resting in the bottom-right corner: click it and it flutters off as the theme fades across the page. Buttons, forms, links, tags, toasts, the vault grid, and the health and update dialogs all follow along, and disabled buttons stay clearly visible on the dark surface.

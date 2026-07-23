@@ -1,6 +1,6 @@
 [project]
 name = "backend"
-version = "1.4.3"
+version = "1.4.4"
 description = "CipherMoth Password Manager API"
 requires-python = ">=3.13"
 dependencies = [

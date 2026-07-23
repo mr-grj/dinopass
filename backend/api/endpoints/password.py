@@ -43,6 +43,15 @@ _MAX_IMPORT_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
 _MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024  # 5 MB
 
 
+async def _read_capped(file: UploadFile, max_bytes: int, message: str) -> bytes:
+    if file.size is not None and file.size > max_bytes:
+        raise TypesMismatchError(message)
+    data = await file.read()
+    if len(data) > max_bytes:
+        raise TypesMismatchError(message)
+    return data
+
+
 def _safe_content_disposition(filename: str) -> str:
     cleaned = filename.replace("\r", "").replace("\n", "").replace('"', "")
     cleaned = cleaned.strip() or "attachment"
@@ -264,11 +273,9 @@ async def add_attachment(
     crud: AttachmentCRUDDep,
     key_derivation: KeyDerivationDep,
 ) -> AttachmentResponse:
-    if file.size is not None and file.size > _MAX_ATTACHMENT_BYTES:
-        raise TypesMismatchError("Attachment too large. Maximum size is 5 MB.")
-    data = await file.read()
-    if len(data) > _MAX_ATTACHMENT_BYTES:
-        raise TypesMismatchError("Attachment too large. Maximum size is 5 MB.")
+    data = await _read_capped(
+        file, _MAX_ATTACHMENT_BYTES, "Attachment too large. Maximum size is 5 MB."
+    )
     return await crud.add_attachment(
         password_name=password_name,
         filename=file.filename or "attachment",
@@ -348,11 +355,9 @@ async def import_passwords(
     master_password: str = Form(...),
     on_conflict: OnConflict = Form(OnConflict.skip),
 ) -> PasswordImportResult:
-    if file.size is not None and file.size > _MAX_IMPORT_FILE_BYTES:
-        raise TypesMismatchError("File too large. Maximum allowed size is 10 MB.")
-    file_bytes = await file.read()
-    if len(file_bytes) > _MAX_IMPORT_FILE_BYTES:
-        raise TypesMismatchError("File too large. Maximum allowed size is 10 MB.")
+    file_bytes = await _read_capped(
+        file, _MAX_IMPORT_FILE_BYTES, "File too large. Maximum allowed size is 10 MB."
+    )
     return await crud.import_passwords(
         file_bytes=file_bytes,
         master_password=master_password,
@@ -382,13 +387,9 @@ async def import_passwords_csv(
     key_derivation: KeyDerivationDep,
     on_conflict: OnConflict = Form(OnConflict.skip),
 ) -> PasswordImportResult:
-    if file.size is not None and file.size > _MAX_IMPORT_FILE_BYTES:
-        raise TypesMismatchError("File too large. Maximum allowed size is 10 MB.")
-
-    file_bytes = await file.read()
-    if len(file_bytes) > _MAX_IMPORT_FILE_BYTES:
-        raise TypesMismatchError("File too large. Maximum allowed size is 10 MB.")
-
+    file_bytes = await _read_capped(
+        file, _MAX_IMPORT_FILE_BYTES, "File too large. Maximum allowed size is 10 MB."
+    )
     return await crud.import_passwords_csv(
         file_bytes=file_bytes,
         key_derivation=key_derivation,

@@ -1,6 +1,7 @@
 import { action, thunk } from "easy-peasy";
 
 import apiClient from "../api/client";
+import { errorDetail } from "../lib/http";
 import { getUpdateStatus } from "../lib/updateCheck";
 
 const Updates = {
@@ -63,7 +64,7 @@ const Updates = {
       actions.setApply(data);
       return data;
     } catch (err) {
-      throw new Error(err.response?.data?.detail ?? "Failed to start the update.");
+      throw new Error(await errorDetail(err, "Failed to start the update."));
     }
   }),
 };

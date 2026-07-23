@@ -15,6 +15,7 @@ import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import RestoreFromTrashIcon from "@mui/icons-material/RestoreFromTrash";
 
 import ConfirmDialog from "../ConfirmDialog";
+import { gridBaseSx } from "./gridStyles";
 
 const formatDeleted = (iso) => {
   if (!iso) return "-";
@@ -104,12 +105,7 @@ const TrashDialog = ({ open, trash, onClose, onRestore, onPurge }) => {
             autoHeight
             pageSizeOptions={[10, 25]}
             initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
-            sx={{
-              borderColor: "divider",
-              "& .MuiDataGrid-cell": { display: "flex", alignItems: "center" },
-              "& .MuiDataGrid-cell:focus": { outline: "none" },
-              "& .MuiDataGrid-cell:focus-within": { outline: "none" },
-            }}
+            sx={gridBaseSx}
           />
         )}
       </DialogContent>

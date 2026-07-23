@@ -395,6 +395,7 @@ const PasswordFormDialog = ({
             required
             fullWidth
             autoFocus
+            slotProps={{ htmlInput: { maxLength: 255 } }}
             helperText={
               editTarget
                 ? "Name cannot be changed"

@@ -34,11 +34,7 @@ class MasterPassword(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
 
-class MasterPasswordCreatePayload(BaseModel):
-    master_password: str = Field(min_length=1, max_length=1024)
-
-    model_config = ConfigDict(str_strip_whitespace=True)
-
+class MasterPasswordCreatePayload(MasterPassword):
     @field_validator("master_password")
     @classmethod
     def _strong(cls, value: str) -> str:

@@ -1,6 +1,7 @@
 import { action, thunk } from "easy-peasy";
 
 import apiClient from "../api/client";
+import { errorDetail } from "../lib/http";
 
 const DEFAULTS = {
   inactivity_ms: 120_000,
@@ -43,7 +44,7 @@ const Settings = {
       const { data } = await apiClient.patch("/settings", payload);
       actions.setSettings(data);
     } catch (err) {
-      throw new Error(err.response?.data?.detail ?? "Failed to save settings.");
+      throw new Error(await errorDetail(err, "Failed to save settings."));
     }
   }),
 };

@@ -26,6 +26,15 @@ async def fetch_master_password(session: AsyncSession) -> MasterPasswordModel | 
 
 
 class MasterPasswordCRUD(BaseCRUD):
+    _OPTIONAL_ENCRYPTED_FIELDS = (
+        "url",
+        "totp_secret",
+        "tags",
+        "custom_fields",
+        "folder",
+        "password_history",
+    )
+
     @staticmethod
     def _reencrypt(
         old_key: bytes | str, new_key: bytes | str, token: bytes, pwd: PasswordModel
@@ -125,24 +134,14 @@ class MasterPasswordCRUD(BaseCRUD):
             pwd.password_value = self._reencrypt(
                 key_derivation, new_key_derivation, pwd.password_value, pwd
             )
-            pwd.url = self._reencrypt_optional(
-                key_derivation, new_key_derivation, pwd.url, pwd
-            )
-            pwd.totp_secret = self._reencrypt_optional(
-                key_derivation, new_key_derivation, pwd.totp_secret, pwd
-            )
-            pwd.tags = self._reencrypt_optional(
-                key_derivation, new_key_derivation, pwd.tags, pwd
-            )
-            pwd.custom_fields = self._reencrypt_optional(
-                key_derivation, new_key_derivation, pwd.custom_fields, pwd
-            )
-            pwd.folder = self._reencrypt_optional(
-                key_derivation, new_key_derivation, pwd.folder, pwd
-            )
-            pwd.password_history = self._reencrypt_optional(
-                key_derivation, new_key_derivation, pwd.password_history, pwd
-            )
+            for field in self._OPTIONAL_ENCRYPTED_FIELDS:
+                setattr(
+                    pwd,
+                    field,
+                    self._reencrypt_optional(
+                        key_derivation, new_key_derivation, getattr(pwd, field), pwd
+                    ),
+                )
 
         attachments = (
             await self.session.execute(select(PasswordAttachmentModel))

@@ -27,6 +27,7 @@ import ImportDialog from "../components/vault/ImportDialog";
 import PasswordFormDialog from "../components/vault/PasswordFormDialog";
 import TrashDialog from "../components/vault/TrashDialog";
 import { createColumns } from "../components/vault/columns";
+import { gridBaseSx } from "../components/vault/gridStyles";
 import useClipboard from "../hooks/useClipboard";
 
 const buildSubtitle = (loading, passwords) => {
@@ -346,10 +347,9 @@ const PasswordsPage = () => {
             ),
           }}
           sx={{
+            ...gridBaseSx,
             bgcolor: "background.paper",
             borderRadius: 2.5,
-            borderColor: "divider",
-            "& .MuiDataGrid-cell": { display: "flex", alignItems: "center" },
             "& .MuiDataGrid-columnHeaders": { borderColor: "divider" },
             "& .MuiDataGrid-columnHeader": { bgcolor: "background.paper" },
             "& .MuiDataGrid-columnHeaderTitle": {
@@ -357,8 +357,6 @@ const PasswordsPage = () => {
               color: "text.secondary",
             },
             "& .MuiDataGrid-row:hover": { bgcolor: "#fafafa" },
-            "& .MuiDataGrid-cell:focus": { outline: "none" },
-            "& .MuiDataGrid-cell:focus-within": { outline: "none" },
             "& .rowHoverActions": {
               opacity: 0,
               pointerEvents: "none",

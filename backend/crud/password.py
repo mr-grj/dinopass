@@ -83,70 +83,64 @@ class PasswordCRUD(BaseCRUD):
             raise TypesMismatchError(f"Invalid key for '{model.password_name}'.")
         return decrypted
 
-    def _encode_tags(self, key_derivation: str, tags: list[str]) -> bytes | None:
-        if not tags:
+    @staticmethod
+    def _encode_json(key_derivation: str, data: list) -> bytes | None:
+        if not data:
             return None
-        return encrypt(key_derivation, json.dumps(tags).encode())
+        return encrypt(key_derivation, json.dumps(data).encode())
 
-    def _decode_tags(self, key_derivation: str, model: PasswordModel) -> list[str]:
-        raw = decrypt_optional(key_derivation, model.tags)
+    @staticmethod
+    def _decode_json_list(key_derivation: str, token: bytes | None) -> list:
+        raw = decrypt_optional(key_derivation, token)
         if not raw:
             return []
-
         try:
             data = json.loads(raw)
         except json.JSONDecodeError:
             return []
-
         return data if isinstance(data, list) else []
 
-    def _encode_custom_fields(
-        self, key_derivation: str, fields: list[dict[str, object]]
-    ) -> bytes | None:
-        if not fields:
-            return None
-        return encrypt(key_derivation, json.dumps(fields).encode())
+    def _decode_tags(self, key_derivation: str, model: PasswordModel) -> list[str]:
+        return self._decode_json_list(key_derivation, model.tags)
 
     def _decode_custom_fields(
         self, key_derivation: str, model: PasswordModel
     ) -> list[dict[str, object]]:
-        raw = decrypt_optional(key_derivation, model.custom_fields)
-        if not raw:
-            return []
-
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
-            return []
-
-        if not isinstance(data, list):
-            return []
-
-        cleaned: list[dict[str, object]] = []
-        for item in data:
-            if isinstance(item, dict) and item.get("label"):
-                cleaned.append(
-                    {
-                        "label": item.get("label"),
-                        "value": item.get("value", ""),
-                        "hidden": bool(item.get("hidden", False)),
-                    }
-                )
-        return cleaned
+        return self._normalize_custom_fields(
+            self._decode_json_list(key_derivation, model.custom_fields)
+        )
 
     def _decode_history(
         self, key_derivation: str, model: PasswordModel
     ) -> list[dict[str, str]]:
-        raw = decrypt_optional(key_derivation, model.password_history)
-        if not raw:
-            return []
+        return self._decode_json_list(key_derivation, model.password_history)
 
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
-            return []
-
-        return data if isinstance(data, list) else []
+    def _apply_fields(
+        self,
+        model: PasswordModel,
+        key_derivation: str,
+        *,
+        kind: str,
+        username: str | None,
+        url: str | None,
+        totp_secret: str | None,
+        description: str | None,
+        tags: list[str],
+        custom_fields: list[dict[str, object]],
+        folder: str | None,
+        favorite: bool,
+    ) -> None:
+        """Write every shared (encrypted) column onto ``model``, except the
+        password value and history, which each callsite handles itself."""
+        model.kind = kind
+        model.username = username
+        model.url = encrypt_optional(key_derivation, url)
+        model.totp_secret = encrypt_optional(key_derivation, totp_secret)
+        model.description = description
+        model.tags = self._encode_json(key_derivation, tags)
+        model.custom_fields = self._encode_json(key_derivation, custom_fields)
+        model.folder = encrypt_optional(key_derivation, folder)
+        model.favorite = favorite
 
     def _to_response(
         self, model: PasswordModel, key_derivation: str, attachment_count: int = 0
@@ -232,25 +226,24 @@ class PasswordCRUD(BaseCRUD):
     async def create_password(
         self, password: Password, key_derivation: str
     ) -> PasswordCreate:
-        self.session.add(
-            PasswordModel(
-                password_name=password.password_name,
-                kind=password.kind,
-                username=password.username,
-                password_value=encrypt(
-                    key_derivation, password.password_value.encode()
-                ),
-                url=encrypt_optional(key_derivation, password.url),
-                totp_secret=encrypt_optional(key_derivation, password.totp_secret),
-                description=password.description,
-                tags=self._encode_tags(key_derivation, password.tags),
-                custom_fields=self._encode_custom_fields(
-                    key_derivation, [f.model_dump() for f in password.custom_fields]
-                ),
-                folder=encrypt_optional(key_derivation, password.folder),
-                favorite=password.favorite,
-            )
+        model = PasswordModel(
+            password_name=password.password_name,
+            password_value=encrypt(key_derivation, password.password_value.encode()),
         )
+        self._apply_fields(
+            model,
+            key_derivation,
+            kind=password.kind,
+            username=password.username,
+            url=password.url,
+            totp_secret=password.totp_secret,
+            description=password.description,
+            tags=password.tags,
+            custom_fields=[f.model_dump() for f in password.custom_fields],
+            folder=password.folder,
+            favorite=password.favorite,
+        )
+        self.session.add(model)
 
         try:
             await self.session.flush()
@@ -276,8 +269,6 @@ class PasswordCRUD(BaseCRUD):
                 raise TypesMismatchError("A password with that name already exists.")
             model.password_name = new_password.password_name
 
-        model.kind = new_password.kind
-
         old_value = self._decrypt_or_raise(key_derivation, model)
         if old_value != new_password.password_value:
             if new_password.kind == "login":
@@ -294,16 +285,19 @@ class PasswordCRUD(BaseCRUD):
                 key_derivation, new_password.password_value.encode()
             )
 
-        model.username = new_password.username
-        model.url = encrypt_optional(key_derivation, new_password.url)
-        model.totp_secret = encrypt_optional(key_derivation, new_password.totp_secret)
-        model.description = new_password.description
-        model.tags = self._encode_tags(key_derivation, new_password.tags)
-        model.custom_fields = self._encode_custom_fields(
-            key_derivation, [f.model_dump() for f in new_password.custom_fields]
+        self._apply_fields(
+            model,
+            key_derivation,
+            kind=new_password.kind,
+            username=new_password.username,
+            url=new_password.url,
+            totp_secret=new_password.totp_secret,
+            description=new_password.description,
+            tags=new_password.tags,
+            custom_fields=[f.model_dump() for f in new_password.custom_fields],
+            folder=new_password.folder,
+            favorite=new_password.favorite,
         )
-        model.folder = encrypt_optional(key_derivation, new_password.folder)
-        model.favorite = new_password.favorite
 
         model.backed_up = False
         await self.session.flush()
@@ -407,43 +401,34 @@ class PasswordCRUD(BaseCRUD):
         favorite: bool,
     ) -> str:
         current = existing.get(name)
-        if current:
-            if on_conflict == OnConflict.skip:
-                return "skipped"
+        if current is None:
+            current = PasswordModel(password_name=name)
+            self.session.add(current)
+            existing[name] = current
+            outcome = "imported"
+        elif on_conflict == OnConflict.skip:
+            return "skipped"
+        else:
+            outcome = "overwritten"
 
-            current.password_value = encrypt(key_derivation, value.encode())
-            current.kind = kind
-            current.username = username
-            current.url = encrypt_optional(key_derivation, url)
-            current.totp_secret = encrypt_optional(key_derivation, totp_secret)
-            current.description = description
-            current.tags = self._encode_tags(key_derivation, tags)
-            current.custom_fields = self._encode_custom_fields(
-                key_derivation, custom_fields
-            )
-            current.folder = encrypt_optional(key_derivation, folder)
-            current.favorite = favorite
-            current.backed_up = False
-
-            return "overwritten"
-
-        model = PasswordModel(
-            password_name=name,
+        current.password_value = encrypt(key_derivation, value.encode())
+        self._apply_fields(
+            current,
+            key_derivation,
             kind=kind,
             username=username,
-            password_value=encrypt(key_derivation, value.encode()),
-            url=encrypt_optional(key_derivation, url),
-            totp_secret=encrypt_optional(key_derivation, totp_secret),
+            url=url,
+            totp_secret=totp_secret,
             description=description,
-            tags=self._encode_tags(key_derivation, tags),
-            custom_fields=self._encode_custom_fields(key_derivation, custom_fields),
-            folder=encrypt_optional(key_derivation, folder),
+            tags=tags,
+            custom_fields=custom_fields,
+            folder=folder,
             favorite=favorite,
         )
-        self.session.add(model)
-        existing[name] = model
+        if outcome == "overwritten":
+            current.backed_up = False
 
-        return "imported"
+        return outcome
 
     async def _load_existing(self) -> dict[str, PasswordModel]:
         return {

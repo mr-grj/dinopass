@@ -1,6 +1,7 @@
 import { action, thunk } from "easy-peasy";
 
 import apiClient from "../api/client";
+import { errorDetail, triggerDownload } from "../lib/http";
 
 const Passwords = {
   error: null,
@@ -28,7 +29,7 @@ const Passwords = {
       const { data } = await apiClient.get("/passwords");
       actions.setPasswords(data);
     } catch (err) {
-      actions.setError(err.response?.data?.detail ?? "Failed to load passwords.");
+      actions.setError(await errorDetail(err, "Failed to load passwords."));
     } finally {
       actions.setLoading(false);
     }
@@ -39,7 +40,7 @@ const Passwords = {
       await apiClient.post("/passwords/create", payload);
       await actions.get();
     } catch (err) {
-      throw new Error(err.response?.data?.detail ?? "Failed to create password.");
+      throw new Error(await errorDetail(err, "Failed to create password."));
     }
   }),
 
@@ -48,7 +49,7 @@ const Passwords = {
       await apiClient.patch("/passwords/update", payload);
       await actions.get();
     } catch (err) {
-      throw new Error(err.response?.data?.detail ?? "Failed to update password.");
+      throw new Error(await errorDetail(err, "Failed to update password."));
     }
   }),
 
@@ -58,7 +59,7 @@ const Passwords = {
       await actions.get();
       await actions.getTrash();
     } catch (err) {
-      throw new Error(err.response?.data?.detail ?? "Failed to delete password.");
+      throw new Error(await errorDetail(err, "Failed to delete password."));
     }
   }),
 
@@ -67,7 +68,7 @@ const Passwords = {
       const { data } = await apiClient.get("/passwords/trash");
       actions.setTrash(data);
     } catch (err) {
-      throw new Error(err.response?.data?.detail ?? "Failed to load trash.");
+      throw new Error(await errorDetail(err, "Failed to load trash."));
     }
   }),
 
@@ -77,7 +78,7 @@ const Passwords = {
       await actions.get();
       await actions.getTrash();
     } catch (err) {
-      throw new Error(err.response?.data?.detail ?? "Failed to restore password.");
+      throw new Error(await errorDetail(err, "Failed to restore password."));
     }
   }),
 
@@ -86,7 +87,7 @@ const Passwords = {
       await apiClient.delete(`/passwords/${encodeURIComponent(passwordName)}/purge`);
       await actions.getTrash();
     } catch (err) {
-      throw new Error(err.response?.data?.detail ?? "Failed to delete password.");
+      throw new Error(await errorDetail(err, "Failed to delete password."));
     }
   }),
 
@@ -97,7 +98,7 @@ const Passwords = {
       });
       await actions.get();
     } catch (err) {
-      throw new Error(err.response?.data?.detail ?? "Failed to update favorite.");
+      throw new Error(await errorDetail(err, "Failed to update favorite."));
     }
   }),
 
@@ -108,7 +109,7 @@ const Passwords = {
       );
       return data;
     } catch (err) {
-      throw new Error(err.response?.data?.detail ?? "Failed to load attachments.");
+      throw new Error(await errorDetail(err, "Failed to load attachments."));
     }
   }),
 
@@ -123,7 +124,7 @@ const Passwords = {
       await actions.get();
       return data;
     } catch (err) {
-      throw new Error(err.response?.data?.detail ?? "Failed to upload attachment.");
+      throw new Error(await errorDetail(err, "Failed to upload attachment."));
     }
   }),
 
@@ -133,24 +134,9 @@ const Passwords = {
         `/passwords/${encodeURIComponent(passwordName)}/attachments/${attachmentId}`,
         { responseType: "blob" }
       );
-      const url = URL.createObjectURL(response.data);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename || "attachment";
-      link.click();
-      URL.revokeObjectURL(url);
+      triggerDownload(response.data, filename || "attachment");
     } catch (err) {
-      let detail = "Failed to download attachment.";
-      if (err.response?.data instanceof Blob) {
-        try {
-          detail = JSON.parse(await err.response.data.text()).detail ?? detail;
-        } catch {
-          // Blob wasn't JSON; fall back to the generic message.
-        }
-      } else {
-        detail = err.response?.data?.detail ?? detail;
-      }
-      throw new Error(detail);
+      throw new Error(await errorDetail(err, "Failed to download attachment."));
     }
   }),
 
@@ -161,7 +147,7 @@ const Passwords = {
       );
       await actions.get();
     } catch (err) {
-      throw new Error(err.response?.data?.detail ?? "Failed to delete attachment.");
+      throw new Error(await errorDetail(err, "Failed to delete attachment."));
     }
   }),
 
@@ -175,7 +161,7 @@ const Passwords = {
       await actions.get();
       return data;
     } catch (err) {
-      throw new Error(err.response?.data?.detail ?? "Import failed.");
+      throw new Error(await errorDetail(err, "Import failed."));
     }
   }),
 
@@ -188,7 +174,7 @@ const Passwords = {
       await actions.get();
       return data;
     } catch (err) {
-      throw new Error(err.response?.data?.detail ?? "Import failed.");
+      throw new Error(await errorDetail(err, "Import failed."));
     }
   }),
 
@@ -199,26 +185,11 @@ const Passwords = {
         { master_password: masterPassword },
         { responseType: "blob" }
       );
-      const url = URL.createObjectURL(response.data);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `ciphermoth_backup_${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.zip`;
-      link.click();
-      URL.revokeObjectURL(url);
+      const stamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
+      triggerDownload(response.data, `ciphermoth_backup_${stamp}.zip`);
       await actions.get();
     } catch (err) {
-      let detail = "Backup failed.";
-      if (err.response?.data instanceof Blob) {
-        try {
-          const text = await err.response.data.text();
-          detail = JSON.parse(text).detail ?? detail;
-        } catch {
-          // Blob wasn't JSON; fall back to the generic message.
-        }
-      } else {
-        detail = err.response?.data?.detail ?? detail;
-      }
-      throw new Error(detail);
+      throw new Error(await errorDetail(err, "Backup failed."));
     }
   }),
 };

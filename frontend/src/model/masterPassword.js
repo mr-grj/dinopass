@@ -1,6 +1,7 @@
 import { action, thunk } from "easy-peasy";
 
 import apiClient from "../api/client";
+import { errorDetail } from "../lib/http";
 import { setKeyDerivation } from "../utils";
 
 const MasterPassword = {
@@ -50,7 +51,7 @@ const MasterPassword = {
       const msg =
         err.response?.status === 429
           ? "Too many attempts. Please try again in an hour."
-          : (err.response?.data?.detail ?? "An error occurred.");
+          : await errorDetail(err, "An error occurred.");
       actions.setError(msg);
     } finally {
       actions.setLoading(false);
@@ -65,7 +66,7 @@ const MasterPassword = {
       setKeyDerivation(data.key_derivation);
       window.location.replace("/passwords");
     } catch (err) {
-      actions.setError(err.response?.data?.detail ?? "An error occurred.");
+      actions.setError(await errorDetail(err, "An error occurred."));
     } finally {
       actions.setLoading(false);
     }

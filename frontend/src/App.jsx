@@ -1,87 +1,17 @@
 import { useEffect } from "react";
 import { BrowserRouter as Router, Navigate, Route, Routes } from "react-router-dom";
 import { Box, Container, CssBaseline, GlobalStyles, Toolbar } from "@mui/material";
-import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useStoreActions } from "easy-peasy";
 
+import ThemeToggle from "./components/ThemeToggle";
 import TopMenu from "./components/TopMenu";
+import { ColorModeProvider } from "./hooks/useColorMode";
 import useAutoLogout from "./hooks/useAutoLogout";
 import routes from "./routes";
 import { isAuth } from "./utils";
-import {
-  BORDER,
-  BORDER_STRONG,
-  GLOW,
-  INFO,
-  INK,
-  OK,
-  PAPER_DARK,
-  SURFACE,
-  TEXT_DISABLED,
-  TEXT_ON_DARK,
-  TEXT_SECONDARY,
-  WARN,
-  WEAK,
-} from "./lib/brand";
+import { GLOW, INFO, PAPER_DARK, TEXT_ON_DARK, WARN, WEAK } from "./lib/brand";
 
 const SANS = "'Space Grotesk Variable', system-ui, sans-serif";
-const MONO = "'Space Mono', ui-monospace, monospace";
-
-const theme = createTheme({
-  palette: {
-    primary: { main: INK, contrastText: SURFACE },
-    secondary: { main: GLOW, contrastText: INK },
-    success: { main: OK },
-    warning: { main: WARN },
-    error: { main: WEAK },
-    info: { main: INFO },
-    background: { default: SURFACE, paper: "#ffffff" },
-    text: { primary: INK, secondary: TEXT_SECONDARY, disabled: TEXT_DISABLED },
-    divider: BORDER,
-  },
-  shape: { borderRadius: 8 },
-  typography: {
-    fontFamily: SANS,
-    fontFamilyMonospace: MONO,
-    h4: { fontWeight: 700, letterSpacing: "-0.01em" },
-    h5: { fontWeight: 700, letterSpacing: "-0.01em" },
-    h6: { fontWeight: 700 },
-  },
-  components: {
-    MuiTooltip: {
-      defaultProps: { disableInteractive: true, enterDelay: 400, enterNextDelay: 400 },
-    },
-    MuiButtonBase: {
-      defaultProps: { disableRipple: true },
-    },
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 7,
-          fontWeight: 600,
-          letterSpacing: "0.04em",
-          "&.Mui-focusVisible": { outline: `2px solid ${GLOW}`, outlineOffset: "2px" },
-        },
-        outlined: {
-          backgroundColor: "#ffffff",
-          borderColor: BORDER_STRONG,
-          color: INK,
-          "&:hover": { backgroundColor: "#ffffff", borderColor: INK },
-        },
-      },
-    },
-    MuiIconButton: {
-      styleOverrides: {
-        root: {
-          "&.Mui-focusVisible": { outline: `2px solid ${GLOW}`, outlineOffset: "2px" },
-        },
-      },
-    },
-    MuiDialog: {
-      styleOverrides: { paper: { borderRadius: 14 } },
-    },
-  },
-});
 
 const AppContent = () => {
   useAutoLogout();
@@ -128,6 +58,7 @@ const AppContent = () => {
           {appRoutes}
         </Container>
       </Box>
+      <ThemeToggle />
     </Box>
   );
 };
@@ -152,12 +83,24 @@ const snackbarStyles = (
   />
 );
 
+const themeTransitionStyles = (
+  <GlobalStyles
+    styles={{
+      "html.cm-theming, html.cm-theming *, html.cm-theming *::before, html.cm-theming *::after": {
+        transition:
+          "background-color 420ms ease, border-color 420ms ease, color 300ms ease, fill 300ms ease !important",
+      },
+    }}
+  />
+);
+
 const App = () => (
   <Router>
-    <ThemeProvider theme={theme}>
+    <ColorModeProvider>
       {snackbarStyles}
+      {themeTransitionStyles}
       <AppContent />
-    </ThemeProvider>
+    </ColorModeProvider>
   </Router>
 );
 

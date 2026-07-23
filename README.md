@@ -33,10 +33,10 @@ you know. One master password unlocks everything. If someone gets the database, 
 
 |  |  |
 |---|---|
-| **The vault** | **Add a password, generate a strong one** |
-| ![Vault overview](docs/screenshots/01-vault.png) | ![Add password with generator](docs/screenshots/02-add-generator.png) |
-| **Vault health, computed on your device** | **First run: set up your master password** |
-| ![Vault health report](docs/screenshots/03-health.png) | ![Set up your vault](docs/screenshots/00-login.png) |
+| **First run: set up your master password** | **The vault** |
+| ![Set up your vault](docs/screenshots/00-login.png) | ![Vault overview](docs/screenshots/01-vault.png) |
+| **Add a password, generate a strong one** | **Vault health, computed on your device** |
+| ![Add password with generator](docs/screenshots/02-add-generator.png) | ![Vault health report](docs/screenshots/03-health.png) |
 
 ## Get started
 
@@ -67,6 +67,7 @@ That's all in **[CONTRIBUTING.md](./CONTRIBUTING.md)**.
 - attach files to any entry (recovery-code PDFs, license keys, key files), up to 5 MB each, encrypted with your vault key
 - search, favorites, folders, tags, and password history to keep a growing vault tidy
 - trash for deletions you can restore from or empty for good when you're sure
+- light and dark themes that flip across the whole app, toggled by a moth that flutters off as the colours fade (and remembers your pick)
 - vault health check that flags weak, reused, and old passwords, entirely on your device
 - cryptographically secure password generator (not the `Math.random()` kind) with a strength indicator on every entry
 - import from Chrome, Bitwarden, KeePass, Proton Pass, and friends via CSV, or restore an encrypted CipherMoth backup

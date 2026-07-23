@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { Box, CircularProgress, Tooltip, Typography } from "@mui/material";
+import { Box, CircularProgress, Tooltip, Typography, useTheme } from "@mui/material";
 
 import { generateTotp, totpRemaining } from "../../lib/totp";
+import { GLOW, TOTP } from "../../lib/brand";
 
 const PERIOD = 30;
 
 const TotpCell = ({ secret, onCopy }) => {
+  const theme = useTheme();
   const [code, setCode] = useState("");
   const [remaining, setRemaining] = useState(PERIOD);
   const [invalid, setInvalid] = useState(false);
@@ -48,7 +50,11 @@ const TotpCell = ({ secret, onCopy }) => {
       >
         <Typography
           variant="body2"
-          sx={{ fontFamily: "'Space Mono', monospace", fontWeight: 700, color: "#1f7a68" }}
+          sx={{
+            fontFamily: "'Space Mono', monospace",
+            fontWeight: 700,
+            color: theme.palette.mode === "dark" ? GLOW : TOTP,
+          }}
         >
           {code.slice(0, 3)} {code.slice(3)}
         </Typography>

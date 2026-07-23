@@ -148,8 +148,11 @@ const UpdateDialog = ({ open, onClose }) => {
                   m: 0,
                   p: 1.5,
                   borderRadius: 1,
-                  bgcolor: "#141416",
-                  color: "#f4f4f2",
+                  border: "1px solid",
+                  borderColor: "divider",
+                  bgcolor: (t) =>
+                    t.palette.mode === "dark" ? "rgba(255,255,255,0.06)" : "#141416",
+                  color: (t) => (t.palette.mode === "dark" ? t.palette.text.primary : "#f4f4f2"),
                   fontSize: 12,
                   overflowX: "auto",
                   whiteSpace: "pre-wrap",

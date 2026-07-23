@@ -12,6 +12,7 @@ export const TEXT_SECONDARY = "#6c6f73";
 export const TEXT_DISABLED = "#9a9d9f";
 export const TEXT_ON_DARK = "#f4f4f2";
 export const TEXT_ON_DARK_MUTED = "#8a8d90";
+export const TEXT_ON_DARK_FAINT = "#5f6266";
 
 export const BORDER = "#e2e2df";
 export const BORDER_STRONG = "#d4d4d0";

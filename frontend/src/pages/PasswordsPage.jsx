@@ -356,7 +356,7 @@ const PasswordsPage = () => {
               fontWeight: 600,
               color: "text.secondary",
             },
-            "& .MuiDataGrid-row:hover": { bgcolor: "#fafafa" },
+            "& .MuiDataGrid-row:hover": { bgcolor: "action.hover" },
             "& .rowHoverActions": {
               opacity: 0,
               pointerEvents: "none",

@@ -6,28 +6,9 @@ import { useSnackbar } from "notistack";
 import LoadingScreen from "../components/LoadingScreen";
 import MothIcon from "../components/MothIcon";
 import PasswordField from "../components/PasswordField";
+import ThemeToggle from "../components/ThemeToggle";
 import { getMasterPasswordStrength } from "../lib/passwordStrength";
-import {
-  GLOW,
-  GLOW_SOFT,
-  INK,
-  PAPER_DARK,
-  TEXT_ON_DARK,
-  TEXT_ON_DARK_MUTED,
-  WARN,
-} from "../lib/brand";
-
-const darkFieldSx = {
-  "& .MuiOutlinedInput-root": {
-    color: TEXT_ON_DARK,
-    "& fieldset": { borderColor: "rgba(255,255,255,0.16)" },
-    "&:hover fieldset": { borderColor: "rgba(255,255,255,0.3)" },
-    "&.Mui-focused fieldset": { borderColor: GLOW, borderWidth: 2 },
-  },
-  "& .MuiInputLabel-root": { color: TEXT_ON_DARK_MUTED },
-  "& .MuiInputLabel-root.Mui-focused": { color: GLOW },
-  "& .MuiIconButton-root": { color: TEXT_ON_DARK_MUTED },
-};
+import { GLOW, GLOW_SOFT, INK, WARN } from "../lib/brand";
 
 const unlockButtonSx = {
   bgcolor: GLOW,
@@ -36,6 +17,7 @@ const unlockButtonSx = {
   letterSpacing: "0.06em",
   py: 1.6,
   "&:hover": { bgcolor: GLOW_SOFT },
+  "&.Mui-disabled": { bgcolor: "rgba(125,211,192,0.3)", color: "rgba(11,11,12,0.55)" },
 };
 
 const LoginPage = () => {
@@ -102,7 +84,7 @@ const LoginPage = () => {
       sx={{
         position: "fixed",
         inset: 0,
-        bgcolor: INK,
+        bgcolor: "background.default",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -117,8 +99,9 @@ const LoginPage = () => {
         sx={{
           width: "100%",
           maxWidth: initialized ? 400 : 440,
-          bgcolor: PAPER_DARK,
-          border: "1px solid rgba(255,255,255,0.1)",
+          bgcolor: "background.paper",
+          border: "1px solid",
+          borderColor: "divider",
           borderRadius: 2,
           px: { xs: 3, sm: 4.25 },
           py: 5,
@@ -130,7 +113,7 @@ const LoginPage = () => {
             width: 56,
             mx: "auto",
             mb: 2.25,
-            color: TEXT_ON_DARK,
+            color: "text.primary",
             filter: `drop-shadow(0 0 18px color-mix(in srgb, ${GLOW} 50%, transparent))`,
           }}
         >
@@ -139,7 +122,7 @@ const LoginPage = () => {
 
         {initialized ? (
           <>
-            <Typography sx={{ fontSize: 24, fontWeight: 700, color: TEXT_ON_DARK }}>
+            <Typography sx={{ fontSize: 24, fontWeight: 700, color: "text.primary" }}>
               Cipher
               <Box component="span" sx={{ color: GLOW }}>
                 Moth
@@ -151,7 +134,7 @@ const LoginPage = () => {
                 mb: 3.25,
                 fontFamily: "'Space Mono', monospace",
                 fontSize: 12,
-                color: TEXT_ON_DARK_MUTED,
+                color: "text.secondary",
               }}
             >
               Your secrets stay in the dark.
@@ -159,11 +142,11 @@ const LoginPage = () => {
           </>
         ) : (
           <>
-            <Typography sx={{ fontSize: 23, fontWeight: 700, color: TEXT_ON_DARK }}>
+            <Typography sx={{ fontSize: 23, fontWeight: 700, color: "text.primary" }}>
               Set up your vault
             </Typography>
             <Typography
-              sx={{ mt: 1, mb: 3, fontSize: 13, color: TEXT_ON_DARK_MUTED, lineHeight: 1.5 }}
+              sx={{ mt: 1, mb: 3, fontSize: 13, color: "text.secondary", lineHeight: 1.5 }}
             >
               One master password protects everything. Choose it well. It is the only key.
             </Typography>
@@ -180,7 +163,6 @@ const LoginPage = () => {
           }}
           autoFocus
           autoComplete={initialized ? "current-password" : "new-password"}
-          sx={darkFieldSx}
         />
 
         {!initialized && value && strength && (
@@ -189,7 +171,7 @@ const LoginPage = () => {
               variant="determinate"
               value={strength.value}
               color={strength.color}
-              sx={{ borderRadius: 1, height: 6, bgcolor: "rgba(255,255,255,0.1)" }}
+              sx={{ borderRadius: 1, height: 6, bgcolor: "action.hover" }}
             />
             <Typography
               variant="caption"
@@ -212,7 +194,6 @@ const LoginPage = () => {
                 if (e.key === "Enter") handleCreate();
               }}
               autoComplete="new-password"
-              sx={darkFieldSx}
             />
             <Box
               sx={{
@@ -248,7 +229,7 @@ const LoginPage = () => {
                 />
               }
               label={
-                <Typography variant="caption" sx={{ color: "#cfd2d4" }}>
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
                   I understand my master password cannot be recovered.
                 </Typography>
               }
@@ -268,10 +249,11 @@ const LoginPage = () => {
           {initialized ? "Unlock Vault" : "Create Vault"}
         </Button>
 
-        <Typography sx={{ mt: 2.75, fontSize: 11, color: "#56585b" }}>
+        <Typography sx={{ mt: 2.75, fontSize: 11, color: "text.disabled" }}>
           Closing this tab locks your vault. That is by design.
         </Typography>
       </Box>
+      <ThemeToggle zIndex={1301} />
     </Box>
   );
 };

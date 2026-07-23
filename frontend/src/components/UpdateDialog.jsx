@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Box,
@@ -21,6 +21,8 @@ const DONE = new Set(["success", "failed", "rolled_back"]);
 const POLL_MS = 3000;
 const TIMEOUT_MS = 6 * 60 * 1000;
 
+const stripV = (v) => String(v ?? "").replace(/^v/, "");
+
 const STATE_COPY = {
   requested: "Starting…",
   verifying: "Verifying image signatures…",
@@ -35,11 +37,12 @@ const UpdateDialog = ({ open, onClose }) => {
 
   const { current, latest, releaseUrl } = useStoreState((s) => s.ciphermothModels.updates);
   const apply = useStoreState((s) => s.ciphermothModels.updates.apply);
-  const { applyUpdate, fetchApplyStatus, checkForUpdates } = useStoreActions(
+  const { applyUpdate, fetchApplyStatus, fetchLiveVersion, checkForUpdates } = useStoreActions(
     (a) => a.ciphermothModels.updates
   );
 
   const [busy, setBusy] = useState(false);
+  const bootVersion = useRef(null);
 
   const updaterPresent = apply?.updater_present;
 
@@ -59,19 +62,32 @@ const UpdateDialog = ({ open, onClose }) => {
       fn();
     };
 
+    const reloadDone = () =>
+      finish(() => {
+        enqueueSnackbar("Update complete. Reloading…", { variant: "success" });
+        setTimeout(() => window.location.reload(), 1500);
+      });
+
     const tick = async () => {
+      const live = stripV(await fetchLiveVersion());
+      const boot = bootVersion.current;
+      const target = stripV(latest);
+      if (live && ((boot && live !== boot) || (target && live === target))) {
+        reloadDone();
+        return;
+      }
+
       const status = await fetchApplyStatus();
       const state = status?.state;
       if (state && DONE.has(state)) {
-        finish(() => {
-          if (state === "success") {
-            enqueueSnackbar("Update complete. Reloading…", { variant: "success" });
-            setTimeout(() => window.location.reload(), 1500);
-          } else {
+        if (state === "success") {
+          reloadDone();
+        } else {
+          finish(() => {
             setBusy(false);
             enqueueSnackbar(STATE_COPY[state], { variant: "error" });
-          }
-        });
+          });
+        }
       } else if (Date.now() > deadline) {
         finish(() => {
           setBusy(false);
@@ -89,9 +105,10 @@ const UpdateDialog = ({ open, onClose }) => {
       done = true;
       clearInterval(id);
     };
-  }, [busy, fetchApplyStatus, enqueueSnackbar, checkForUpdates]);
+  }, [busy, fetchApplyStatus, fetchLiveVersion, latest, enqueueSnackbar, checkForUpdates]);
 
   const handleApply = async () => {
+    bootVersion.current = stripV(current);
     setBusy(true);
     try {
       await applyUpdate(latest);

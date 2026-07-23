@@ -32,7 +32,7 @@ write_result() {
     --arg state "$1" --arg detail "$2" --arg target "${3:-}" \
     --arg finished_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
     '{state:$state, detail:$detail, target:$target, finished_at:$finished_at}' \
-    >"$tmp" && mv "$tmp" "$RESULT_FILE"
+    >"$tmp" && chmod 0644 "$tmp" && mv "$tmp" "$RESULT_FILE"
 }
 
 current_version() {

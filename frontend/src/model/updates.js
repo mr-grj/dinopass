@@ -38,6 +38,15 @@ const Updates = {
     }
   }),
 
+  fetchLiveVersion: thunk(async () => {
+    try {
+      const { data } = await apiClient.get("/meta", { timeout: 5000 });
+      return data.version;
+    } catch {
+      return null;
+    }
+  }),
+
   checkForUpdates: thunk(async (actions) => {
     actions.setChecking(true);
     try {

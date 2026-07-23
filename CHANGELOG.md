@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **One-click update really finishes on its own now.** The update dialog could sit on "Working..." until you refreshed by hand, even though the update itself succeeded. Root cause: the updater wrote its progress file as `root` with `0600` permissions, so the non-root backend got "permission denied" reading it and reported `idle` - the dialog never saw the terminal state. Two fixes: the updater now writes that file world-readable (`0644`), and the dialog no longer depends on it at all - it watches the running version via `/api/meta` and reloads the moment the new version is live, so it recovers cleanly even across the backend restart or a stale status file.
+
 ## [1.4.3] - 2026-07-23
 
 ### Added
